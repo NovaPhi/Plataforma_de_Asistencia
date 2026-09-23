@@ -8,7 +8,7 @@ Supervisor Regional, Administrador Central) para acceder solo a las funciones de
 
 RBAC (roll based access control) aplicado a todos los tipos de usuario
 
-Story Points: 4
+Story Points: 3
 
 ### HU 2 - Restriccion de sesion por estancia
 Como Administrador Central quiero que cada sesion quede ligada a una estancia por IP o token institucional, para evitar accessos cruzados entre estancias
@@ -227,7 +227,7 @@ Story Points: 3
 
 ### HU 33 - Optimizar Base de Datos existente con un modelo de base de datos no relacional.
 
-Story Points: 5
+Story Points: 6
 
 ## Modulo Gestion de Riesgos y Contingencia Operativa
 
