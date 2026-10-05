@@ -35,7 +35,7 @@ const AppBar = () => {
 const AppMenu = () => (
   <Menu>
     <Menu.Item to="/" primaryText="Tablero" leftIcon={<DashboardIcon />} />
-    <Menu.ResourceItems/>
+    {/* TODO: más opciones del menú */}
   </Menu>
 );
  
