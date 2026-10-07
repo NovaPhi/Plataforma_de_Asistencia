@@ -6,13 +6,15 @@ import { Seguimientos } from "./Seguimiento";
 import { PasaLista } from "./Pase_de_Lista";
 import { Bitacora } from "./Bitacora";
 import { Historicos } from "./Datos_Historicos";
+import { Escaneo_Credencial } from "./Escaneo_QR";
+import { Seguimientos } from "./Seguimiento";
+import { PasaLista } from "./Pase_de_Lista";
+import { Bitacora } from "./Bitacora";
+import { Historicos } from "./Datos_Historicos";
 import { dataProvider } from "./dataProvider";
 import authProvider from "./AuthProvider";
 import { i18nProvider } from "./i18nProvider";
 import { Dashboard } from "./Dashboard";
-import { Route } from "react-router-dom";
-import Registrarse from "./registrarse";
-import { listarProductos, editarProductos, crearProductos } from "./pr";
 import PostIcon from "@mui/icons-material/Book";
  
 export const App = () => (
