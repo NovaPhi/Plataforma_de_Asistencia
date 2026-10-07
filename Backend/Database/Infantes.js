@@ -37,7 +37,10 @@ const templateInfante = {
   usuario: "",
   RegPesoTalla: null,        // [pesoGramos, tallaCm] p. ej. [16250, 102]
   fsistema: null,
-  inscripcion: []      // ["agosto2026", "septiembre2026", etc tomar del padron de SQL]
+  inscripcion: [],     // ["agosto2026", "septiembre2026", etc tomar del padron de SQL]
+  bloqueoIngreso: false,     // Candado cuando el infante requiere alta medica
+  tutores: [],               // Tutores autorizados: [{ tutor: ObjectId, parentesco: "MADRE", autorizadoEgreso: true }]
+  contactosEmergencia: []    // Contactos a notificar si no se localiza: [{ nombre: "", telefono: "", parentesco: "", prioridad: 1 }]
 };
 */
 
@@ -74,6 +77,32 @@ db.createCollection("infantes", {
           bsonType: "array",
           uniqueItems: true,
           items: { bsonType: "string"}
+        },
+        bloqueoIngreso: { bsonType: "bool" },
+        tutores: {
+          bsonType: "array",
+          items: {
+            bsonType: "object",
+            required: ["tutor", "parentesco", "autorizadoEgreso"],
+            properties: {
+              tutor: { bsonType: "objectId" },
+              parentesco: { bsonType: "string", maxLength: 30 },
+              autorizadoEgreso: { bsonType: "bool" }
+            }
+          }
+        },
+        contactosEmergencia: {
+          bsonType: "array",
+          items: {
+            bsonType: "object",
+            required: ["nombre", "telefono", "parentesco", "prioridad"],
+            properties: {
+              nombre: { bsonType: "string", maxLength: 150 },
+              telefono: { bsonType: "string", maxLength: 10 },
+              parentesco: { bsonType: "string", maxLength: 30 },
+              prioridad: { bsonType: "int", minimum: 1 }
+            }
+          }
         }
       }
     }
@@ -85,6 +114,7 @@ db.infantes.createIndex({ matricula: 1 }, { unique: true });
 db.infantes.createIndex({ curp: 1 }, { unique: true });
 db.infantes.createIndex({ ebdi: 1, activo: 1 });
 db.infantes.createIndex({ inscripcion: 1 });
+db.infantes.createIndex({ "tutores.tutor": 1 });
 
 // ---------------------------------------------------------------------------
 // Dummy data: 50 infantes
@@ -119,7 +149,13 @@ const infantes = [
     usuario: "dir.ebdi042",
     RegPesoTalla: [16250, 105],
     fsistema: ISODate("2023-08-04T08:29:00Z"),
-    inscripcion: ["agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [
+      { tutor: ObjectId("b00000000000000000000001"), parentesco: "MADRE", autorizadoEgreso: true },
+      { tutor: ObjectId("b00000000000000000000002"), parentesco: "PADRE", autorizadoEgreso: true }
+    ],
+    contactosEmergencia: [{ nombre: "Mónica Vargas Moreno", telefono: "2220940985", parentesco: "ABUELA", prioridad: 1 }]
   },
   {
     id_infante: 199410,
@@ -150,7 +186,10 @@ const infantes = [
     usuario: "dir.ebdi042",
     RegPesoTalla: null,
     fsistema: ISODate("2025-01-27T09:16:00Z"),
-    inscripcion: ["enero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["enero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [{ tutor: ObjectId("b00000000000000000000003"), parentesco: "MADRE", autorizadoEgreso: true }],
+    contactosEmergencia: [{ nombre: "Sandra Castro Flores", telefono: "3388498556", parentesco: "ABUELA", prioridad: 1 }]
   },
   {
     id_infante: 199411,
@@ -181,7 +220,10 @@ const infantes = [
     usuario: "dir.ebdi042",
     RegPesoTalla: [17250, 111],
     fsistema: ISODate("2022-08-05T12:38:00Z"),
-    inscripcion: ["agosto2022", "septiembre2022", "octubre2022", "noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["agosto2022", "septiembre2022", "octubre2022", "noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [{ tutor: ObjectId("b00000000000000000000004"), parentesco: "MADRE", autorizadoEgreso: true }],
+    contactosEmergencia: [{ nombre: "María García Medina", telefono: "7228669538", parentesco: "ABUELA", prioridad: 1 }]
   },
   {
     id_infante: 199412,
@@ -212,7 +254,17 @@ const infantes = [
     usuario: "capt.ebdi007",
     RegPesoTalla: [12400, 91],
     fsistema: ISODate("2024-10-12T09:53:00Z"),
-    inscripcion: ["octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [{ tutor: ObjectId("b00000000000000000000005"), parentesco: "MADRE", autorizadoEgreso: true }],
+    contactosEmergencia: [
+      {
+        nombre: "Gabriela Romero García",
+        telefono: "8113327967",
+        parentesco: "ABUELA",
+        prioridad: 1
+      }
+    ]
   },
   {
     id_infante: 199413,
@@ -243,7 +295,13 @@ const infantes = [
     usuario: "capt.ebdi007",
     RegPesoTalla: [20350, 111],
     fsistema: ISODate("2022-02-08T10:47:00Z"),
-    inscripcion: ["febrero2022", "marzo2022", "abril2022"]
+    inscripcion: ["febrero2022", "marzo2022", "abril2022"],
+    bloqueoIngreso: false,
+    tutores: [{ tutor: ObjectId("b00000000000000000000006"), parentesco: "MADRE", autorizadoEgreso: true }],
+    contactosEmergencia: [
+      { nombre: "Rosa González Medina", telefono: "5583508111", parentesco: "ABUELA", prioridad: 1 },
+      { nombre: "Carlos Jiménez Medina", telefono: "5595816354", parentesco: "TIO", prioridad: 2 }
+    ]
   },
   {
     id_infante: 199414,
@@ -274,7 +332,17 @@ const infantes = [
     usuario: "dir.ebdi105",
     RegPesoTalla: [11200, 78],
     fsistema: ISODate("2026-04-16T08:33:00Z"),
-    inscripcion: ["abril2026", "mayo2026", "junio2026", "octubre2026"]
+    inscripcion: ["abril2026", "mayo2026", "junio2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [{ tutor: ObjectId("b00000000000000000000007"), parentesco: "MADRE", autorizadoEgreso: true }],
+    contactosEmergencia: [
+      {
+        nombre: "María Moreno González",
+        telefono: "5515276113",
+        parentesco: "ABUELA",
+        prioridad: 1
+      }
+    ]
   },
   {
     id_infante: 199415,
@@ -305,7 +373,13 @@ const infantes = [
     usuario: "dir.ebdi042",
     RegPesoTalla: [11150, 88],
     fsistema: ISODate("2025-01-22T09:15:00Z"),
-    inscripcion: ["enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [{ tutor: ObjectId("b00000000000000000000008"), parentesco: "MADRE", autorizadoEgreso: true }],
+    contactosEmergencia: [
+      { nombre: "Diana Gómez Moreno", telefono: "8159211532", parentesco: "ABUELA", prioridad: 1 },
+      { nombre: "Carlos Flores Mendoza", telefono: "8162107617", parentesco: "TIO", prioridad: 2 }
+    ]
   },
   {
     id_infante: 199416,
@@ -336,7 +410,21 @@ const infantes = [
     usuario: "dir.ebdi042",
     RegPesoTalla: null,
     fsistema: ISODate("2026-08-15T09:18:00Z"),
-    inscripcion: ["agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [
+      { tutor: ObjectId("b00000000000000000000009"), parentesco: "MADRE", autorizadoEgreso: true },
+      { tutor: ObjectId("b0000000000000000000000a"), parentesco: "PADRE", autorizadoEgreso: true }
+    ],
+    contactosEmergencia: [
+      {
+        nombre: "Elizabeth Gómez Martínez",
+        telefono: "7227751062",
+        parentesco: "ABUELA",
+        prioridad: 1
+      },
+      { nombre: "Luis Rodríguez Gómez", telefono: "7228836152", parentesco: "TIO", prioridad: 2 }
+    ]
   },
   {
     id_infante: 199417,
@@ -367,7 +455,10 @@ const infantes = [
     usuario: "dir.ebdi042",
     RegPesoTalla: null,
     fsistema: ISODate("2025-02-10T11:17:00Z"),
-    inscripcion: ["febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: true,
+    tutores: [{ tutor: ObjectId("b0000000000000000000000b"), parentesco: "MADRE", autorizadoEgreso: true }],
+    contactosEmergencia: [{ nombre: "María Mendoza Pérez", telefono: "5599446135", parentesco: "ABUELA", prioridad: 1 }]
   },
   {
     id_infante: 199418,
@@ -398,7 +489,10 @@ const infantes = [
     usuario: "dir.ebdi020",
     RegPesoTalla: [19650, 117],
     fsistema: ISODate("2022-01-10T10:22:00Z"),
-    inscripcion: ["enero2022", "marzo2022", "abril2022", "mayo2022", "junio2022", "julio2022", "agosto2022", "septiembre2022", "noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["enero2022", "marzo2022", "abril2022", "mayo2022", "junio2022", "julio2022", "agosto2022", "septiembre2022", "noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [{ tutor: ObjectId("b0000000000000000000000c"), parentesco: "MADRE", autorizadoEgreso: true }],
+    contactosEmergencia: [{ nombre: "Ana Ríos Herrera", telefono: "7221994569", parentesco: "ABUELA", prioridad: 1 }]
   },
   {
     id_infante: 199419,
@@ -429,7 +523,20 @@ const infantes = [
     usuario: "admin.central",
     RegPesoTalla: [13650, 88],
     fsistema: ISODate("2025-03-07T08:25:00Z"),
-    inscripcion: ["marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [
+      { tutor: ObjectId("b0000000000000000000000d"), parentesco: "MADRE", autorizadoEgreso: true },
+      { tutor: ObjectId("b0000000000000000000000e"), parentesco: "PADRE", autorizadoEgreso: true }
+    ],
+    contactosEmergencia: [
+      {
+        nombre: "Leticia Ramírez Gómez",
+        telefono: "7229828640",
+        parentesco: "ABUELA",
+        prioridad: 1
+      }
+    ]
   },
   {
     id_infante: 199420,
@@ -460,7 +567,16 @@ const infantes = [
     usuario: "capt.ebdi007",
     RegPesoTalla: [18900, 114],
     fsistema: ISODate("2022-01-15T10:07:00Z"),
-    inscripcion: ["enero2022", "febrero2022", "marzo2022", "abril2022", "mayo2022", "junio2022", "julio2022", "agosto2022", "septiembre2022", "octubre2022", "noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["enero2022", "febrero2022", "marzo2022", "abril2022", "mayo2022", "junio2022", "julio2022", "agosto2022", "septiembre2022", "octubre2022", "noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [
+      { tutor: ObjectId("b0000000000000000000000f"), parentesco: "MADRE", autorizadoEgreso: true },
+      { tutor: ObjectId("b00000000000000000000010"), parentesco: "PADRE", autorizadoEgreso: true }
+    ],
+    contactosEmergencia: [
+      { nombre: "Claudia Ríos Moreno", telefono: "2227464397", parentesco: "ABUELA", prioridad: 1 },
+      { nombre: "Héctor Chávez Díaz", telefono: "2224419303", parentesco: "TIO", prioridad: 2 }
+    ]
   },
   {
     id_infante: 199421,
@@ -491,7 +607,16 @@ const infantes = [
     usuario: "admin.central",
     RegPesoTalla: null,
     fsistema: ISODate("2022-02-02T11:45:00Z"),
-    inscripcion: ["febrero2022", "marzo2022", "abril2022", "mayo2022", "junio2022", "julio2022", "agosto2022", "septiembre2022", "octubre2022", "noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["febrero2022", "marzo2022", "abril2022", "mayo2022", "junio2022", "julio2022", "agosto2022", "septiembre2022", "octubre2022", "noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [
+      { tutor: ObjectId("b00000000000000000000011"), parentesco: "MADRE", autorizadoEgreso: true },
+      { tutor: ObjectId("b00000000000000000000012"), parentesco: "PADRE", autorizadoEgreso: true }
+    ],
+    contactosEmergencia: [
+      { nombre: "Paola Gómez Castro", telefono: "3351566979", parentesco: "ABUELA", prioridad: 1 },
+      { nombre: "Carlos Ruiz Castro", telefono: "3367959650", parentesco: "TIO", prioridad: 2 }
+    ]
   },
   {
     id_infante: 199422,
@@ -522,7 +647,17 @@ const infantes = [
     usuario: "dir.ebdi042",
     RegPesoTalla: [19150, 113],
     fsistema: ISODate("2022-01-10T09:09:00Z"),
-    inscripcion: ["enero2022", "febrero2022", "marzo2022", "abril2022", "mayo2022", "junio2022", "julio2022", "agosto2022", "septiembre2022", "octubre2022", "noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023"]
+    inscripcion: ["enero2022", "febrero2022", "marzo2022", "abril2022", "mayo2022", "junio2022", "julio2022", "agosto2022", "septiembre2022", "octubre2022", "noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023"],
+    bloqueoIngreso: false,
+    tutores: [{ tutor: ObjectId("b00000000000000000000013"), parentesco: "MADRE", autorizadoEgreso: true }],
+    contactosEmergencia: [
+      {
+        nombre: "Gabriela Silva Romero",
+        telefono: "8154705670",
+        parentesco: "ABUELA",
+        prioridad: 1
+      }
+    ]
   },
   {
     id_infante: 199423,
@@ -553,7 +688,16 @@ const infantes = [
     usuario: "capt.ebdi012",
     RegPesoTalla: [11300, 85],
     fsistema: ISODate("2026-02-05T12:57:00Z"),
-    inscripcion: ["febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [
+      { tutor: ObjectId("b00000000000000000000014"), parentesco: "MADRE", autorizadoEgreso: true },
+      { tutor: ObjectId("b00000000000000000000015"), parentesco: "PADRE", autorizadoEgreso: true }
+    ],
+    contactosEmergencia: [
+      { nombre: "Leticia Díaz Mendoza", telefono: "7228015646", parentesco: "ABUELA", prioridad: 1 },
+      { nombre: "Fernando Gómez García", telefono: "7223301320", parentesco: "TIO", prioridad: 2 }
+    ]
   },
   {
     id_infante: 199424,
@@ -584,7 +728,21 @@ const infantes = [
     usuario: "dir.ebdi042",
     RegPesoTalla: null,
     fsistema: ISODate("2022-08-05T13:08:00Z"),
-    inscripcion: ["agosto2022", "septiembre2022", "octubre2022", "noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["agosto2022", "septiembre2022", "octubre2022", "noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [
+      { tutor: ObjectId("b00000000000000000000016"), parentesco: "MADRE", autorizadoEgreso: true },
+      { tutor: ObjectId("b00000000000000000000017"), parentesco: "PADRE", autorizadoEgreso: true }
+    ],
+    contactosEmergencia: [
+      {
+        nombre: "Gabriela Sánchez Mendoza",
+        telefono: "8171988904",
+        parentesco: "ABUELA",
+        prioridad: 1
+      },
+      { nombre: "Raúl Ruiz Flores", telefono: "8111119602", parentesco: "TIO", prioridad: 2 }
+    ]
   },
   {
     id_infante: 199425,
@@ -615,7 +773,17 @@ const infantes = [
     usuario: "dir.ebdi020",
     RegPesoTalla: [13050, 86],
     fsistema: ISODate("2025-08-22T11:41:00Z"),
-    inscripcion: ["agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [{ tutor: ObjectId("b00000000000000000000018"), parentesco: "MADRE", autorizadoEgreso: true }],
+    contactosEmergencia: [
+      {
+        nombre: "Karina Herrera Mendoza",
+        telefono: "7220465873",
+        parentesco: "ABUELA",
+        prioridad: 1
+      }
+    ]
   },
   {
     id_infante: 199426,
@@ -646,7 +814,16 @@ const infantes = [
     usuario: "capt.ebdi012",
     RegPesoTalla: [20500, 110],
     fsistema: ISODate("2022-03-30T12:01:00Z"),
-    inscripcion: ["marzo2022", "abril2022", "mayo2022", "junio2022", "julio2022", "agosto2022", "septiembre2022", "octubre2022", "noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["marzo2022", "abril2022", "mayo2022", "junio2022", "julio2022", "agosto2022", "septiembre2022", "octubre2022", "noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [
+      { tutor: ObjectId("b00000000000000000000019"), parentesco: "MADRE", autorizadoEgreso: true },
+      { tutor: ObjectId("b0000000000000000000001a"), parentesco: "PADRE", autorizadoEgreso: false }
+    ],
+    contactosEmergencia: [
+      { nombre: "Sandra Castro Díaz", telefono: "3324829601", parentesco: "ABUELA", prioridad: 1 },
+      { nombre: "Mario Jiménez Herrera", telefono: "3377204126", parentesco: "TIO", prioridad: 2 }
+    ]
   },
   {
     id_infante: 199427,
@@ -677,7 +854,20 @@ const infantes = [
     usuario: "dir.ebdi042",
     RegPesoTalla: null,
     fsistema: ISODate("2023-03-05T13:49:00Z"),
-    inscripcion: ["marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [
+      { tutor: ObjectId("b0000000000000000000001b"), parentesco: "MADRE", autorizadoEgreso: true },
+      { tutor: ObjectId("b0000000000000000000001c"), parentesco: "PADRE", autorizadoEgreso: true }
+    ],
+    contactosEmergencia: [
+      {
+        nombre: "Alejandra Romero Gómez",
+        telefono: "7227892352",
+        parentesco: "ABUELA",
+        prioridad: 1
+      }
+    ]
   },
   {
     id_infante: 199428,
@@ -708,7 +898,13 @@ const infantes = [
     usuario: "capt.ebdi007",
     RegPesoTalla: [18100, 118],
     fsistema: ISODate("2022-01-10T08:19:00Z"),
-    inscripcion: ["enero2022", "febrero2022", "marzo2022", "abril2022", "mayo2022", "junio2022", "julio2022", "agosto2022", "septiembre2022", "octubre2022", "noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["enero2022", "febrero2022", "marzo2022", "abril2022", "mayo2022", "junio2022", "julio2022", "agosto2022", "septiembre2022", "octubre2022", "noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [
+      { tutor: ObjectId("b0000000000000000000001d"), parentesco: "MADRE", autorizadoEgreso: true },
+      { tutor: ObjectId("b0000000000000000000001e"), parentesco: "PADRE", autorizadoEgreso: true }
+    ],
+    contactosEmergencia: [{ nombre: "Leticia Gómez García", telefono: "3313761561", parentesco: "ABUELA", prioridad: 1 }]
   },
   {
     id_infante: 199429,
@@ -739,7 +935,16 @@ const infantes = [
     usuario: "dir.ebdi105",
     RegPesoTalla: null,
     fsistema: ISODate("2023-07-27T09:41:00Z"),
-    inscripcion: ["julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [
+      { tutor: ObjectId("b0000000000000000000001f"), parentesco: "MADRE", autorizadoEgreso: true },
+      { tutor: ObjectId("b00000000000000000000020"), parentesco: "PADRE", autorizadoEgreso: true }
+    ],
+    contactosEmergencia: [
+      { nombre: "María Sánchez Romero", telefono: "8191483354", parentesco: "ABUELA", prioridad: 1 },
+      { nombre: "Iván Aguilar Mendoza", telefono: "8118137852", parentesco: "TIO", prioridad: 2 }
+    ]
   },
   {
     id_infante: 199430,
@@ -770,7 +975,21 @@ const infantes = [
     usuario: "dir.ebdi105",
     RegPesoTalla: null,
     fsistema: ISODate("2022-02-09T11:17:00Z"),
-    inscripcion: ["febrero2022", "marzo2022", "abril2022", "mayo2022", "junio2022", "agosto2022", "septiembre2022", "octubre2022", "noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["febrero2022", "marzo2022", "abril2022", "mayo2022", "junio2022", "agosto2022", "septiembre2022", "octubre2022", "noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [
+      { tutor: ObjectId("b00000000000000000000021"), parentesco: "MADRE", autorizadoEgreso: true },
+      { tutor: ObjectId("b00000000000000000000022"), parentesco: "PADRE", autorizadoEgreso: true }
+    ],
+    contactosEmergencia: [
+      { nombre: "Rosa Romero Pérez", telefono: "8138416497", parentesco: "ABUELA", prioridad: 1 },
+      {
+        nombre: "Alejandro Navarro Sánchez",
+        telefono: "8157192948",
+        parentesco: "TIO",
+        prioridad: 2
+      }
+    ]
   },
   {
     id_infante: 199431,
@@ -801,7 +1020,21 @@ const infantes = [
     usuario: "dir.ebdi020",
     RegPesoTalla: null,
     fsistema: ISODate("2022-11-24T14:49:00Z"),
-    inscripcion: ["noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024"]
+    inscripcion: ["noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024"],
+    bloqueoIngreso: false,
+    tutores: [
+      { tutor: ObjectId("b00000000000000000000023"), parentesco: "MADRE", autorizadoEgreso: true },
+      { tutor: ObjectId("b00000000000000000000024"), parentesco: "PADRE", autorizadoEgreso: true }
+    ],
+    contactosEmergencia: [
+      {
+        nombre: "Guadalupe Moreno Mendoza",
+        telefono: "2225347042",
+        parentesco: "ABUELA",
+        prioridad: 1
+      },
+      { nombre: "Sergio Navarro González", telefono: "2223414617", parentesco: "TIO", prioridad: 2 }
+    ]
   },
   {
     id_infante: 199432,
@@ -832,7 +1065,13 @@ const infantes = [
     usuario: "capt.ebdi007",
     RegPesoTalla: [16400, 103],
     fsistema: ISODate("2023-08-02T09:49:00Z"),
-    inscripcion: ["agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [
+      { tutor: ObjectId("b00000000000000000000025"), parentesco: "MADRE", autorizadoEgreso: true },
+      { tutor: ObjectId("b00000000000000000000026"), parentesco: "PADRE", autorizadoEgreso: true }
+    ],
+    contactosEmergencia: [{ nombre: "Adriana Vargas Díaz", telefono: "7224201461", parentesco: "ABUELA", prioridad: 1 }]
   },
   {
     id_infante: 199433,
@@ -863,7 +1102,21 @@ const infantes = [
     usuario: "admin.central",
     RegPesoTalla: null,
     fsistema: ISODate("2022-05-19T08:15:00Z"),
-    inscripcion: ["mayo2022", "junio2022", "julio2022", "agosto2022", "septiembre2022", "octubre2022", "noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["mayo2022", "junio2022", "julio2022", "agosto2022", "septiembre2022", "octubre2022", "noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [
+      { tutor: ObjectId("b00000000000000000000027"), parentesco: "MADRE", autorizadoEgreso: true },
+      { tutor: ObjectId("b00000000000000000000028"), parentesco: "PADRE", autorizadoEgreso: false }
+    ],
+    contactosEmergencia: [
+      {
+        nombre: "Alejandra Aguilar Mendoza",
+        telefono: "3300530514",
+        parentesco: "ABUELA",
+        prioridad: 1
+      },
+      { nombre: "Héctor Ortiz Herrera", telefono: "3358930597", parentesco: "TIO", prioridad: 2 }
+    ]
   },
   {
     id_infante: 199434,
@@ -894,7 +1147,20 @@ const infantes = [
     usuario: "capt.ebdi007",
     RegPesoTalla: null,
     fsistema: ISODate("2022-03-27T15:44:00Z"),
-    inscripcion: ["marzo2022", "abril2022", "mayo2022", "junio2022", "julio2022", "agosto2022", "septiembre2022", "octubre2022", "noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["marzo2022", "abril2022", "mayo2022", "junio2022", "julio2022", "agosto2022", "septiembre2022", "octubre2022", "noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [
+      { tutor: ObjectId("b00000000000000000000029"), parentesco: "MADRE", autorizadoEgreso: true },
+      { tutor: ObjectId("b0000000000000000000002a"), parentesco: "PADRE", autorizadoEgreso: true }
+    ],
+    contactosEmergencia: [
+      {
+        nombre: "Elizabeth Silva Herrera",
+        telefono: "7220553848",
+        parentesco: "ABUELA",
+        prioridad: 1
+      }
+    ]
   },
   {
     id_infante: 199435,
@@ -925,7 +1191,18 @@ const infantes = [
     usuario: "capt.ebdi007",
     RegPesoTalla: null,
     fsistema: ISODate("2022-11-11T10:26:00Z"),
-    inscripcion: ["noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [{ tutor: ObjectId("b0000000000000000000002b"), parentesco: "MADRE", autorizadoEgreso: true }],
+    contactosEmergencia: [
+      {
+        nombre: "Gabriela Romero Herrera",
+        telefono: "3381067090",
+        parentesco: "ABUELA",
+        prioridad: 1
+      },
+      { nombre: "Óscar Cruz Romero", telefono: "3315141363", parentesco: "TIO", prioridad: 2 }
+    ]
   },
   {
     id_infante: 199436,
@@ -956,7 +1233,18 @@ const infantes = [
     usuario: "dir.ebdi105",
     RegPesoTalla: [14150, 102],
     fsistema: ISODate("2023-09-05T14:14:00Z"),
-    inscripcion: ["septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [{ tutor: ObjectId("b0000000000000000000002c"), parentesco: "MADRE", autorizadoEgreso: true }],
+    contactosEmergencia: [
+      {
+        nombre: "Alejandra Martínez Díaz",
+        telefono: "3337010875",
+        parentesco: "ABUELA",
+        prioridad: 1
+      },
+      { nombre: "Jorge Salazar Ramírez", telefono: "3394246466", parentesco: "TIO", prioridad: 2 }
+    ]
   },
   {
     id_infante: 199437,
@@ -987,7 +1275,13 @@ const infantes = [
     usuario: "admin.central",
     RegPesoTalla: null,
     fsistema: ISODate("2022-12-25T15:25:00Z"),
-    inscripcion: ["diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [
+      { tutor: ObjectId("b0000000000000000000002d"), parentesco: "MADRE", autorizadoEgreso: true },
+      { tutor: ObjectId("b0000000000000000000002e"), parentesco: "PADRE", autorizadoEgreso: true }
+    ],
+    contactosEmergencia: [{ nombre: "Diana López Medina", telefono: "8131665398", parentesco: "ABUELA", prioridad: 1 }]
   },
   {
     id_infante: 199438,
@@ -1018,7 +1312,18 @@ const infantes = [
     usuario: "dir.ebdi105",
     RegPesoTalla: null,
     fsistema: ISODate("2022-12-30T12:25:00Z"),
-    inscripcion: ["diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [{ tutor: ObjectId("b0000000000000000000002f"), parentesco: "MADRE", autorizadoEgreso: true }],
+    contactosEmergencia: [
+      {
+        nombre: "Fernanda Moreno Aguilar",
+        telefono: "8145358134",
+        parentesco: "ABUELA",
+        prioridad: 1
+      },
+      { nombre: "Arturo Cruz Sánchez", telefono: "8133496770", parentesco: "TIO", prioridad: 2 }
+    ]
   },
   {
     id_infante: 199439,
@@ -1049,7 +1354,13 @@ const infantes = [
     usuario: "dir.ebdi042",
     RegPesoTalla: null,
     fsistema: ISODate("2022-07-28T10:03:00Z"),
-    inscripcion: ["julio2022", "agosto2022", "septiembre2022", "octubre2022", "noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["julio2022", "agosto2022", "septiembre2022", "octubre2022", "noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [
+      { tutor: ObjectId("b00000000000000000000030"), parentesco: "MADRE", autorizadoEgreso: true },
+      { tutor: ObjectId("b00000000000000000000031"), parentesco: "PADRE", autorizadoEgreso: true }
+    ],
+    contactosEmergencia: [{ nombre: "Claudia Castro Díaz", telefono: "8110475168", parentesco: "ABUELA", prioridad: 1 }]
   },
   {
     id_infante: 199440,
@@ -1080,7 +1391,20 @@ const infantes = [
     usuario: "dir.ebdi105",
     RegPesoTalla: null,
     fsistema: ISODate("2023-11-10T08:07:00Z"),
-    inscripcion: ["noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025"]
+    inscripcion: ["noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025"],
+    bloqueoIngreso: false,
+    tutores: [
+      { tutor: ObjectId("b00000000000000000000032"), parentesco: "MADRE", autorizadoEgreso: true },
+      { tutor: ObjectId("b00000000000000000000033"), parentesco: "PADRE", autorizadoEgreso: true }
+    ],
+    contactosEmergencia: [
+      {
+        nombre: "Adriana Vargas Medina",
+        telefono: "8111410823",
+        parentesco: "ABUELA",
+        prioridad: 1
+      }
+    ]
   },
   {
     id_infante: 199441,
@@ -1111,7 +1435,20 @@ const infantes = [
     usuario: "dir.ebdi020",
     RegPesoTalla: null,
     fsistema: ISODate("2024-05-25T14:33:00Z"),
-    inscripcion: ["mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [
+      { tutor: ObjectId("b00000000000000000000034"), parentesco: "MADRE", autorizadoEgreso: true },
+      { tutor: ObjectId("b00000000000000000000035"), parentesco: "PADRE", autorizadoEgreso: true }
+    ],
+    contactosEmergencia: [
+      {
+        nombre: "Fernanda Romero Vargas",
+        telefono: "5534940429",
+        parentesco: "ABUELA",
+        prioridad: 1
+      }
+    ]
   },
   {
     id_infante: 199442,
@@ -1142,7 +1479,16 @@ const infantes = [
     usuario: "admin.central",
     RegPesoTalla: null,
     fsistema: ISODate("2023-11-14T10:58:00Z"),
-    inscripcion: ["noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "mayo2024", "junio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "mayo2024", "junio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [
+      { tutor: ObjectId("b00000000000000000000036"), parentesco: "MADRE", autorizadoEgreso: true },
+      { tutor: ObjectId("b00000000000000000000037"), parentesco: "PADRE", autorizadoEgreso: true }
+    ],
+    contactosEmergencia: [
+      { nombre: "Elizabeth Ríos Gómez", telefono: "5578182446", parentesco: "ABUELA", prioridad: 1 },
+      { nombre: "Sergio Pérez López", telefono: "5595680801", parentesco: "TIO", prioridad: 2 }
+    ]
   },
   {
     id_infante: 199443,
@@ -1173,7 +1519,17 @@ const infantes = [
     usuario: "capt.ebdi012",
     RegPesoTalla: null,
     fsistema: ISODate("2026-06-02T15:34:00Z"),
-    inscripcion: ["junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [{ tutor: ObjectId("b00000000000000000000038"), parentesco: "MADRE", autorizadoEgreso: true }],
+    contactosEmergencia: [
+      {
+        nombre: "Guadalupe Ramírez García",
+        telefono: "7220520070",
+        parentesco: "ABUELA",
+        prioridad: 1
+      }
+    ]
   },
   {
     id_infante: 199444,
@@ -1204,7 +1560,17 @@ const infantes = [
     usuario: "dir.ebdi105",
     RegPesoTalla: [17700, 111],
     fsistema: ISODate("2022-01-10T10:44:00Z"),
-    inscripcion: ["enero2022", "febrero2022", "marzo2022", "abril2022", "mayo2022", "junio2022", "julio2022", "agosto2022", "septiembre2022", "octubre2022", "noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["enero2022", "febrero2022", "marzo2022", "abril2022", "mayo2022", "junio2022", "julio2022", "agosto2022", "septiembre2022", "octubre2022", "noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [{ tutor: ObjectId("b00000000000000000000039"), parentesco: "MADRE", autorizadoEgreso: true }],
+    contactosEmergencia: [
+      {
+        nombre: "Fernanda Romero González",
+        telefono: "2227039273",
+        parentesco: "ABUELA",
+        prioridad: 1
+      }
+    ]
   },
   {
     id_infante: 199445,
@@ -1235,7 +1601,21 @@ const infantes = [
     usuario: "dir.ebdi105",
     RegPesoTalla: [12050, 87],
     fsistema: ISODate("2026-01-02T09:52:00Z"),
-    inscripcion: ["enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [
+      { tutor: ObjectId("b0000000000000000000003a"), parentesco: "MADRE", autorizadoEgreso: true },
+      { tutor: ObjectId("b0000000000000000000003b"), parentesco: "PADRE", autorizadoEgreso: true }
+    ],
+    contactosEmergencia: [
+      {
+        nombre: "Guadalupe Ramírez Romero",
+        telefono: "5570304887",
+        parentesco: "ABUELA",
+        prioridad: 1
+      },
+      { nombre: "Héctor Ruiz González", telefono: "5566114635", parentesco: "TIO", prioridad: 2 }
+    ]
   },
   {
     id_infante: 199446,
@@ -1266,7 +1646,17 @@ const infantes = [
     usuario: "capt.ebdi007",
     RegPesoTalla: [14200, 95],
     fsistema: ISODate("2024-05-27T15:58:00Z"),
-    inscripcion: ["mayo2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["mayo2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [{ tutor: ObjectId("b0000000000000000000003c"), parentesco: "MADRE", autorizadoEgreso: true }],
+    contactosEmergencia: [
+      {
+        nombre: "Ana Martínez González",
+        telefono: "3302038300",
+        parentesco: "ABUELA",
+        prioridad: 1
+      }
+    ]
   },
   {
     id_infante: 199447,
@@ -1297,7 +1687,13 @@ const infantes = [
     usuario: "capt.ebdi012",
     RegPesoTalla: [15250, 98],
     fsistema: ISODate("2024-02-27T12:11:00Z"),
-    inscripcion: ["febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [
+      { tutor: ObjectId("b0000000000000000000003d"), parentesco: "MADRE", autorizadoEgreso: true },
+      { tutor: ObjectId("b0000000000000000000003e"), parentesco: "PADRE", autorizadoEgreso: true }
+    ],
+    contactosEmergencia: [{ nombre: "María Vargas Ramírez", telefono: "7220042637", parentesco: "ABUELA", prioridad: 1 }]
   },
   {
     id_infante: 199448,
@@ -1328,7 +1724,17 @@ const infantes = [
     usuario: "dir.ebdi042",
     RegPesoTalla: null,
     fsistema: ISODate("2024-07-06T13:02:00Z"),
-    inscripcion: ["julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [{ tutor: ObjectId("b0000000000000000000003f"), parentesco: "MADRE", autorizadoEgreso: true }],
+    contactosEmergencia: [
+      {
+        nombre: "Sandra González Moreno",
+        telefono: "3315529301",
+        parentesco: "ABUELA",
+        prioridad: 1
+      }
+    ]
   },
   {
     id_infante: 199449,
@@ -1359,7 +1765,26 @@ const infantes = [
     usuario: "dir.ebdi020",
     RegPesoTalla: null,
     fsistema: ISODate("2022-09-25T15:57:00Z"),
-    inscripcion: ["septiembre2022", "octubre2022", "noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023"]
+    inscripcion: ["septiembre2022", "octubre2022", "noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023"],
+    bloqueoIngreso: false,
+    tutores: [
+      { tutor: ObjectId("b00000000000000000000040"), parentesco: "MADRE", autorizadoEgreso: true },
+      { tutor: ObjectId("b00000000000000000000041"), parentesco: "PADRE", autorizadoEgreso: true }
+    ],
+    contactosEmergencia: [
+      {
+        nombre: "Patricia Martínez Medina",
+        telefono: "5570812977",
+        parentesco: "ABUELA",
+        prioridad: 1
+      },
+      {
+        nombre: "Roberto Gutiérrez Aguilar",
+        telefono: "5592992398",
+        parentesco: "TIO",
+        prioridad: 2
+      }
+    ]
   },
   {
     id_infante: 199450,
@@ -1390,7 +1815,16 @@ const infantes = [
     usuario: "admin.central",
     RegPesoTalla: [17000, 107],
     fsistema: ISODate("2022-03-18T08:20:00Z"),
-    inscripcion: ["marzo2022", "abril2022", "mayo2022", "junio2022", "julio2022", "agosto2022", "septiembre2022", "octubre2022", "noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["marzo2022", "abril2022", "mayo2022", "junio2022", "julio2022", "agosto2022", "septiembre2022", "octubre2022", "noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [
+      { tutor: ObjectId("b00000000000000000000042"), parentesco: "MADRE", autorizadoEgreso: true },
+      { tutor: ObjectId("b00000000000000000000043"), parentesco: "PADRE", autorizadoEgreso: true }
+    ],
+    contactosEmergencia: [
+      { nombre: "Ana Silva Ramírez", telefono: "7223702718", parentesco: "ABUELA", prioridad: 1 },
+      { nombre: "Javier Vázquez Silva", telefono: "7221299914", parentesco: "TIO", prioridad: 2 }
+    ]
   },
   {
     id_infante: 199451,
@@ -1421,7 +1855,18 @@ const infantes = [
     usuario: "dir.ebdi042",
     RegPesoTalla: null,
     fsistema: ISODate("2024-11-18T12:31:00Z"),
-    inscripcion: ["noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [{ tutor: ObjectId("b00000000000000000000044"), parentesco: "MADRE", autorizadoEgreso: true }],
+    contactosEmergencia: [
+      {
+        nombre: "Elizabeth Ramírez García",
+        telefono: "5567554850",
+        parentesco: "ABUELA",
+        prioridad: 1
+      },
+      { nombre: "Ricardo González Castro", telefono: "5516768259", parentesco: "TIO", prioridad: 2 }
+    ]
   },
   {
     id_infante: 199452,
@@ -1452,7 +1897,21 @@ const infantes = [
     usuario: "dir.ebdi020",
     RegPesoTalla: null,
     fsistema: ISODate("2025-07-12T12:23:00Z"),
-    inscripcion: ["julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [
+      { tutor: ObjectId("b00000000000000000000045"), parentesco: "MADRE", autorizadoEgreso: true },
+      { tutor: ObjectId("b00000000000000000000046"), parentesco: "PADRE", autorizadoEgreso: true }
+    ],
+    contactosEmergencia: [
+      {
+        nombre: "Karina Vargas Ramírez",
+        telefono: "3348124172",
+        parentesco: "ABUELA",
+        prioridad: 1
+      },
+      { nombre: "Ricardo Torres Herrera", telefono: "3362829092", parentesco: "TIO", prioridad: 2 }
+    ]
   },
   {
     id_infante: 199453,
@@ -1483,7 +1942,16 @@ const infantes = [
     usuario: "dir.ebdi020",
     RegPesoTalla: [6050, 62],
     fsistema: ISODate("2026-09-12T12:22:00Z"),
-    inscripcion: ["septiembre2026", "octubre2026"]
+    inscripcion: ["septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [
+      { tutor: ObjectId("b00000000000000000000047"), parentesco: "MADRE", autorizadoEgreso: true },
+      { tutor: ObjectId("b00000000000000000000048"), parentesco: "PADRE", autorizadoEgreso: true }
+    ],
+    contactosEmergencia: [
+      { nombre: "María García Silva", telefono: "5524220426", parentesco: "ABUELA", prioridad: 1 },
+      { nombre: "Ricardo Mendoza Medina", telefono: "5509506018", parentesco: "TIO", prioridad: 2 }
+    ]
   },
   {
     id_infante: 199454,
@@ -1514,7 +1982,13 @@ const infantes = [
     usuario: "admin.central",
     RegPesoTalla: null,
     fsistema: ISODate("2025-02-07T14:50:00Z"),
-    inscripcion: ["febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [
+      { tutor: ObjectId("b00000000000000000000049"), parentesco: "MADRE", autorizadoEgreso: true },
+      { tutor: ObjectId("b0000000000000000000004a"), parentesco: "PADRE", autorizadoEgreso: true }
+    ],
+    contactosEmergencia: [{ nombre: "Brenda Mendoza Ríos", telefono: "5587041517", parentesco: "ABUELA", prioridad: 1 }]
   },
   {
     id_infante: 199455,
@@ -1545,7 +2019,17 @@ const infantes = [
     usuario: "admin.central",
     RegPesoTalla: [12500, 84],
     fsistema: ISODate("2025-08-06T10:53:00Z"),
-    inscripcion: ["agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [{ tutor: ObjectId("b0000000000000000000004b"), parentesco: "MADRE", autorizadoEgreso: true }],
+    contactosEmergencia: [
+      {
+        nombre: "Guadalupe Vargas González",
+        telefono: "3333252695",
+        parentesco: "ABUELA",
+        prioridad: 1
+      }
+    ]
   },
   {
     id_infante: 199456,
@@ -1576,7 +2060,16 @@ const infantes = [
     usuario: "dir.ebdi105",
     RegPesoTalla: [18950, 112],
     fsistema: ISODate("2022-02-06T09:10:00Z"),
-    inscripcion: ["febrero2022", "marzo2022", "abril2022", "mayo2022", "junio2022", "julio2022", "agosto2022", "septiembre2022", "octubre2022", "noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["febrero2022", "marzo2022", "abril2022", "mayo2022", "junio2022", "julio2022", "agosto2022", "septiembre2022", "octubre2022", "noviembre2022", "diciembre2022", "enero2023", "febrero2023", "marzo2023", "abril2023", "mayo2023", "junio2023", "julio2023", "agosto2023", "septiembre2023", "octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [
+      { tutor: ObjectId("b0000000000000000000004c"), parentesco: "MADRE", autorizadoEgreso: true },
+      { tutor: ObjectId("b0000000000000000000004d"), parentesco: "PADRE", autorizadoEgreso: true }
+    ],
+    contactosEmergencia: [
+      { nombre: "Sandra Silva Ramírez", telefono: "2227827608", parentesco: "ABUELA", prioridad: 1 },
+      { nombre: "Mario Mendoza Romero", telefono: "2221213856", parentesco: "TIO", prioridad: 2 }
+    ]
   },
   {
     id_infante: 199457,
@@ -1607,7 +2100,21 @@ const infantes = [
     usuario: "dir.ebdi042",
     RegPesoTalla: [15250, 99],
     fsistema: ISODate("2023-10-31T09:47:00Z"),
-    inscripcion: ["octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"]
+    inscripcion: ["octubre2023", "noviembre2023", "diciembre2023", "enero2024", "febrero2024", "marzo2024", "abril2024", "mayo2024", "junio2024", "julio2024", "agosto2024", "septiembre2024", "octubre2024", "noviembre2024", "diciembre2024", "enero2025", "febrero2025", "marzo2025", "abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026", "octubre2026"],
+    bloqueoIngreso: false,
+    tutores: [
+      { tutor: ObjectId("b0000000000000000000004e"), parentesco: "MADRE", autorizadoEgreso: true },
+      { tutor: ObjectId("b0000000000000000000004f"), parentesco: "PADRE", autorizadoEgreso: true }
+    ],
+    contactosEmergencia: [
+      {
+        nombre: "Guadalupe Medina Aguilar",
+        telefono: "8100223869",
+        parentesco: "ABUELA",
+        prioridad: 1
+      },
+      { nombre: "Roberto Ortiz Ramírez", telefono: "8143274655", parentesco: "TIO", prioridad: 2 }
+    ]
   },
   {
     id_infante: 199458,
@@ -1638,7 +2145,17 @@ const infantes = [
     usuario: "admin.central",
     RegPesoTalla: null,
     fsistema: ISODate("2025-04-13T14:38:00Z"),
-    inscripcion: ["abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026"]
+    inscripcion: ["abril2025", "mayo2025", "junio2025", "julio2025", "agosto2025", "septiembre2025", "octubre2025", "noviembre2025", "diciembre2025", "enero2026", "febrero2026", "marzo2026", "abril2026", "mayo2026", "junio2026", "julio2026", "agosto2026", "septiembre2026"],
+    bloqueoIngreso: false,
+    tutores: [{ tutor: ObjectId("b00000000000000000000050"), parentesco: "MADRE", autorizadoEgreso: true }],
+    contactosEmergencia: [
+      {
+        nombre: "Guadalupe Castro López",
+        telefono: "5535100637",
+        parentesco: "ABUELA",
+        prioridad: 1
+      }
+    ]
   }
 ];
 
