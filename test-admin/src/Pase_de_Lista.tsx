@@ -151,7 +151,7 @@ export const PasaLista = () => {
                     }}
                     action={
                         <>
-                            // Boton que abre el menu de las salas
+                            {/*Boton que abre el menu de las salas*/}
                             <Button
                                 variant='outlined'
                                 size='large'
@@ -195,7 +195,7 @@ export const PasaLista = () => {
                     subheader={`Total de estudiantes: ${total}`}
                 />
                 <CardContent sx={{pt:0}}>
-                    // Fila de conteos salta una linea si no caben
+                    {/*Fila de conteos salta una linea si no caben*/}
                     <Stack 
                     direction={'row'} 
                     flexWrap={"wrap"} 
@@ -219,7 +219,7 @@ export const PasaLista = () => {
                 </CardContent>
             </Card>
             <Card>
-                // la zona fija que se pueda ver siempre
+                {/*la zona fija que se pueda ver siempre*/}
                 <Box sx={{p:2}}>
                     <TextField
                     fullWidth
@@ -230,7 +230,7 @@ export const PasaLista = () => {
                     onChange={(e)=> setBusqueda(e.target.value)}
                     />
                 </Box>
-                // Lista con el scroll propio
+                {/*Lista con el scroll propio*/}
                 <List sx={{maxHeight: "60vh", overflowY: 'auto'}}>
                     {visibles.map((e)=>(
                         <ListItem
@@ -252,7 +252,7 @@ export const PasaLista = () => {
                                 </Stack>
                             }
                         >
-                            // nombre y matricula
+                            {/*nombre y matricula*/}
                             <ListItemText
                                 primary={e.Nombre}
                                 secondary={`${e.Matricula}${e.HoraIngreso ? ` · Ingreso ${e.HoraIngreso}` : ""}`}
@@ -262,7 +262,7 @@ export const PasaLista = () => {
                 </List>
             </Card>
             <Card>
-                // texto a la izquierda boton a la derecha y el flexWrap para que se vea chido en pantalla chica
+                {/*texto a la izquierda boton a la derecha y el flexWrap para que se vea chido en pantalla chica*/}
               <CardContent
                 sx={{
                   display: "flex",
@@ -272,12 +272,12 @@ export const PasaLista = () => {
                   flexWrap: "wrap",
                 }}
               >
-                // conteo de presentes y faltas
+                {/*conteo de presentes y faltas*/}
                 <Typography variant="body2" color="text.secondary">
                   {presentes} presentes · {faltas} faltas
                 </Typography>
                 
-                // manda el pase de lista a la BD
+                {/*manda el pase de lista a la BD*/}
                 <Button
                   variant="contained"
                   size="large"
