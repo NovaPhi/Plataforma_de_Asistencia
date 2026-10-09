@@ -6,6 +6,7 @@ use("ISSTE");
 // Template de un registro de bitacora, recordatorio de que tipo de datos se espera en los campos
 /*
 const templateBitacora = {
+  id: 0,                     // id ascendente por coleccion
   usuario: "",               // usuario que hizo la accion
   rol: "",                   // Rol que tenia en ese momento
   ip: "",
@@ -27,8 +28,9 @@ db.createCollection("bitacora", {
   validator: {
     $jsonSchema: {
       bsonType: "object",
-      required: ["usuario", "rol", "ip", "userAgent", "fechaHora", "accion", "coleccion"],
+      required: ["id", "usuario", "rol", "ip", "userAgent", "fechaHora", "accion", "coleccion"],
       properties: {
+        id: { bsonType: "number" },
         usuario: { bsonType: "string", maxLength: 50 },
         rol: { enum: ["ADMINISTRADOR_CENTRAL",
                       "SUPERVISOR_CENTRAL",
@@ -62,6 +64,7 @@ db.createCollection("bitacora", {
   }
 });
 
+db.bitacora.createIndex({ id: 1 }, { unique: true });
 db.bitacora.createIndex({ fechaHora: -1 });
 db.bitacora.createIndex({ coleccion: 1, registro: 1 });
 db.bitacora.createIndex({ usuario: 1 });
@@ -73,6 +76,7 @@ db.bitacora.createIndex({ usuario: 1 });
 
 const bitacora = [
   {
+    id: 1,
     usuario: "ts.ebdi007",
     rol: "TRABAJO_SOCIAL",
     ip: "10.90.7.30",
@@ -85,6 +89,7 @@ const bitacora = [
     datosNuevos: { intentosContacto: [{ numero: 1, exitoso: true }] }
   },
   {
+    id: 2,
     usuario: "med.ebdi007",
     rol: "MEDICO_ESTANCIA",
     ip: "10.90.7.31",
@@ -97,6 +102,7 @@ const bitacora = [
     datosNuevos: { requiereAltaMedica: true, fechaRetornoEstimada: ISODate("2026-10-09") }
   },
   {
+    id: 3,
     usuario: "med.ebdi007",
     rol: "MEDICO_ESTANCIA",
     ip: "10.90.7.31",
@@ -109,6 +115,7 @@ const bitacora = [
     datosNuevos: { bloqueoIngreso: true }
   },
   {
+    id: 4,
     usuario: "ts.ebdi007",
     rol: "TRABAJO_SOCIAL",
     ip: "10.90.7.30",
@@ -121,6 +128,7 @@ const bitacora = [
     datosNuevos: { estatus: "AUSENTE_JUSTIFICADO" }
   },
   {
+    id: 5,
     usuario: "ts.ebdi007",
     rol: "TRABAJO_SOCIAL",
     ip: "10.90.7.30",
@@ -133,6 +141,7 @@ const bitacora = [
     datosNuevos: { estado: "CERRADO", cerradoPor: "ts.ebdi007" }
   },
   {
+    id: 6,
     usuario: "med.ebdi007",
     rol: "MEDICO_ESTANCIA",
     ip: "10.90.7.31",
@@ -145,6 +154,7 @@ const bitacora = [
     datosNuevos: null
   },
   {
+    id: 7,
     usuario: "med.ebdi033",
     rol: "MEDICO_ESTANCIA",
     ip: "10.150.33.31",
@@ -157,6 +167,7 @@ const bitacora = [
     datosNuevos: { estatus: "AUSENTE_JUSTIFICADO" }
   },
   {
+    id: 8,
     usuario: "med.ebdi033",
     rol: "MEDICO_ESTANCIA",
     ip: "10.150.33.31",
@@ -169,6 +180,7 @@ const bitacora = [
     datosNuevos: { estado: "CERRADO", cerradoPor: "med.ebdi033" }
   },
   {
+    id: 9,
     usuario: "dir.ebdi033",
     rol: "DIRECTORA_ESTANCIA",
     ip: "10.150.33.31",

@@ -6,6 +6,7 @@ use("ISSTE");
 // Template de un grupo, recordatorio de que tipo de datos se espera en los campos
 /*
 const templateGrupo = {
+  id: 0,                     // id ascendente por coleccion
   estancia: 0,               // ebdi de la estancia
   sala: "",                  // Nombre de la sala (estancias.salas.nombre)
   nombre: "",
@@ -24,8 +25,9 @@ db.createCollection("grupos", {
   validator: {
     $jsonSchema: {
       bsonType: "object",
-      required: ["estancia", "sala", "nombre", "cicloEscolar", "educador", "activo"],
+      required: ["id", "estancia", "sala", "nombre", "cicloEscolar", "educador", "activo"],
       properties: {
+        id: { bsonType: "number" },
         estancia: { bsonType: "number" },
         sala: { bsonType: "string", maxLength: 50 },
         nombre: { bsonType: "string", maxLength: 50 },
@@ -38,6 +40,7 @@ db.createCollection("grupos", {
   }
 });
 
+db.grupos.createIndex({ id: 1 }, { unique: true });
 db.grupos.createIndex({ estancia: 1, cicloEscolar: 1 });
 db.grupos.createIndex({ educador: 1 });
 
@@ -48,6 +51,7 @@ db.grupos.createIndex({ educador: 1 });
 
 const grupos = [
   {
+    id: 1,
     _id: ObjectId("a00000000000000000000001"),
     estancia: 7,
     sala: "Lactantes A",
@@ -58,6 +62,7 @@ const grupos = [
     deleted_at: null
   },
   {
+    id: 2,
     _id: ObjectId("a00000000000000000000002"),
     estancia: 7,
     sala: "Lactantes B",
@@ -68,6 +73,7 @@ const grupos = [
     deleted_at: null
   },
   {
+    id: 3,
     _id: ObjectId("a00000000000000000000003"),
     estancia: 12,
     sala: "Maternal A",
@@ -78,6 +84,7 @@ const grupos = [
     deleted_at: null
   },
   {
+    id: 4,
     _id: ObjectId("a00000000000000000000004"),
     estancia: 33,
     sala: "Lactantes A",
@@ -88,6 +95,7 @@ const grupos = [
     deleted_at: null
   },
   {
+    id: 5,
     _id: ObjectId("a00000000000000000000005"),
     estancia: 33,
     sala: "Maternal B",
@@ -98,6 +106,7 @@ const grupos = [
     deleted_at: null
   },
   {
+    id: 6,
     _id: ObjectId("a00000000000000000000006"),
     estancia: 64,
     sala: "Preescolar 1",
@@ -108,6 +117,7 @@ const grupos = [
     deleted_at: null
   },
   {
+    id: 7,
     _id: ObjectId("a00000000000000000000007"),
     estancia: 64,
     sala: "Preescolar 2",
@@ -118,6 +128,7 @@ const grupos = [
     deleted_at: null
   },
   {
+    id: 8,
     _id: ObjectId("a00000000000000000000008"),
     estancia: 88,
     sala: "Maternal A",
@@ -128,6 +139,7 @@ const grupos = [
     deleted_at: null
   },
   {
+    id: 9,
     // Grupo del ciclo anterior (ya no vigente)
     _id: ObjectId("a00000000000000000000063"),
     estancia: 7,

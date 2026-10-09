@@ -6,6 +6,7 @@ use("ISSTE");
 // Template de un consentimiento, recordatorio de que tipo de datos se espera en los campos
 /*
 const templateConsentimiento = {
+  id: 0,                     // id ascendente por coleccion
   tutor: null,               // ObjectId del tutor que acepto el aviso de privacidad
   infante: 0,                // id_infante
   versionAviso: "",          // Version del aviso aceptado
@@ -24,8 +25,9 @@ db.createCollection("consentimientos", {
   validator: {
     $jsonSchema: {
       bsonType: "object",
-      required: ["tutor", "infante", "versionAviso", "aceptado", "registradoPor"],
+      required: ["id", "tutor", "infante", "versionAviso", "aceptado", "registradoPor"],
       properties: {
+        id: { bsonType: "number" },
         tutor: { bsonType: "objectId" },
         infante: { bsonType: "number" },
         versionAviso: { bsonType: "string", maxLength: 20 },
@@ -38,6 +40,7 @@ db.createCollection("consentimientos", {
   }
 });
 
+db.consentimientos.createIndex({ id: 1 }, { unique: true });
 db.consentimientos.createIndex({ tutor: 1, infante: 1, versionAviso: 1 }, { unique: true });
 db.consentimientos.createIndex({ infante: 1 });
 
@@ -48,6 +51,7 @@ db.consentimientos.createIndex({ infante: 1 });
 
 const consentimientos = [
   {
+    id: 1,
     tutor: ObjectId("b00000000000000000000044"),
     infante: 199451,
     versionAviso: "2025.1",
@@ -57,6 +61,7 @@ const consentimientos = [
     deleted_at: null
   },
   {
+    id: 2,
     tutor: ObjectId("b00000000000000000000004"),
     infante: 199411,
     versionAviso: "2025.1",
@@ -66,6 +71,7 @@ const consentimientos = [
     deleted_at: null
   },
   {
+    id: 3,
     tutor: ObjectId("b0000000000000000000000b"),
     infante: 199417,
     versionAviso: "2026.1",
@@ -75,6 +81,7 @@ const consentimientos = [
     deleted_at: null
   },
   {
+    id: 4,
     tutor: ObjectId("b0000000000000000000003a"),
     infante: 199445,
     versionAviso: "2026.1",
@@ -84,6 +91,7 @@ const consentimientos = [
     deleted_at: null
   },
   {
+    id: 5,
     tutor: ObjectId("b00000000000000000000044"),
     infante: 199451,
     versionAviso: "2026.1",
@@ -93,6 +101,7 @@ const consentimientos = [
     deleted_at: null
   },
   {
+    id: 6,
     tutor: ObjectId("b0000000000000000000000d"),
     infante: 199419,
     versionAviso: "2026.1",
@@ -102,6 +111,7 @@ const consentimientos = [
     deleted_at: null
   },
   {
+    id: 7,
     tutor: ObjectId("b00000000000000000000018"),
     infante: 199425,
     versionAviso: "2026.1",
@@ -111,6 +121,7 @@ const consentimientos = [
     deleted_at: null
   },
   {
+    id: 8,
     tutor: ObjectId("b00000000000000000000038"),
     infante: 199443,
     versionAviso: "2026.1",
@@ -120,6 +131,7 @@ const consentimientos = [
     deleted_at: null
   },
   {
+    id: 9,
     tutor: ObjectId("b00000000000000000000004"),
     infante: 199411,
     versionAviso: "2026.1",
@@ -129,6 +141,7 @@ const consentimientos = [
     deleted_at: null
   },
   {
+    id: 10,
     // Aviso pendiente de aceptar: no se puede activar seguimiento
     tutor: ObjectId("b00000000000000000000007"),
     infante: 199414,

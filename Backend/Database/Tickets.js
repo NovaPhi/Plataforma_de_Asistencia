@@ -6,6 +6,7 @@ use("ISSTE");
 // Template de un ticket, recordatorio de que tipo de datos se espera en los campos
 /*
 const templateTicket = {
+  id: 0,                     // id ascendente por coleccion
   asistencia: null,          // ObjectId de la asistencia que origino el ticket
   infante: 0,                // id_infante
   estancia: 0,               // ebdi
@@ -34,8 +35,9 @@ db.createCollection("tickets", {
   validator: {
     $jsonSchema: {
       bsonType: "object",
-      required: ["asistencia", "infante", "estancia", "estado", "semaforo", "intentosContacto", "alertaAmarilla", "bloqueoIngreso", "contactosNotificados", "fechaApertura"],
+      required: ["id", "asistencia", "infante", "estancia", "estado", "semaforo", "intentosContacto", "alertaAmarilla", "bloqueoIngreso", "contactosNotificados", "fechaApertura"],
       properties: {
+        id: { bsonType: "number" },
         asistencia: { bsonType: "objectId" },
         infante: { bsonType: "number" },
         estancia: { bsonType: "number" },
@@ -100,6 +102,7 @@ db.createCollection("tickets", {
   }
 });
 
+db.tickets.createIndex({ id: 1 }, { unique: true });
 db.tickets.createIndex({ asistencia: 1 }, { unique: true });
 db.tickets.createIndex({ estancia: 1, estado: 1 });
 db.tickets.createIndex({ infante: 1 });
@@ -111,6 +114,7 @@ db.tickets.createIndex({ infante: 1 });
 
 const tickets = [
   {
+    id: 1,
     // Enfermedad en casa, requiere alta medica (bloqueo de ingreso activo)
     _id: ObjectId("d00000000000000000000001"),
     asistencia: ObjectId("c00000000000000000000002"),
@@ -140,6 +144,7 @@ const tickets = [
     deleted_at: null
   },
   {
+    id: 2,
     // Primer intento sin respuesta, alerta amarilla activa
     _id: ObjectId("d00000000000000000000002"),
     asistencia: ObjectId("c00000000000000000000022"),
@@ -188,6 +193,7 @@ const tickets = [
     deleted_at: null
   },
   {
+    id: 3,
     // No localizado: no se hizo el segundo intento a tiempo y se escalo
     _id: ObjectId("d00000000000000000000003"),
     asistencia: ObjectId("c0000000000000000000000d"),
@@ -229,6 +235,7 @@ const tickets = [
     deleted_at: null
   },
   {
+    id: 4,
     // Permiso del tutor, cerrado
     _id: ObjectId("d00000000000000000000004"),
     asistencia: ObjectId("c0000000000000000000000f"),
@@ -258,6 +265,7 @@ const tickets = [
     deleted_at: null
   },
   {
+    id: 5,
     // Accidente fuera de la estancia, cerrado
     _id: ObjectId("d00000000000000000000005"),
     asistencia: ObjectId("c00000000000000000000003"),

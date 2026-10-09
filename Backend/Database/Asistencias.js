@@ -6,6 +6,7 @@ use("ISSTE");
 // Template de una asistencia, recordatorio de que tipo de datos se espera en los campos
 /*
 const templateAsistencia = {
+  id: 0,                     // id ascendente por coleccion
   estancia: 0,               // ebdi donde se registro
   infante: 0,                // id_infante
   grupo: null,               // ObjectId del grupo del pase de lista
@@ -37,8 +38,9 @@ db.createCollection("asistencias", {
   validator: {
     $jsonSchema: {
       bsonType: "object",
-      required: ["estancia", "infante", "grupo", "fecha", "turno", "estatus", "metodo", "offline", "clientUuid", "capturadoEn", "registradoPor"],
+      required: ["id", "estancia", "infante", "grupo", "fecha", "turno", "estatus", "metodo", "offline", "clientUuid", "capturadoEn", "registradoPor"],
       properties: {
+        id: { bsonType: "number" },
         estancia: { bsonType: "number" },
         infante: { bsonType: "number" },
         grupo: { bsonType: "objectId" },
@@ -67,6 +69,7 @@ db.createCollection("asistencias", {
   }
 });
 
+db.asistencias.createIndex({ id: 1 }, { unique: true });
 db.asistencias.createIndex({ clientUuid: 1 }, { unique: true });
 db.asistencias.createIndex({ estancia: 1, infante: 1, fecha: 1, turno: 1 });
 db.asistencias.createIndex({ grupo: 1, fecha: 1 });
@@ -80,6 +83,7 @@ db.asistencias.createIndex({ grupo: 1, fecha: 1 });
 const asistencias = [
   // ---- 2026-10-05 | EBDI 7 ----
   {
+    id: 1,
     _id: ObjectId("c00000000000000000000001"),
     estancia: 7,
     infante: 199414,
@@ -101,6 +105,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 2,
     _id: ObjectId("c00000000000000000000002"),
     estancia: 7,
     infante: 199417,
@@ -122,6 +127,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 3,
     _id: ObjectId("c00000000000000000000003"),
     estancia: 7,
     infante: 199445,
@@ -143,6 +149,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 4,
     _id: ObjectId("c00000000000000000000004"),
     estancia: 7,
     infante: 199451,
@@ -165,6 +172,7 @@ const asistencias = [
   },
   // ---- 2026-10-05 | EBDI 12 ----
   {
+    id: 5,
     _id: ObjectId("c00000000000000000000005"),
     estancia: 12,
     infante: 199418,
@@ -186,6 +194,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 6,
     _id: ObjectId("c00000000000000000000006"),
     estancia: 12,
     infante: 199427,
@@ -207,6 +216,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 7,
     _id: ObjectId("c00000000000000000000007"),
     estancia: 12,
     infante: 199434,
@@ -228,6 +238,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 8,
     _id: ObjectId("c00000000000000000000008"),
     estancia: 12,
     infante: 199447,
@@ -250,6 +261,7 @@ const asistencias = [
   },
   // ---- 2026-10-05 | EBDI 33 ----
   {
+    id: 9,
     _id: ObjectId("c00000000000000000000009"),
     estancia: 33,
     infante: 199411,
@@ -271,6 +283,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 10,
     _id: ObjectId("c0000000000000000000000a"),
     estancia: 33,
     infante: 199416,
@@ -292,6 +305,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 11,
     _id: ObjectId("c0000000000000000000000b"),
     estancia: 33,
     infante: 199419,
@@ -313,6 +327,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 12,
     _id: ObjectId("c0000000000000000000000c"),
     estancia: 33,
     infante: 199423,
@@ -334,6 +349,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 13,
     _id: ObjectId("c0000000000000000000000d"),
     estancia: 33,
     infante: 199425,
@@ -355,6 +371,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 14,
     _id: ObjectId("c0000000000000000000000e"),
     estancia: 33,
     infante: 199432,
@@ -376,6 +393,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 15,
     _id: ObjectId("c0000000000000000000000f"),
     estancia: 33,
     infante: 199443,
@@ -397,6 +415,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 16,
     _id: ObjectId("c00000000000000000000010"),
     estancia: 33,
     infante: 199450,
@@ -419,6 +438,7 @@ const asistencias = [
   },
   // ---- 2026-10-05 | EBDI 64 ----
   {
+    id: 17,
     _id: ObjectId("c00000000000000000000011"),
     estancia: 64,
     infante: 199410,
@@ -440,6 +460,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 18,
     _id: ObjectId("c00000000000000000000012"),
     estancia: 64,
     infante: 199426,
@@ -461,6 +482,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 19,
     _id: ObjectId("c00000000000000000000013"),
     estancia: 64,
     infante: 199428,
@@ -482,6 +504,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 20,
     _id: ObjectId("c00000000000000000000014"),
     estancia: 64,
     infante: 199433,
@@ -503,6 +526,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 21,
     _id: ObjectId("c00000000000000000000015"),
     estancia: 64,
     infante: 199446,
@@ -524,6 +548,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 22,
     _id: ObjectId("c00000000000000000000016"),
     estancia: 64,
     infante: 199452,
@@ -546,6 +571,7 @@ const asistencias = [
   },
   // ---- 2026-10-05 | EBDI 88 ----
   {
+    id: 23,
     _id: ObjectId("c00000000000000000000017"),
     estancia: 88,
     infante: 199456,
@@ -568,6 +594,7 @@ const asistencias = [
   },
   // ---- 2026-10-06 | EBDI 7 ----
   {
+    id: 24,
     _id: ObjectId("c00000000000000000000018"),
     estancia: 7,
     infante: 199414,
@@ -589,6 +616,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 25,
     _id: ObjectId("c00000000000000000000019"),
     estancia: 7,
     infante: 199417,
@@ -610,6 +638,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 26,
     _id: ObjectId("c0000000000000000000001a"),
     estancia: 7,
     infante: 199445,
@@ -631,6 +660,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 27,
     _id: ObjectId("c0000000000000000000001b"),
     estancia: 7,
     infante: 199451,
@@ -653,6 +683,7 @@ const asistencias = [
   },
   // ---- 2026-10-06 | EBDI 12 ----
   {
+    id: 28,
     _id: ObjectId("c0000000000000000000001c"),
     estancia: 12,
     infante: 199418,
@@ -674,6 +705,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 29,
     _id: ObjectId("c0000000000000000000001d"),
     estancia: 12,
     infante: 199427,
@@ -695,6 +727,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 30,
     _id: ObjectId("c0000000000000000000001e"),
     estancia: 12,
     infante: 199434,
@@ -716,6 +749,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 31,
     _id: ObjectId("c0000000000000000000001f"),
     estancia: 12,
     infante: 199447,
@@ -738,6 +772,7 @@ const asistencias = [
   },
   // ---- 2026-10-06 | EBDI 33 ----
   {
+    id: 32,
     _id: ObjectId("c00000000000000000000020"),
     estancia: 33,
     infante: 199411,
@@ -759,6 +794,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 33,
     _id: ObjectId("c00000000000000000000021"),
     estancia: 33,
     infante: 199416,
@@ -780,6 +816,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 34,
     _id: ObjectId("c00000000000000000000022"),
     estancia: 33,
     infante: 199419,
@@ -801,6 +838,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 35,
     _id: ObjectId("c00000000000000000000023"),
     estancia: 33,
     infante: 199423,
@@ -822,6 +860,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 36,
     _id: ObjectId("c00000000000000000000024"),
     estancia: 33,
     infante: 199425,
@@ -843,6 +882,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 37,
     _id: ObjectId("c00000000000000000000025"),
     estancia: 33,
     infante: 199432,
@@ -864,6 +904,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 38,
     _id: ObjectId("c00000000000000000000026"),
     estancia: 33,
     infante: 199443,
@@ -885,6 +926,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 39,
     _id: ObjectId("c00000000000000000000027"),
     estancia: 33,
     infante: 199450,
@@ -907,6 +949,7 @@ const asistencias = [
   },
   // ---- 2026-10-06 | EBDI 64 ----
   {
+    id: 40,
     _id: ObjectId("c00000000000000000000028"),
     estancia: 64,
     infante: 199410,
@@ -928,6 +971,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 41,
     _id: ObjectId("c00000000000000000000029"),
     estancia: 64,
     infante: 199426,
@@ -949,6 +993,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 42,
     _id: ObjectId("c0000000000000000000002a"),
     estancia: 64,
     infante: 199428,
@@ -970,6 +1015,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 43,
     _id: ObjectId("c0000000000000000000002b"),
     estancia: 64,
     infante: 199433,
@@ -991,6 +1037,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 44,
     _id: ObjectId("c0000000000000000000002c"),
     estancia: 64,
     infante: 199446,
@@ -1012,6 +1059,7 @@ const asistencias = [
     deleted_at: null
   },
   {
+    id: 45,
     _id: ObjectId("c0000000000000000000002d"),
     estancia: 64,
     infante: 199452,
@@ -1034,6 +1082,7 @@ const asistencias = [
   },
   // ---- 2026-10-06 | EBDI 88 ----
   {
+    id: 46,
     _id: ObjectId("c0000000000000000000002e"),
     estancia: 88,
     infante: 199456,

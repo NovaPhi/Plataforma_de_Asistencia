@@ -6,6 +6,7 @@ use("ISSTE");
 // Template de una asesoria, recordatorio de que tipo de datos se espera en los campos
 /*
 const templateAsesoria = {
+  id: 0,                     // id ascendente por coleccion
   ticket: null,              // ObjectId del ticket
   infante: 0,                // id_infante
   asesoria: "",              // Orientacion brindada (cifrado)
@@ -25,8 +26,9 @@ db.createCollection("asesorias", {
   validator: {
     $jsonSchema: {
       bsonType: "object",
-      required: ["ticket", "infante", "asesoria", "requiereAltaMedica", "registradoPor", "fechaRegistro"],
+      required: ["id", "ticket", "infante", "asesoria", "requiereAltaMedica", "registradoPor", "fechaRegistro"],
       properties: {
+        id: { bsonType: "number" },
         ticket: { bsonType: "objectId" },
         infante: { bsonType: "number" },
         asesoria: { bsonType: "string", minLength: 1 },
@@ -40,6 +42,7 @@ db.createCollection("asesorias", {
   }
 });
 
+db.asesorias.createIndex({ id: 1 }, { unique: true });
 db.asesorias.createIndex({ ticket: 1 });
 db.asesorias.createIndex({ infante: 1 });
 
@@ -50,6 +53,7 @@ db.asesorias.createIndex({ infante: 1 });
 
 const asesorias = [
   {
+    id: 1,
     _id: ObjectId("e00000000000000000000001"),
     ticket: ObjectId("d00000000000000000000001"),
     infante: 199417,
@@ -61,6 +65,7 @@ const asesorias = [
     deleted_at: null
   },
   {
+    id: 2,
     _id: ObjectId("e00000000000000000000002"),
     ticket: ObjectId("d00000000000000000000005"),
     infante: 199445,

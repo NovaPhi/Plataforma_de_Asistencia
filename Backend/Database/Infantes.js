@@ -9,7 +9,7 @@ use("ISSTE");
 /*
 // Template de un infante
 const templateInfante = {
-  id_infante: 0,
+  id: "",                    // mismo valor que matricula
   id_benef_infante: 0,
   matricula: "",
   ur: "",
@@ -53,9 +53,9 @@ db.createCollection("infantes", {
   validator: {
     $jsonSchema: {
       bsonType: "object",
-      required: ["id_infante", "matricula", "ebdi", "nombre", "paterno", "genero", "curp", "fnac", "freg", "inscripcion"],
+      required: ["id", "matricula", "ebdi", "nombre", "paterno", "genero", "curp", "fnac", "freg", "inscripcion"],
       properties: {
-        id_infante: { bsonType: "number" },
+        id: { bsonType: "string" },
         matricula: { bsonType: "string" },
         ur: { bsonType: "string", maxLength: 3 },
         ebdi: { bsonType: "number" },
@@ -109,7 +109,7 @@ db.createCollection("infantes", {
   }
 });
 
-db.infantes.createIndex({ id_infante: 1 }, { unique: true });
+db.infantes.createIndex({ id: 1 }, { unique: true });
 db.infantes.createIndex({ matricula: 1 }, { unique: true });
 db.infantes.createIndex({ curp: 1 }, { unique: true });
 db.infantes.createIndex({ ebdi: 1, activo: 1 });
@@ -121,7 +121,7 @@ db.infantes.createIndex({ "tutores.tutor": 1 });
 // ---------------------------------------------------------------------------
 const infantes = [
   {
-    id_infante: 199409,
+    id: "2026799643",
     id_benef_infante: 34217,
     matricula: "2026799643",
     ur: "210",
@@ -158,7 +158,7 @@ const infantes = [
     contactosEmergencia: [{ nombre: "Mónica Vargas Moreno", telefono: "2220940985", parentesco: "ABUELA", prioridad: 1 }]
   },
   {
-    id_infante: 199410,
+    id: "2026721035",
     id_benef_infante: 23055,
     matricula: "2026721035",
     ur: "140",
@@ -192,7 +192,7 @@ const infantes = [
     contactosEmergencia: [{ nombre: "Sandra Castro Flores", telefono: "3388498556", parentesco: "ABUELA", prioridad: 1 }]
   },
   {
-    id_infante: 199411,
+    id: "2026637220",
     id_benef_infante: 43780,
     matricula: "2026637220",
     ur: "150",
@@ -226,7 +226,7 @@ const infantes = [
     contactosEmergencia: [{ nombre: "María García Medina", telefono: "7228669538", parentesco: "ABUELA", prioridad: 1 }]
   },
   {
-    id_infante: 199412,
+    id: "2026252530",
     id_benef_infante: 96700,
     matricula: "2026252530",
     ur: "190",
@@ -267,7 +267,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199413,
+    id: "2026997870",
     id_benef_infante: 54242,
     matricula: "2026997870",
     ur: "090",
@@ -304,7 +304,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199414,
+    id: "2026783383",
     id_benef_infante: 86975,
     matricula: "2026783383",
     ur: "090",
@@ -345,7 +345,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199415,
+    id: "2026995265",
     id_benef_infante: 25033,
     matricula: "2026995265",
     ur: "190",
@@ -382,7 +382,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199416,
+    id: "2026746014",
     id_benef_infante: 51483,
     matricula: "2026746014",
     ur: "150",
@@ -427,7 +427,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199417,
+    id: "2026085648",
     id_benef_infante: 52015,
     matricula: "2026085648",
     ur: "090",
@@ -461,7 +461,7 @@ const infantes = [
     contactosEmergencia: [{ nombre: "María Mendoza Pérez", telefono: "5599446135", parentesco: "ABUELA", prioridad: 1 }]
   },
   {
-    id_infante: 199418,
+    id: "2026264856",
     id_benef_infante: 16362,
     matricula: "2026264856",
     ur: "150",
@@ -495,7 +495,7 @@ const infantes = [
     contactosEmergencia: [{ nombre: "Ana Ríos Herrera", telefono: "7221994569", parentesco: "ABUELA", prioridad: 1 }]
   },
   {
-    id_infante: 199419,
+    id: "2026709263",
     id_benef_infante: 44386,
     matricula: "2026709263",
     ur: "150",
@@ -539,7 +539,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199420,
+    id: "2026395068",
     id_benef_infante: 65470,
     matricula: "2026395068",
     ur: "210",
@@ -579,7 +579,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199421,
+    id: "2026335032",
     id_benef_infante: 38845,
     matricula: "2026335032",
     ur: "140",
@@ -619,7 +619,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199422,
+    id: "2026844803",
     id_benef_infante: 48323,
     matricula: "2026844803",
     ur: "190",
@@ -660,7 +660,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199423,
+    id: "2026987837",
     id_benef_infante: 22161,
     matricula: "2026987837",
     ur: "150",
@@ -700,7 +700,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199424,
+    id: "2026269948",
     id_benef_infante: 64249,
     matricula: "2026269948",
     ur: "190",
@@ -745,7 +745,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199425,
+    id: "2026594209",
     id_benef_infante: 30993,
     matricula: "2026594209",
     ur: "150",
@@ -786,7 +786,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199426,
+    id: "2026070915",
     id_benef_infante: 93168,
     matricula: "2026070915",
     ur: "140",
@@ -826,7 +826,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199427,
+    id: "2026218123",
     id_benef_infante: 51650,
     matricula: "2026218123",
     ur: "150",
@@ -870,7 +870,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199428,
+    id: "2026372653",
     id_benef_infante: 85414,
     matricula: "2026372653",
     ur: "140",
@@ -907,7 +907,7 @@ const infantes = [
     contactosEmergencia: [{ nombre: "Leticia Gómez García", telefono: "3313761561", parentesco: "ABUELA", prioridad: 1 }]
   },
   {
-    id_infante: 199429,
+    id: "2026580034",
     id_benef_infante: 61413,
     matricula: "2026580034",
     ur: "190",
@@ -947,7 +947,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199430,
+    id: "2026788253",
     id_benef_infante: 87775,
     matricula: "2026788253",
     ur: "190",
@@ -992,7 +992,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199431,
+    id: "2026331123",
     id_benef_infante: 16514,
     matricula: "2026331123",
     ur: "210",
@@ -1037,7 +1037,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199432,
+    id: "2026882601",
     id_benef_infante: 56449,
     matricula: "2026882601",
     ur: "150",
@@ -1074,7 +1074,7 @@ const infantes = [
     contactosEmergencia: [{ nombre: "Adriana Vargas Díaz", telefono: "7224201461", parentesco: "ABUELA", prioridad: 1 }]
   },
   {
-    id_infante: 199433,
+    id: "2026184735",
     id_benef_infante: 74972,
     matricula: "2026184735",
     ur: "140",
@@ -1119,7 +1119,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199434,
+    id: "2026471981",
     id_benef_infante: 80349,
     matricula: "2026471981",
     ur: "150",
@@ -1163,7 +1163,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199435,
+    id: "2026025485",
     id_benef_infante: 32984,
     matricula: "2026025485",
     ur: "140",
@@ -1205,7 +1205,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199436,
+    id: "2026094938",
     id_benef_infante: 56318,
     matricula: "2026094938",
     ur: "140",
@@ -1247,7 +1247,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199437,
+    id: "2026696519",
     id_benef_infante: 75867,
     matricula: "2026696519",
     ur: "190",
@@ -1284,7 +1284,7 @@ const infantes = [
     contactosEmergencia: [{ nombre: "Diana López Medina", telefono: "8131665398", parentesco: "ABUELA", prioridad: 1 }]
   },
   {
-    id_infante: 199438,
+    id: "2026660639",
     id_benef_infante: 81993,
     matricula: "2026660639",
     ur: "190",
@@ -1326,7 +1326,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199439,
+    id: "2026021557",
     id_benef_infante: 50044,
     matricula: "2026021557",
     ur: "190",
@@ -1363,7 +1363,7 @@ const infantes = [
     contactosEmergencia: [{ nombre: "Claudia Castro Díaz", telefono: "8110475168", parentesco: "ABUELA", prioridad: 1 }]
   },
   {
-    id_infante: 199440,
+    id: "2026960189",
     id_benef_infante: 16556,
     matricula: "2026960189",
     ur: "190",
@@ -1407,7 +1407,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199441,
+    id: "2026648370",
     id_benef_infante: 55423,
     matricula: "2026648370",
     ur: "090",
@@ -1451,7 +1451,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199442,
+    id: "2026353777",
     id_benef_infante: 81599,
     matricula: "2026353777",
     ur: "090",
@@ -1491,7 +1491,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199443,
+    id: "2026483801",
     id_benef_infante: 44177,
     matricula: "2026483801",
     ur: "150",
@@ -1532,7 +1532,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199444,
+    id: "2026613328",
     id_benef_infante: 33631,
     matricula: "2026613328",
     ur: "210",
@@ -1573,7 +1573,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199445,
+    id: "2026989885",
     id_benef_infante: 21371,
     matricula: "2026989885",
     ur: "090",
@@ -1618,7 +1618,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199446,
+    id: "2026736017",
     id_benef_infante: 82147,
     matricula: "2026736017",
     ur: "140",
@@ -1659,7 +1659,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199447,
+    id: "2026822264",
     id_benef_infante: 57517,
     matricula: "2026822264",
     ur: "150",
@@ -1696,7 +1696,7 @@ const infantes = [
     contactosEmergencia: [{ nombre: "María Vargas Ramírez", telefono: "7220042637", parentesco: "ABUELA", prioridad: 1 }]
   },
   {
-    id_infante: 199448,
+    id: "2026315846",
     id_benef_infante: 58507,
     matricula: "2026315846",
     ur: "140",
@@ -1737,7 +1737,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199449,
+    id: "2026372436",
     id_benef_infante: 61664,
     matricula: "2026372436",
     ur: "090",
@@ -1787,7 +1787,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199450,
+    id: "2026788136",
     id_benef_infante: 44552,
     matricula: "2026788136",
     ur: "150",
@@ -1827,7 +1827,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199451,
+    id: "2026893630",
     id_benef_infante: 43792,
     matricula: "2026893630",
     ur: "090",
@@ -1869,7 +1869,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199452,
+    id: "2026758202",
     id_benef_infante: 80610,
     matricula: "2026758202",
     ur: "140",
@@ -1914,7 +1914,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199453,
+    id: "2026633554",
     id_benef_infante: 22298,
     matricula: "2026633554",
     ur: "090",
@@ -1954,7 +1954,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199454,
+    id: "2026103747",
     id_benef_infante: 32988,
     matricula: "2026103747",
     ur: "090",
@@ -1991,7 +1991,7 @@ const infantes = [
     contactosEmergencia: [{ nombre: "Brenda Mendoza Ríos", telefono: "5587041517", parentesco: "ABUELA", prioridad: 1 }]
   },
   {
-    id_infante: 199455,
+    id: "2026651642",
     id_benef_infante: 39357,
     matricula: "2026651642",
     ur: "140",
@@ -2032,7 +2032,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199456,
+    id: "2026606414",
     id_benef_infante: 82179,
     matricula: "2026606414",
     ur: "210",
@@ -2072,7 +2072,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199457,
+    id: "2026711574",
     id_benef_infante: 17267,
     matricula: "2026711574",
     ur: "190",
@@ -2117,7 +2117,7 @@ const infantes = [
     ]
   },
   {
-    id_infante: 199458,
+    id: "2026870158",
     id_benef_infante: 55255,
     matricula: "2026870158",
     ur: "090",

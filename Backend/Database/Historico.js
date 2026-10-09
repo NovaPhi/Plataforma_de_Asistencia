@@ -6,6 +6,7 @@ use("ISSTE");
 // Template de un registro historico, recordatorio de que tipo de datos se espera en los campos
 /*
 const templateHistorico = {
+  id: 0,                     // id ascendente por coleccion
   ticketIdOriginal: null,    // ObjectId del ticket de origen
   ticket: {},                // Copia integra del ticket al archivarse
   asesorias: [],             // Copia de las asesorias del ticket
@@ -27,8 +28,9 @@ db.createCollection("historico", {
   validator: {
     $jsonSchema: {
       bsonType: "object",
-      required: ["ticketIdOriginal", "ticket", "asesorias", "notasConfidenciales", "infanteId", "estanciaId", "cicloEscolar", "fechaCierre", "archivadoEn", "fechaDepuracion"],
+      required: ["id", "ticketIdOriginal", "ticket", "asesorias", "notasConfidenciales", "infanteId", "estanciaId", "cicloEscolar", "fechaCierre", "archivadoEn", "fechaDepuracion"],
       properties: {
+        id: { bsonType: "number" },
         ticketIdOriginal: { bsonType: "objectId" },
         ticket: { bsonType: "object" },
         asesorias: { bsonType: "array", items: { bsonType: "object" } },
@@ -44,6 +46,7 @@ db.createCollection("historico", {
   }
 });
 
+db.historico.createIndex({ id: 1 }, { unique: true });
 db.historico.createIndex({ ticketIdOriginal: 1 }, { unique: true });
 db.historico.createIndex({ infanteId: 1 });
 db.historico.createIndex({ estanciaId: 1 });
@@ -57,6 +60,7 @@ db.historico.createIndex({ fechaDepuracion: 1 }, { expireAfterSeconds: 0 });
 
 const historico = [
   {
+    id: 1,
     ticketIdOriginal: ObjectId("d00000000000000000000385"),
     ticket: {
       _id: ObjectId("d00000000000000000000385"),
@@ -120,6 +124,7 @@ const historico = [
     fechaDepuracion: ISODate("2031-08-01T02:00:00-06:00")
   },
   {
+    id: 2,
     ticketIdOriginal: ObjectId("d00000000000000000000386"),
     ticket: {
       _id: ObjectId("d00000000000000000000386"),

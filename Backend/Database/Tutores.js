@@ -6,6 +6,7 @@ use("ISSTE");
 // Template de un tutor, recordatorio de que tipo de datos se espera en los campos
 /*
 const templateTutor = {
+  id: 0,                     // id ascendente por coleccion
   nombre: "",
   paterno: "",
   materno: "",
@@ -27,8 +28,9 @@ db.createCollection("tutores", {
   validator: {
     $jsonSchema: {
       bsonType: "object",
-      required: ["nombre", "paterno", "curp", "telefono", "codigoCredencial", "infantes", "activo"],
+      required: ["id", "nombre", "paterno", "curp", "telefono", "codigoCredencial", "infantes", "activo"],
       properties: {
+        id: { bsonType: "number" },
         nombre: { bsonType: "string", maxLength: 50 },
         paterno: { bsonType: "string", maxLength: 50 },
         materno: { bsonType: "string", maxLength: 50 },
@@ -49,6 +51,7 @@ db.createCollection("tutores", {
   }
 });
 
+db.tutores.createIndex({ id: 1 }, { unique: true });
 db.tutores.createIndex({ curp: 1 }, { unique: true });
 db.tutores.createIndex({ codigoCredencial: 1 }, { unique: true });
 db.tutores.createIndex({ infantes: 1 });
@@ -60,6 +63,7 @@ db.tutores.createIndex({ infantes: 1 });
 
 const tutores = [
   {
+    id: 1,
     _id: ObjectId("b00000000000000000000001"),
     nombre: "Laura",
     paterno: "Ortiz",
@@ -73,6 +77,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 2,
     _id: ObjectId("b00000000000000000000002"),
     nombre: "Héctor",
     paterno: "Hernández",
@@ -86,6 +91,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 3,
     _id: ObjectId("b00000000000000000000003"),
     nombre: "Gabriela",
     paterno: "Rodríguez",
@@ -99,6 +105,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 4,
     _id: ObjectId("b00000000000000000000004"),
     nombre: "Leticia",
     paterno: "Rojas",
@@ -112,6 +119,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 5,
     _id: ObjectId("b00000000000000000000005"),
     nombre: "Elizabeth",
     paterno: "Ortiz",
@@ -125,6 +133,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 6,
     _id: ObjectId("b00000000000000000000006"),
     nombre: "Brenda",
     paterno: "Torres",
@@ -138,6 +147,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 7,
     _id: ObjectId("b00000000000000000000007"),
     nombre: "Diana",
     paterno: "Rodríguez",
@@ -151,6 +161,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 8,
     _id: ObjectId("b00000000000000000000008"),
     nombre: "Alejandra",
     paterno: "Reyes",
@@ -164,6 +175,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 9,
     _id: ObjectId("b00000000000000000000009"),
     nombre: "Brenda",
     paterno: "Chávez",
@@ -177,6 +189,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 10,
     _id: ObjectId("b0000000000000000000000a"),
     nombre: "Miguel",
     paterno: "Rodríguez",
@@ -190,6 +203,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 11,
     _id: ObjectId("b0000000000000000000000b"),
     nombre: "Guadalupe",
     paterno: "Pérez",
@@ -203,6 +217,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 12,
     _id: ObjectId("b0000000000000000000000c"),
     nombre: "Patricia",
     paterno: "Chávez",
@@ -216,6 +231,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 13,
     _id: ObjectId("b0000000000000000000000d"),
     nombre: "Brenda",
     paterno: "Díaz",
@@ -229,6 +245,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 14,
     _id: ObjectId("b0000000000000000000000e"),
     nombre: "Carlos",
     paterno: "Cruz",
@@ -242,6 +259,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 15,
     _id: ObjectId("b0000000000000000000000f"),
     nombre: "Sandra",
     paterno: "Domínguez",
@@ -255,6 +273,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 16,
     _id: ObjectId("b00000000000000000000010"),
     nombre: "Andrés",
     paterno: "Chávez",
@@ -268,6 +287,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 17,
     _id: ObjectId("b00000000000000000000011"),
     nombre: "Mónica",
     paterno: "Chávez",
@@ -281,6 +301,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 18,
     _id: ObjectId("b00000000000000000000012"),
     nombre: "Raúl",
     paterno: "Ruiz",
@@ -294,6 +315,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 19,
     _id: ObjectId("b00000000000000000000013"),
     nombre: "Sandra",
     paterno: "Morales",
@@ -307,6 +329,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 20,
     _id: ObjectId("b00000000000000000000014"),
     nombre: "Paola",
     paterno: "Ramírez",
@@ -320,6 +343,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 21,
     _id: ObjectId("b00000000000000000000015"),
     nombre: "Mario",
     paterno: "Gómez",
@@ -333,6 +357,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 22,
     _id: ObjectId("b00000000000000000000016"),
     nombre: "Adriana",
     paterno: "Castillo",
@@ -346,6 +371,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 23,
     _id: ObjectId("b00000000000000000000017"),
     nombre: "Luis",
     paterno: "Ruiz",
@@ -359,6 +385,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 24,
     _id: ObjectId("b00000000000000000000018"),
     nombre: "Karina",
     paterno: "Reyes",
@@ -372,6 +399,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 25,
     _id: ObjectId("b00000000000000000000019"),
     nombre: "Leticia",
     paterno: "García",
@@ -385,6 +413,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 26,
     _id: ObjectId("b0000000000000000000001a"),
     nombre: "Carlos",
     paterno: "Jiménez",
@@ -398,6 +427,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 27,
     _id: ObjectId("b0000000000000000000001b"),
     nombre: "Mónica",
     paterno: "Rojas",
@@ -411,6 +441,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 28,
     _id: ObjectId("b0000000000000000000001c"),
     nombre: "Raúl",
     paterno: "Reyes",
@@ -424,6 +455,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 29,
     _id: ObjectId("b0000000000000000000001d"),
     nombre: "Brenda",
     paterno: "Gutiérrez",
@@ -437,6 +469,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 30,
     _id: ObjectId("b0000000000000000000001e"),
     nombre: "Héctor",
     paterno: "Díaz",
@@ -450,6 +483,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 31,
     _id: ObjectId("b0000000000000000000001f"),
     nombre: "Alejandra",
     paterno: "Flores",
@@ -463,6 +497,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 32,
     _id: ObjectId("b00000000000000000000020"),
     nombre: "Jorge",
     paterno: "Aguilar",
@@ -476,6 +511,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 33,
     _id: ObjectId("b00000000000000000000021"),
     nombre: "Mónica",
     paterno: "Castillo",
@@ -489,6 +525,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 34,
     _id: ObjectId("b00000000000000000000022"),
     nombre: "Héctor",
     paterno: "Navarro",
@@ -502,6 +539,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 35,
     _id: ObjectId("b00000000000000000000023"),
     nombre: "Rosa",
     paterno: "Reyes",
@@ -515,6 +553,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 36,
     _id: ObjectId("b00000000000000000000024"),
     nombre: "Roberto",
     paterno: "Navarro",
@@ -528,6 +567,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 37,
     _id: ObjectId("b00000000000000000000025"),
     nombre: "Claudia",
     paterno: "Gómez",
@@ -541,6 +581,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 38,
     _id: ObjectId("b00000000000000000000026"),
     nombre: "Javier",
     paterno: "Salazar",
@@ -554,6 +595,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 39,
     _id: ObjectId("b00000000000000000000027"),
     nombre: "Adriana",
     paterno: "Gutiérrez",
@@ -567,6 +609,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 40,
     _id: ObjectId("b00000000000000000000028"),
     nombre: "Miguel",
     paterno: "Ortiz",
@@ -580,6 +623,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 41,
     _id: ObjectId("b00000000000000000000029"),
     nombre: "Patricia",
     paterno: "Cruz",
@@ -593,6 +637,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 42,
     _id: ObjectId("b0000000000000000000002a"),
     nombre: "Ricardo",
     paterno: "Pérez",
@@ -606,6 +651,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 43,
     _id: ObjectId("b0000000000000000000002b"),
     nombre: "Guadalupe",
     paterno: "Reyes",
@@ -619,6 +665,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 44,
     _id: ObjectId("b0000000000000000000002c"),
     nombre: "María",
     paterno: "Torres",
@@ -632,6 +679,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 45,
     _id: ObjectId("b0000000000000000000002d"),
     nombre: "Gabriela",
     paterno: "Cruz",
@@ -645,6 +693,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 46,
     _id: ObjectId("b0000000000000000000002e"),
     nombre: "Alejandro",
     paterno: "Martínez",
@@ -658,6 +707,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 47,
     _id: ObjectId("b0000000000000000000002f"),
     nombre: "Verónica",
     paterno: "López",
@@ -671,6 +721,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 48,
     _id: ObjectId("b00000000000000000000030"),
     nombre: "Elizabeth",
     paterno: "Chávez",
@@ -684,6 +735,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 49,
     _id: ObjectId("b00000000000000000000031"),
     nombre: "Arturo",
     paterno: "Martínez",
@@ -697,6 +749,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 50,
     _id: ObjectId("b00000000000000000000032"),
     nombre: "Adriana",
     paterno: "Rodríguez",
@@ -710,6 +763,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 51,
     _id: ObjectId("b00000000000000000000033"),
     nombre: "Luis",
     paterno: "Jiménez",
@@ -723,6 +777,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 52,
     _id: ObjectId("b00000000000000000000034"),
     nombre: "Gabriela",
     paterno: "Salazar",
@@ -736,6 +791,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 53,
     _id: ObjectId("b00000000000000000000035"),
     nombre: "Iván",
     paterno: "García",
@@ -749,6 +805,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 54,
     _id: ObjectId("b00000000000000000000036"),
     nombre: "Sandra",
     paterno: "Salazar",
@@ -762,6 +819,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 55,
     _id: ObjectId("b00000000000000000000037"),
     nombre: "Iván",
     paterno: "Pérez",
@@ -775,6 +833,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 56,
     _id: ObjectId("b00000000000000000000038"),
     nombre: "Sandra",
     paterno: "Navarro",
@@ -788,6 +847,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 57,
     _id: ObjectId("b00000000000000000000039"),
     nombre: "Karina",
     paterno: "Gómez",
@@ -801,6 +861,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 58,
     _id: ObjectId("b0000000000000000000003a"),
     nombre: "Gabriela",
     paterno: "Pérez",
@@ -814,6 +875,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 59,
     _id: ObjectId("b0000000000000000000003b"),
     nombre: "Alejandro",
     paterno: "Ruiz",
@@ -827,6 +889,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 60,
     _id: ObjectId("b0000000000000000000003c"),
     nombre: "Fernanda",
     paterno: "González",
@@ -840,6 +903,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 61,
     _id: ObjectId("b0000000000000000000003d"),
     nombre: "Claudia",
     paterno: "Gómez",
@@ -853,6 +917,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 62,
     _id: ObjectId("b0000000000000000000003e"),
     nombre: "Mario",
     paterno: "Flores",
@@ -866,6 +931,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 63,
     _id: ObjectId("b0000000000000000000003f"),
     nombre: "Brenda",
     paterno: "Hernández",
@@ -879,6 +945,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 64,
     _id: ObjectId("b00000000000000000000040"),
     nombre: "Sandra",
     paterno: "Chávez",
@@ -892,6 +959,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 65,
     _id: ObjectId("b00000000000000000000041"),
     nombre: "Andrés",
     paterno: "Gutiérrez",
@@ -905,6 +973,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 66,
     _id: ObjectId("b00000000000000000000042"),
     nombre: "Gabriela",
     paterno: "Aguilar",
@@ -918,6 +987,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 67,
     _id: ObjectId("b00000000000000000000043"),
     nombre: "Héctor",
     paterno: "Vázquez",
@@ -931,6 +1001,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 68,
     _id: ObjectId("b00000000000000000000044"),
     nombre: "Guadalupe",
     paterno: "Ortiz",
@@ -944,6 +1015,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 69,
     _id: ObjectId("b00000000000000000000045"),
     nombre: "Guadalupe",
     paterno: "Gómez",
@@ -957,6 +1029,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 70,
     _id: ObjectId("b00000000000000000000046"),
     nombre: "Luis",
     paterno: "Torres",
@@ -970,6 +1043,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 71,
     _id: ObjectId("b00000000000000000000047"),
     nombre: "Guadalupe",
     paterno: "Ramírez",
@@ -983,6 +1057,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 72,
     _id: ObjectId("b00000000000000000000048"),
     nombre: "Iván",
     paterno: "Mendoza",
@@ -996,6 +1071,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 73,
     _id: ObjectId("b00000000000000000000049"),
     nombre: "Elizabeth",
     paterno: "Sánchez",
@@ -1009,6 +1085,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 74,
     _id: ObjectId("b0000000000000000000004a"),
     nombre: "José",
     paterno: "Domínguez",
@@ -1022,6 +1099,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 75,
     _id: ObjectId("b0000000000000000000004b"),
     nombre: "María",
     paterno: "Hernández",
@@ -1035,6 +1113,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 76,
     _id: ObjectId("b0000000000000000000004c"),
     nombre: "María",
     paterno: "Díaz",
@@ -1048,6 +1127,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 77,
     _id: ObjectId("b0000000000000000000004d"),
     nombre: "Raúl",
     paterno: "Mendoza",
@@ -1061,6 +1141,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 78,
     _id: ObjectId("b0000000000000000000004e"),
     nombre: "Paola",
     paterno: "Díaz",
@@ -1074,6 +1155,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 79,
     _id: ObjectId("b0000000000000000000004f"),
     nombre: "Roberto",
     paterno: "Ortiz",
@@ -1087,6 +1169,7 @@ const tutores = [
     deleted_at: null
   },
   {
+    id: 80,
     _id: ObjectId("b00000000000000000000050"),
     nombre: "Claudia",
     paterno: "Aguilar",

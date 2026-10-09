@@ -6,6 +6,7 @@ use("ISSTE");
 // Template de una nota confidencial, recordatorio de que tipo de datos se espera en los campos
 /*
 const templateNotaConfidencial = {
+  id: 0,                     // id ascendente por coleccion
   ticket: null,              // ObjectId del ticket
   infante: 0,                // id_infante
   tipo: "",                  // "MEDICA" | "FAMILIAR"
@@ -25,8 +26,9 @@ db.createCollection("notasConfidenciales", {
   validator: {
     $jsonSchema: {
       bsonType: "object",
-      required: ["ticket", "infante", "tipo", "nota", "autor", "fechaRegistro"],
+      required: ["id", "ticket", "infante", "tipo", "nota", "autor", "fechaRegistro"],
       properties: {
+        id: { bsonType: "number" },
         ticket: { bsonType: "objectId" },
         infante: { bsonType: "number" },
         tipo: { enum: ["MEDICA", "FAMILIAR"] },
@@ -40,6 +42,7 @@ db.createCollection("notasConfidenciales", {
   }
 });
 
+db.notasConfidenciales.createIndex({ id: 1 }, { unique: true });
 db.notasConfidenciales.createIndex({ ticket: 1 });
 db.notasConfidenciales.createIndex({ infante: 1 });
 
@@ -50,6 +53,7 @@ db.notasConfidenciales.createIndex({ infante: 1 });
 
 const notasConfidenciales = [
   {
+    id: 1,
     _id: ObjectId("f00000000000000000000001"),
     ticket: ObjectId("d00000000000000000000001"),
     infante: 199417,
@@ -61,6 +65,7 @@ const notasConfidenciales = [
     deleted_at: null
   },
   {
+    id: 2,
     _id: ObjectId("f00000000000000000000002"),
     ticket: ObjectId("d00000000000000000000003"),
     infante: 199425,
@@ -72,6 +77,7 @@ const notasConfidenciales = [
     deleted_at: null
   },
   {
+    id: 3,
     _id: ObjectId("f00000000000000000000003"),
     ticket: ObjectId("d00000000000000000000005"),
     infante: 199445,

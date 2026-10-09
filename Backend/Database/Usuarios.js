@@ -6,6 +6,7 @@ use("ISSTE");
 // Template de un usuario, recordatorio de que tipo de datos se espera en los campos
 /*
 const templateUsuario = {
+  id: 0,                     // id ascendente por coleccion
   numeroEmpleado: "",        
   usuario: "",               
   passwordHash: "",          
@@ -44,8 +45,9 @@ db.createCollection("usuarios", {
   validator: {
     $jsonSchema: {
       bsonType: "object",
-      required: ["usuario", "passwordHash", "nombre", "paterno", "rol", "ambito", "activo"],
+      required: ["usuario", "passwordHash"], //, "nombre", "paterno", "rol", "ambito", "activo"],
       properties: {
+        id: { bsonType: "number" },
         numeroEmpleado: { bsonType: "string" },
         usuario: { bsonType: "string", minLength: 3, maxLength: 50 },
         passwordHash: { bsonType: "string", minLength: 1 },
@@ -86,6 +88,7 @@ db.createCollection("usuarios", {
   }
 });
 
+db.usuarios.createIndex({ id: 1 }, { unique: true });
 db.usuarios.createIndex({ usuario: 1 }, { unique: true });
 db.usuarios.createIndex({ rol: 1});
 
@@ -101,6 +104,7 @@ const PASSWORD_DUMMY = "DUMMY_HASH_Issste2026";
 const usuarios = [
   // ---- Administradores centrales ----
   {
+    id: 1,
     numeroEmpleado: "100001",
     usuario: "admin.central",
     passwordHash: PASSWORD_DUMMY,
@@ -117,6 +121,7 @@ const usuarios = [
     deleted_at: null
   },
   {
+    id: 2,
     numeroEmpleado: "100002",
     usuario: "admin.soporte",
     passwordHash: PASSWORD_DUMMY,
@@ -135,6 +140,7 @@ const usuarios = [
 
   // ---- Supervisores centrales ----
   {
+    id: 3,
     numeroEmpleado: "100010",
     usuario: "sup.central01",
     passwordHash: PASSWORD_DUMMY,
@@ -151,6 +157,7 @@ const usuarios = [
     deleted_at: null
   },
   {
+    id: 4,
     numeroEmpleado: "100011",
     usuario: "sup.central02",
     passwordHash: PASSWORD_DUMMY,
@@ -169,6 +176,7 @@ const usuarios = [
 
   // ---- Supervisores regionales (uno por UR) ----
   {
+    id: 5,
     numeroEmpleado: "200090",
     usuario: "sup.reg090",
     passwordHash: PASSWORD_DUMMY,
@@ -185,6 +193,7 @@ const usuarios = [
     deleted_at: null
   },
   {
+    id: 6,
     numeroEmpleado: "200140",
     usuario: "sup.reg140",
     passwordHash: PASSWORD_DUMMY,
@@ -201,6 +210,7 @@ const usuarios = [
     deleted_at: null
   },
   {
+    id: 7,
     numeroEmpleado: "200150",
     usuario: "sup.reg150",
     passwordHash: PASSWORD_DUMMY,
@@ -217,6 +227,7 @@ const usuarios = [
     deleted_at: null
   },
   {
+    id: 8,
     numeroEmpleado: "200190",
     usuario: "sup.reg190",
     passwordHash: PASSWORD_DUMMY,
@@ -233,6 +244,7 @@ const usuarios = [
     deleted_at: null
   },
   {
+    id: 9,
     numeroEmpleado: "200210",
     usuario: "sup.reg210",
     passwordHash: PASSWORD_DUMMY,
@@ -251,6 +263,7 @@ const usuarios = [
 
   // ---- Directoras de estancia ----
   {
+    id: 10,
     numeroEmpleado: "300042",
     usuario: "dir.ebdi042",
     passwordHash: PASSWORD_DUMMY,
@@ -267,6 +280,7 @@ const usuarios = [
     deleted_at: null
   },
   {
+    id: 11,
     numeroEmpleado: "300020",
     usuario: "dir.ebdi020",
     passwordHash: PASSWORD_DUMMY,
@@ -283,6 +297,7 @@ const usuarios = [
     deleted_at: null
   },
   {
+    id: 12,
     numeroEmpleado: "300105",
     usuario: "dir.ebdi105",
     passwordHash: PASSWORD_DUMMY,
@@ -299,6 +314,7 @@ const usuarios = [
     deleted_at: null
   },
   {
+    id: 13,
     numeroEmpleado: "300007",
     usuario: "dir.ebdi007",
     passwordHash: PASSWORD_DUMMY,
@@ -315,6 +331,7 @@ const usuarios = [
     deleted_at: null
   },
   {
+    id: 14,
     numeroEmpleado: "300033",
     usuario: "dir.ebdi033",
     passwordHash: PASSWORD_DUMMY,
@@ -331,6 +348,7 @@ const usuarios = [
     deleted_at: null
   },
   {
+    id: 15,
     numeroEmpleado: "300071",
     usuario: "dir.ebdi071",
     passwordHash: PASSWORD_DUMMY,
@@ -347,6 +365,7 @@ const usuarios = [
     deleted_at: null
   },
   {
+    id: 16,
     // Estancia pequeña: la directora tambien pasa lista en una sala
     numeroEmpleado: "300088",
     usuario: "dir.ebdi088",
@@ -366,6 +385,7 @@ const usuarios = [
 
   // ---- Medicos de estancia ----
   {
+    id: 17,
     numeroEmpleado: "400007",
     usuario: "med.ebdi007",
     passwordHash: PASSWORD_DUMMY,
@@ -382,6 +402,7 @@ const usuarios = [
     deleted_at: null
   },
   {
+    id: 18,
     numeroEmpleado: "400033",
     usuario: "med.ebdi033",
     passwordHash: PASSWORD_DUMMY,
@@ -398,6 +419,7 @@ const usuarios = [
     deleted_at: null
   },
   {
+    id: 19,
     // Medico con funciones de enfermeria / trabajo social
     numeroEmpleado: "400064",
     usuario: "med.ebdi064",
@@ -417,6 +439,7 @@ const usuarios = [
 
   // ---- Trabajo social / Enfermeria ----
   {
+    id: 20,
     numeroEmpleado: "500007",
     usuario: "ts.ebdi007",
     passwordHash: PASSWORD_DUMMY,
@@ -433,6 +456,7 @@ const usuarios = [
     deleted_at: null
   },
   {
+    id: 21,
     numeroEmpleado: "500071",
     usuario: "ts.ebdi071",
     passwordHash: PASSWORD_DUMMY,
@@ -449,6 +473,7 @@ const usuarios = [
     deleted_at: null
   },
   {
+    id: 22,
     numeroEmpleado: "500015",
     usuario: "ts.ebdi015",
     passwordHash: PASSWORD_DUMMY,
@@ -467,6 +492,7 @@ const usuarios = [
 
   // ---- Capturistas docentes (educadoras de sala) ----
   {
+    id: 23,
     numeroEmpleado: "600007",
     usuario: "capt.ebdi007",
     passwordHash: PASSWORD_DUMMY,
@@ -483,6 +509,7 @@ const usuarios = [
     deleted_at: null
   },
   {
+    id: 24,
     numeroEmpleado: "600012",
     usuario: "capt.ebdi012",
     passwordHash: PASSWORD_DUMMY,
@@ -499,6 +526,7 @@ const usuarios = [
     deleted_at: null
   },
   {
+    id: 25,
     numeroEmpleado: "600033",
     usuario: "capt.ebdi033",
     passwordHash: PASSWORD_DUMMY,
@@ -515,6 +543,7 @@ const usuarios = [
     deleted_at: null
   },
   {
+    id: 26,
     numeroEmpleado: "600064",
     usuario: "capt.ebdi064",
     passwordHash: PASSWORD_DUMMY,
@@ -531,6 +560,7 @@ const usuarios = [
     deleted_at: null
   },
   {
+    id: 27,
     // Usuario inactivo: licencia temporal
     numeroEmpleado: "600009",
     usuario: "capt.ebdi009",
@@ -548,6 +578,7 @@ const usuarios = [
     deleted_at: null
   },
   {
+    id: 28,
     // Usuario con borrado logico (baja de la institucion)
     numeroEmpleado: "600015",
     usuario: "capt.ebdi015",
