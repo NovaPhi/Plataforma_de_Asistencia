@@ -2,60 +2,6 @@
 
 use("ISSTE");
 
-
-// Template de una estancia, recordatorio de que tipo de datos se espera en los campos
-/*
-const templateEstancia = {
-  id: 0,                     // id ascendente por coleccion
-  ebdi: 0,                   // Clave unica de la estancia (la misma que usan infantes y usuarios)
-  nombre: "",
-  ur: "",                    // Region a la que pertenece
-  domicilio: "",
-  telefono: "",
-  salas: [],                 // [{ nombre: "Lactantes A", capacidad: 25 }]
-  activo: true,              // Si la estancia opera
-  deleted_at: null           // Borrado logico
-};
-*/
-
-
-
-
-// Coleccion con validacion
-db.createCollection("estancias", {
-  validator: {
-    $jsonSchema: {
-      bsonType: "object",
-      required: ["id", "ebdi", "nombre", "ur", "domicilio", "telefono", "salas", "activo"],
-      properties: {
-        id: { bsonType: "number" },
-        ebdi: { bsonType: "number" },
-        nombre: { bsonType: "string", maxLength: 100 },
-        ur: { bsonType: "string", maxLength: 3 },
-        domicilio: { bsonType: "string", maxLength: 200 },
-        telefono: { bsonType: "string", maxLength: 10 },
-        salas: {
-          bsonType: "array",
-          items: {
-            bsonType: "object",
-            required: ["nombre", "capacidad"],
-            properties: {
-              nombre: { bsonType: "string", maxLength: 50 },
-              capacidad: { bsonType: "int", minimum: 1 }
-            }
-          }
-        },
-        activo: { bsonType: "bool" },
-        deleted_at: { bsonType: ["date", "null"] }
-      }
-    }
-  }
-});
-
-db.estancias.createIndex({ id: 1 }, { unique: true });
-db.estancias.createIndex({ ebdi: 1 }, { unique: true });
-db.estancias.createIndex({ ur: 1 });
-
 // ---------------------------------------------------------------------------
 // Dummy data: 13 estancias
 // UR / EBDI iguales a los de Infantes.js y Usuarios.js
@@ -64,7 +10,6 @@ db.estancias.createIndex({ ur: 1 });
 const estancias = [
   // ---- UR 090 ----
   {
-    id: 1,
     ebdi: 1,
     nombre: "Estancia de Bienestar y Desarrollo Infantil No. 1",
     ur: "090",
@@ -82,7 +27,6 @@ const estancias = [
     deleted_at: null
   },
   {
-    id: 2,
     ebdi: 7,
     nombre: "Estancia de Bienestar y Desarrollo Infantil No. 7",
     ur: "090",
@@ -100,7 +44,6 @@ const estancias = [
     deleted_at: null
   },
   {
-    id: 3,
     ebdi: 58,
     nombre: "Estancia de Bienestar y Desarrollo Infantil No. 58",
     ur: "090",
@@ -118,7 +61,6 @@ const estancias = [
     deleted_at: null
   },
   {
-    id: 4,
     ebdi: 105,
     nombre: "Estancia de Bienestar y Desarrollo Infantil No. 105",
     ur: "090",
@@ -137,7 +79,6 @@ const estancias = [
   },
   // ---- UR 140 ----
   {
-    id: 5,
     ebdi: 20,
     nombre: "Estancia de Bienestar y Desarrollo Infantil No. 20",
     ur: "140",
@@ -155,7 +96,6 @@ const estancias = [
     deleted_at: null
   },
   {
-    id: 6,
     ebdi: 42,
     nombre: "Estancia de Bienestar y Desarrollo Infantil No. 42",
     ur: "140",
@@ -173,7 +113,6 @@ const estancias = [
     deleted_at: null
   },
   {
-    id: 7,
     ebdi: 64,
     nombre: "Estancia de Bienestar y Desarrollo Infantil No. 64",
     ur: "140",
@@ -192,7 +131,6 @@ const estancias = [
   },
   // ---- UR 150 ----
   {
-    id: 8,
     ebdi: 12,
     nombre: "Estancia de Bienestar y Desarrollo Infantil No. 12",
     ur: "150",
@@ -210,7 +148,6 @@ const estancias = [
     deleted_at: null
   },
   {
-    id: 9,
     ebdi: 33,
     nombre: "Estancia de Bienestar y Desarrollo Infantil No. 33",
     ur: "150",
@@ -229,7 +166,6 @@ const estancias = [
   },
   // ---- UR 190 ----
   {
-    id: 10,
     ebdi: 9,
     nombre: "Estancia de Bienestar y Desarrollo Infantil No. 9",
     ur: "190",
@@ -247,7 +183,6 @@ const estancias = [
     deleted_at: null
   },
   {
-    id: 11,
     ebdi: 71,
     nombre: "Estancia de Bienestar y Desarrollo Infantil No. 71",
     ur: "190",
@@ -266,7 +201,6 @@ const estancias = [
   },
   // ---- UR 210 ----
   {
-    id: 12,
     ebdi: 15,
     nombre: "Estancia de Bienestar y Desarrollo Infantil No. 15",
     ur: "210",
@@ -284,7 +218,6 @@ const estancias = [
     deleted_at: null
   },
   {
-    id: 13,
     ebdi: 88,
     nombre: "Estancia de Bienestar y Desarrollo Infantil No. 88",
     ur: "210",

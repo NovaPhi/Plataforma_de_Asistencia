@@ -6,122 +6,13 @@
 
 use("ISSTE");
 
-/*
-// Template de un infante
-const templateInfante = {
-  id: "",                    // mismo valor que matricula
-  id_benef_infante: 0,
-  matricula: "",
-  ur: "",
-  ebdi: 0,
-  nombre: "",
-  paterno: "",
-  materno: "",
-  genero: "",                // "H" | "M"
-  curp: "",
-  fnac: null,                // Fecha de nacimiento
-  freg: null,                // Fecha de registro
-  estatus_servicio: 0,
-  estrato: "",
-  movimiento: { tipo: "", fecha: null, siguiente: "", previo: "" },
-  activo: true,
-  puede_editar: false,
-  cambioEstrato: { idAnt: 0, idPos: 0, anterior: "", posterior: "", fechaInicio: null, fechaFin: null },
-  cambioEbdi: { anterior: "", posterior: "", fechaInicio: null, fechaFin: null },
-  baja: { activa: false, fecha: null, motivo: 0 },
-  fCambio: null,
-  discapacidad: { tiene: false, grupo: "" },
-  diferencias: { curp: false, fnac: false, paterno: false, materno: false },   // dif_cvrp, dif_cvfn, dif_pat, dif_mat
-  inscripcionInicial: "",
-  comentario: "",
-  usuario: "",
-  RegPesoTalla: null,        // [pesoGramos, tallaCm] p. ej. [16250, 102]
-  fsistema: null,
-  inscripcion: [],     // ["agosto2026", "septiembre2026", etc tomar del padron de SQL]
-  bloqueoIngreso: false,     // Candado cuando el infante requiere alta medica
-  tutores: [],               // Tutores autorizados: [{ tutor: ObjectId, parentesco: "MADRE", autorizadoEgreso: true }]
-  contactosEmergencia: []    // Contactos a notificar si no se localiza: [{ nombre: "", telefono: "", parentesco: "", prioridad: 1 }]
-};
-*/
-
-
-
-
-
-
-db.createCollection("infantes", {
-  validator: {
-    $jsonSchema: {
-      bsonType: "object",
-      required: ["id", "matricula", "ebdi", "nombre", "paterno", "genero", "curp", "fnac", "freg", "inscripcion"],
-      properties: {
-        id: { bsonType: "string" },
-        matricula: { bsonType: "string" },
-        ur: { bsonType: "string", maxLength: 3 },
-        ebdi: { bsonType: "number" },
-        nombre: { bsonType: "string", maxLength: 50 },
-        paterno: { bsonType: "string", maxLength: 50 },
-        materno: { bsonType: "string", maxLength: 50 },
-        genero: { enum: ["H", "M"] },
-        curp: { bsonType: "string"},
-        fnac: { bsonType: "date" },
-        freg: { bsonType: "date" },
-        activo: { bsonType: "bool" },
-        RegPesoTalla: {
-          bsonType: ["array", "null"],   // [pesoGramos, tallaCm]
-          minItems: 2,
-          maxItems: 2,
-          items: { bsonType: "int", minimum: 0 }
-        },
-        inscripcion: {
-          bsonType: "array",
-          uniqueItems: true,
-          items: { bsonType: "string"}
-        },
-        bloqueoIngreso: { bsonType: "bool" },
-        tutores: {
-          bsonType: "array",
-          items: {
-            bsonType: "object",
-            required: ["tutor", "parentesco", "autorizadoEgreso"],
-            properties: {
-              tutor: { bsonType: "objectId" },
-              parentesco: { bsonType: "string", maxLength: 30 },
-              autorizadoEgreso: { bsonType: "bool" }
-            }
-          }
-        },
-        contactosEmergencia: {
-          bsonType: "array",
-          items: {
-            bsonType: "object",
-            required: ["nombre", "telefono", "parentesco", "prioridad"],
-            properties: {
-              nombre: { bsonType: "string", maxLength: 150 },
-              telefono: { bsonType: "string", maxLength: 10 },
-              parentesco: { bsonType: "string", maxLength: 30 },
-              prioridad: { bsonType: "int", minimum: 1 }
-            }
-          }
-        }
-      }
-    }
-  }
-});
-
-db.infantes.createIndex({ id: 1 }, { unique: true });
-db.infantes.createIndex({ matricula: 1 }, { unique: true });
-db.infantes.createIndex({ curp: 1 }, { unique: true });
-db.infantes.createIndex({ ebdi: 1, activo: 1 });
-db.infantes.createIndex({ inscripcion: 1 });
-db.infantes.createIndex({ "tutores.tutor": 1 });
-
 // ---------------------------------------------------------------------------
 // Dummy data: 50 infantes
+// _id fijos (90...) porque tutores, asistencias, tickets y demas colecciones los referencian
 // ---------------------------------------------------------------------------
 const infantes = [
   {
-    id: "2026799643",
+    _id: ObjectId("900000000000000000000001"),
     id_benef_infante: 34217,
     matricula: "2026799643",
     ur: "210",
@@ -158,7 +49,7 @@ const infantes = [
     contactosEmergencia: [{ nombre: "Mónica Vargas Moreno", telefono: "2220940985", parentesco: "ABUELA", prioridad: 1 }]
   },
   {
-    id: "2026721035",
+    _id: ObjectId("900000000000000000000002"),
     id_benef_infante: 23055,
     matricula: "2026721035",
     ur: "140",
@@ -192,7 +83,7 @@ const infantes = [
     contactosEmergencia: [{ nombre: "Sandra Castro Flores", telefono: "3388498556", parentesco: "ABUELA", prioridad: 1 }]
   },
   {
-    id: "2026637220",
+    _id: ObjectId("900000000000000000000003"),
     id_benef_infante: 43780,
     matricula: "2026637220",
     ur: "150",
@@ -226,7 +117,7 @@ const infantes = [
     contactosEmergencia: [{ nombre: "María García Medina", telefono: "7228669538", parentesco: "ABUELA", prioridad: 1 }]
   },
   {
-    id: "2026252530",
+    _id: ObjectId("900000000000000000000004"),
     id_benef_infante: 96700,
     matricula: "2026252530",
     ur: "190",
@@ -267,7 +158,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026997870",
+    _id: ObjectId("900000000000000000000005"),
     id_benef_infante: 54242,
     matricula: "2026997870",
     ur: "090",
@@ -304,7 +195,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026783383",
+    _id: ObjectId("900000000000000000000006"),
     id_benef_infante: 86975,
     matricula: "2026783383",
     ur: "090",
@@ -345,7 +236,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026995265",
+    _id: ObjectId("900000000000000000000007"),
     id_benef_infante: 25033,
     matricula: "2026995265",
     ur: "190",
@@ -382,7 +273,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026746014",
+    _id: ObjectId("900000000000000000000008"),
     id_benef_infante: 51483,
     matricula: "2026746014",
     ur: "150",
@@ -427,7 +318,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026085648",
+    _id: ObjectId("900000000000000000000009"),
     id_benef_infante: 52015,
     matricula: "2026085648",
     ur: "090",
@@ -461,7 +352,7 @@ const infantes = [
     contactosEmergencia: [{ nombre: "María Mendoza Pérez", telefono: "5599446135", parentesco: "ABUELA", prioridad: 1 }]
   },
   {
-    id: "2026264856",
+    _id: ObjectId("90000000000000000000000a"),
     id_benef_infante: 16362,
     matricula: "2026264856",
     ur: "150",
@@ -495,7 +386,7 @@ const infantes = [
     contactosEmergencia: [{ nombre: "Ana Ríos Herrera", telefono: "7221994569", parentesco: "ABUELA", prioridad: 1 }]
   },
   {
-    id: "2026709263",
+    _id: ObjectId("90000000000000000000000b"),
     id_benef_infante: 44386,
     matricula: "2026709263",
     ur: "150",
@@ -539,7 +430,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026395068",
+    _id: ObjectId("90000000000000000000000c"),
     id_benef_infante: 65470,
     matricula: "2026395068",
     ur: "210",
@@ -579,7 +470,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026335032",
+    _id: ObjectId("90000000000000000000000d"),
     id_benef_infante: 38845,
     matricula: "2026335032",
     ur: "140",
@@ -619,7 +510,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026844803",
+    _id: ObjectId("90000000000000000000000e"),
     id_benef_infante: 48323,
     matricula: "2026844803",
     ur: "190",
@@ -660,7 +551,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026987837",
+    _id: ObjectId("90000000000000000000000f"),
     id_benef_infante: 22161,
     matricula: "2026987837",
     ur: "150",
@@ -700,7 +591,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026269948",
+    _id: ObjectId("900000000000000000000010"),
     id_benef_infante: 64249,
     matricula: "2026269948",
     ur: "190",
@@ -745,7 +636,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026594209",
+    _id: ObjectId("900000000000000000000011"),
     id_benef_infante: 30993,
     matricula: "2026594209",
     ur: "150",
@@ -786,7 +677,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026070915",
+    _id: ObjectId("900000000000000000000012"),
     id_benef_infante: 93168,
     matricula: "2026070915",
     ur: "140",
@@ -826,7 +717,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026218123",
+    _id: ObjectId("900000000000000000000013"),
     id_benef_infante: 51650,
     matricula: "2026218123",
     ur: "150",
@@ -870,7 +761,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026372653",
+    _id: ObjectId("900000000000000000000014"),
     id_benef_infante: 85414,
     matricula: "2026372653",
     ur: "140",
@@ -907,7 +798,7 @@ const infantes = [
     contactosEmergencia: [{ nombre: "Leticia Gómez García", telefono: "3313761561", parentesco: "ABUELA", prioridad: 1 }]
   },
   {
-    id: "2026580034",
+    _id: ObjectId("900000000000000000000015"),
     id_benef_infante: 61413,
     matricula: "2026580034",
     ur: "190",
@@ -947,7 +838,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026788253",
+    _id: ObjectId("900000000000000000000016"),
     id_benef_infante: 87775,
     matricula: "2026788253",
     ur: "190",
@@ -992,7 +883,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026331123",
+    _id: ObjectId("900000000000000000000017"),
     id_benef_infante: 16514,
     matricula: "2026331123",
     ur: "210",
@@ -1037,7 +928,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026882601",
+    _id: ObjectId("900000000000000000000018"),
     id_benef_infante: 56449,
     matricula: "2026882601",
     ur: "150",
@@ -1074,7 +965,7 @@ const infantes = [
     contactosEmergencia: [{ nombre: "Adriana Vargas Díaz", telefono: "7224201461", parentesco: "ABUELA", prioridad: 1 }]
   },
   {
-    id: "2026184735",
+    _id: ObjectId("900000000000000000000019"),
     id_benef_infante: 74972,
     matricula: "2026184735",
     ur: "140",
@@ -1119,7 +1010,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026471981",
+    _id: ObjectId("90000000000000000000001a"),
     id_benef_infante: 80349,
     matricula: "2026471981",
     ur: "150",
@@ -1163,7 +1054,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026025485",
+    _id: ObjectId("90000000000000000000001b"),
     id_benef_infante: 32984,
     matricula: "2026025485",
     ur: "140",
@@ -1205,7 +1096,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026094938",
+    _id: ObjectId("90000000000000000000001c"),
     id_benef_infante: 56318,
     matricula: "2026094938",
     ur: "140",
@@ -1247,7 +1138,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026696519",
+    _id: ObjectId("90000000000000000000001d"),
     id_benef_infante: 75867,
     matricula: "2026696519",
     ur: "190",
@@ -1284,7 +1175,7 @@ const infantes = [
     contactosEmergencia: [{ nombre: "Diana López Medina", telefono: "8131665398", parentesco: "ABUELA", prioridad: 1 }]
   },
   {
-    id: "2026660639",
+    _id: ObjectId("90000000000000000000001e"),
     id_benef_infante: 81993,
     matricula: "2026660639",
     ur: "190",
@@ -1326,7 +1217,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026021557",
+    _id: ObjectId("90000000000000000000001f"),
     id_benef_infante: 50044,
     matricula: "2026021557",
     ur: "190",
@@ -1363,7 +1254,7 @@ const infantes = [
     contactosEmergencia: [{ nombre: "Claudia Castro Díaz", telefono: "8110475168", parentesco: "ABUELA", prioridad: 1 }]
   },
   {
-    id: "2026960189",
+    _id: ObjectId("900000000000000000000020"),
     id_benef_infante: 16556,
     matricula: "2026960189",
     ur: "190",
@@ -1407,7 +1298,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026648370",
+    _id: ObjectId("900000000000000000000021"),
     id_benef_infante: 55423,
     matricula: "2026648370",
     ur: "090",
@@ -1451,7 +1342,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026353777",
+    _id: ObjectId("900000000000000000000022"),
     id_benef_infante: 81599,
     matricula: "2026353777",
     ur: "090",
@@ -1491,7 +1382,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026483801",
+    _id: ObjectId("900000000000000000000023"),
     id_benef_infante: 44177,
     matricula: "2026483801",
     ur: "150",
@@ -1532,7 +1423,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026613328",
+    _id: ObjectId("900000000000000000000024"),
     id_benef_infante: 33631,
     matricula: "2026613328",
     ur: "210",
@@ -1573,7 +1464,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026989885",
+    _id: ObjectId("900000000000000000000025"),
     id_benef_infante: 21371,
     matricula: "2026989885",
     ur: "090",
@@ -1618,7 +1509,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026736017",
+    _id: ObjectId("900000000000000000000026"),
     id_benef_infante: 82147,
     matricula: "2026736017",
     ur: "140",
@@ -1659,7 +1550,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026822264",
+    _id: ObjectId("900000000000000000000027"),
     id_benef_infante: 57517,
     matricula: "2026822264",
     ur: "150",
@@ -1696,7 +1587,7 @@ const infantes = [
     contactosEmergencia: [{ nombre: "María Vargas Ramírez", telefono: "7220042637", parentesco: "ABUELA", prioridad: 1 }]
   },
   {
-    id: "2026315846",
+    _id: ObjectId("900000000000000000000028"),
     id_benef_infante: 58507,
     matricula: "2026315846",
     ur: "140",
@@ -1737,7 +1628,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026372436",
+    _id: ObjectId("900000000000000000000029"),
     id_benef_infante: 61664,
     matricula: "2026372436",
     ur: "090",
@@ -1787,7 +1678,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026788136",
+    _id: ObjectId("90000000000000000000002a"),
     id_benef_infante: 44552,
     matricula: "2026788136",
     ur: "150",
@@ -1827,7 +1718,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026893630",
+    _id: ObjectId("90000000000000000000002b"),
     id_benef_infante: 43792,
     matricula: "2026893630",
     ur: "090",
@@ -1869,7 +1760,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026758202",
+    _id: ObjectId("90000000000000000000002c"),
     id_benef_infante: 80610,
     matricula: "2026758202",
     ur: "140",
@@ -1914,7 +1805,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026633554",
+    _id: ObjectId("90000000000000000000002d"),
     id_benef_infante: 22298,
     matricula: "2026633554",
     ur: "090",
@@ -1954,7 +1845,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026103747",
+    _id: ObjectId("90000000000000000000002e"),
     id_benef_infante: 32988,
     matricula: "2026103747",
     ur: "090",
@@ -1991,7 +1882,7 @@ const infantes = [
     contactosEmergencia: [{ nombre: "Brenda Mendoza Ríos", telefono: "5587041517", parentesco: "ABUELA", prioridad: 1 }]
   },
   {
-    id: "2026651642",
+    _id: ObjectId("90000000000000000000002f"),
     id_benef_infante: 39357,
     matricula: "2026651642",
     ur: "140",
@@ -2032,7 +1923,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026606414",
+    _id: ObjectId("900000000000000000000030"),
     id_benef_infante: 82179,
     matricula: "2026606414",
     ur: "210",
@@ -2072,7 +1963,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026711574",
+    _id: ObjectId("900000000000000000000031"),
     id_benef_infante: 17267,
     matricula: "2026711574",
     ur: "190",
@@ -2117,7 +2008,7 @@ const infantes = [
     ]
   },
   {
-    id: "2026870158",
+    _id: ObjectId("900000000000000000000032"),
     id_benef_infante: 55255,
     matricula: "2026870158",
     ur: "090",

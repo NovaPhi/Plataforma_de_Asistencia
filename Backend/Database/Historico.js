@@ -2,57 +2,6 @@
 
 use("ISSTE");
 
-
-// Template de un registro historico, recordatorio de que tipo de datos se espera en los campos
-/*
-const templateHistorico = {
-  id: 0,                     // id ascendente por coleccion
-  ticketIdOriginal: null,    // ObjectId del ticket de origen
-  ticket: {},                // Copia integra del ticket al archivarse
-  asesorias: [],             // Copia de las asesorias del ticket
-  notasConfidenciales: [],   // Copia de las notas (siguen cifradas)
-  infanteId: 0,              // id_infante, para armar el expediente
-  estanciaId: 0,             // ebdi, para indexar por estancia
-  cicloEscolar: "",          // Ciclo en que estuvo activa la incidencia
-  fechaCierre: null,         // Cierre del caso
-  archivadoEn: null,         // Cuando paso de activa a archivo
-  fechaDepuracion: null      // archivadoEn + 5 anos; al llegar se borra (indice TTL)
-};
-*/
-
-
-
-
-// Coleccion con validacion
-db.createCollection("historico", {
-  validator: {
-    $jsonSchema: {
-      bsonType: "object",
-      required: ["id", "ticketIdOriginal", "ticket", "asesorias", "notasConfidenciales", "infanteId", "estanciaId", "cicloEscolar", "fechaCierre", "archivadoEn", "fechaDepuracion"],
-      properties: {
-        id: { bsonType: "number" },
-        ticketIdOriginal: { bsonType: "objectId" },
-        ticket: { bsonType: "object" },
-        asesorias: { bsonType: "array", items: { bsonType: "object" } },
-        notasConfidenciales: { bsonType: "array", items: { bsonType: "object" } },
-        infanteId: { bsonType: "number" },
-        estanciaId: { bsonType: "number" },
-        cicloEscolar: { bsonType: "string", maxLength: 9 },
-        fechaCierre: { bsonType: "date" },
-        archivadoEn: { bsonType: "date" },
-        fechaDepuracion: { bsonType: "date" }
-      }
-    }
-  }
-});
-
-db.historico.createIndex({ id: 1 }, { unique: true });
-db.historico.createIndex({ ticketIdOriginal: 1 }, { unique: true });
-db.historico.createIndex({ infanteId: 1 });
-db.historico.createIndex({ estanciaId: 1 });
-// TTL: Mongo borra el documento cuando llega fechaDepuracion
-db.historico.createIndex({ fechaDepuracion: 1 }, { expireAfterSeconds: 0 });
-
 // ---------------------------------------------------------------------------
 // Dummy data: 2 registros historicos
 // Tickets del ciclo 2025-2026 ya archivados (sus originales ya no estan en tickets)
@@ -60,12 +9,11 @@ db.historico.createIndex({ fechaDepuracion: 1 }, { expireAfterSeconds: 0 });
 
 const historico = [
   {
-    id: 1,
     ticketIdOriginal: ObjectId("d00000000000000000000385"),
     ticket: {
       _id: ObjectId("d00000000000000000000385"),
       asistencia: ObjectId("c00000000000000000000385"),
-      infante: 199451,
+      infante: ObjectId("90000000000000000000002b"),
       estancia: 7,
       estado: "CERRADO",
       semaforo: "VERDE",
@@ -94,7 +42,7 @@ const historico = [
       {
         _id: ObjectId("e00000000000000000000385"),
         ticket: ObjectId("d00000000000000000000385"),
-        infante: 199451,
+        infante: ObjectId("90000000000000000000002b"),
         asesoria: "DUMMY_ENC:Aislamiento en casa hasta que todas las lesiones formen costra",
         fechaRetornoEstimada: ISODate("2026-03-18"),
         requiereAltaMedica: true,
@@ -107,7 +55,7 @@ const historico = [
       {
         _id: ObjectId("f00000000000000000000385"),
         ticket: ObjectId("d00000000000000000000385"),
-        infante: 199451,
+        infante: ObjectId("90000000000000000000002b"),
         tipo: "MEDICA",
         diagnostico: "DUMMY_ENC:Varicela",
         nota: "DUMMY_ENC:Alta médica entregada el 17 de marzo",
@@ -116,7 +64,7 @@ const historico = [
         deleted_at: null
       }
     ],
-    infanteId: 199451,
+    infanteId: ObjectId("90000000000000000000002b"),
     estanciaId: 7,
     cicloEscolar: "2025-2026",
     fechaCierre: ISODate("2026-03-18T08:20:00-06:00"),
@@ -124,12 +72,11 @@ const historico = [
     fechaDepuracion: ISODate("2031-08-01T02:00:00-06:00")
   },
   {
-    id: 2,
     ticketIdOriginal: ObjectId("d00000000000000000000386"),
     ticket: {
       _id: ObjectId("d00000000000000000000386"),
       asistencia: ObjectId("c00000000000000000000386"),
-      infante: 199411,
+      infante: ObjectId("900000000000000000000003"),
       estancia: 33,
       estado: "CERRADO",
       semaforo: "VERDE",
@@ -171,7 +118,7 @@ const historico = [
       {
         _id: ObjectId("f00000000000000000000386"),
         ticket: ObjectId("d00000000000000000000386"),
-        infante: 199411,
+        infante: ObjectId("900000000000000000000003"),
         tipo: "FAMILIAR",
         diagnostico: null,
         nota: "DUMMY_ENC:Se actualizan datos de contacto del tutor",
@@ -180,7 +127,7 @@ const historico = [
         deleted_at: null
       }
     ],
-    infanteId: 199411,
+    infanteId: ObjectId("900000000000000000000003"),
     estanciaId: 33,
     cicloEscolar: "2025-2026",
     fechaCierre: ISODate("2026-05-21T12:00:00-06:00"),

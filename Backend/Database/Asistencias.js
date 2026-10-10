@@ -2,78 +2,6 @@
 
 use("ISSTE");
 
-
-// Template de una asistencia, recordatorio de que tipo de datos se espera en los campos
-/*
-const templateAsistencia = {
-  id: 0,                     // id ascendente por coleccion
-  estancia: 0,               // ebdi donde se registro
-  infante: 0,                // id_infante
-  grupo: null,               // ObjectId del grupo del pase de lista
-  fecha: null,               // Dia del registro
-  turno: "",                 // "MATUTINO"
-  // Opciones de estatus:
-  // "PRESENTE" | "AUSENTE_JUSTIFICADO" | "FALTA_INJUSTIFICADA" | "COMISION_MEDICA" | "FILTRO_SANITARIO"
-  estatus: "",
-  horaIngreso: null,
-  horaEgreso: null,
-  tutorIngreso: null,        // ObjectId del tutor que entrego al infante
-  tutorEgreso: null,         // ObjectId del tutor que recogio al infante
-  metodo: "",                // "MANUAL" | "QR"
-  offline: false,            // true si se capturo sin conexion
-  clientUuid: "",            // Id generado en el dispositivo para evitar duplicados
-  capturadoEn: null,         // Momento real de captura
-  sincronizadoEn: null,      // Cuando llego al servidor
-  ticket: null,              // ObjectId del ticket generado por la falta
-  registradoPor: "",         // usuario que capturo
-  deleted_at: null           // Borrado logico
-};
-*/
-
-
-
-
-// Coleccion con validacion
-db.createCollection("asistencias", {
-  validator: {
-    $jsonSchema: {
-      bsonType: "object",
-      required: ["id", "estancia", "infante", "grupo", "fecha", "turno", "estatus", "metodo", "offline", "clientUuid", "capturadoEn", "registradoPor"],
-      properties: {
-        id: { bsonType: "number" },
-        estancia: { bsonType: "number" },
-        infante: { bsonType: "number" },
-        grupo: { bsonType: "objectId" },
-        fecha: { bsonType: "date" },
-        turno: { bsonType: "string", maxLength: 20 },
-        estatus: { enum: ["PRESENTE",
-                          "AUSENTE_JUSTIFICADO",
-                          "FALTA_INJUSTIFICADA",
-                          "COMISION_MEDICA",
-                          "FILTRO_SANITARIO" ]
-        },
-        horaIngreso: { bsonType: ["date", "null"] },
-        horaEgreso: { bsonType: ["date", "null"] },
-        tutorIngreso: { bsonType: ["objectId", "null"] },
-        tutorEgreso: { bsonType: ["objectId", "null"] },
-        metodo: { enum: ["MANUAL", "QR"] },
-        offline: { bsonType: "bool" },
-        clientUuid: { bsonType: "string", minLength: 36, maxLength: 36 },
-        capturadoEn: { bsonType: "date" },
-        sincronizadoEn: { bsonType: ["date", "null"] },
-        ticket: { bsonType: ["objectId", "null"] },
-        registradoPor: { bsonType: "string", maxLength: 50 },
-        deleted_at: { bsonType: ["date", "null"] }
-      }
-    }
-  }
-});
-
-db.asistencias.createIndex({ id: 1 }, { unique: true });
-db.asistencias.createIndex({ clientUuid: 1 }, { unique: true });
-db.asistencias.createIndex({ estancia: 1, infante: 1, fecha: 1, turno: 1 });
-db.asistencias.createIndex({ grupo: 1, fecha: 1 });
-
 // ---------------------------------------------------------------------------
 // Dummy data: 46 asistencias
 // Pase de lista del 5 y 6 de octubre 2026 de los infantes activos que tienen grupo en Grupos.js.
@@ -83,10 +11,9 @@ db.asistencias.createIndex({ grupo: 1, fecha: 1 });
 const asistencias = [
   // ---- 2026-10-05 | EBDI 7 ----
   {
-    id: 1,
     _id: ObjectId("c00000000000000000000001"),
     estancia: 7,
-    infante: 199414,
+    infante: ObjectId("900000000000000000000006"),
     grupo: ObjectId("a00000000000000000000001"),
     fecha: ISODate("2026-10-05"),
     turno: "MATUTINO",
@@ -105,10 +32,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 2,
     _id: ObjectId("c00000000000000000000002"),
     estancia: 7,
-    infante: 199417,
+    infante: ObjectId("900000000000000000000009"),
     grupo: ObjectId("a00000000000000000000002"),
     fecha: ISODate("2026-10-05"),
     turno: "MATUTINO",
@@ -127,10 +53,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 3,
     _id: ObjectId("c00000000000000000000003"),
     estancia: 7,
-    infante: 199445,
+    infante: ObjectId("900000000000000000000025"),
     grupo: ObjectId("a00000000000000000000002"),
     fecha: ISODate("2026-10-05"),
     turno: "MATUTINO",
@@ -149,10 +74,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 4,
     _id: ObjectId("c00000000000000000000004"),
     estancia: 7,
-    infante: 199451,
+    infante: ObjectId("90000000000000000000002b"),
     grupo: ObjectId("a00000000000000000000002"),
     fecha: ISODate("2026-10-05"),
     turno: "MATUTINO",
@@ -172,10 +96,9 @@ const asistencias = [
   },
   // ---- 2026-10-05 | EBDI 12 ----
   {
-    id: 5,
     _id: ObjectId("c00000000000000000000005"),
     estancia: 12,
-    infante: 199418,
+    infante: ObjectId("90000000000000000000000a"),
     grupo: ObjectId("a00000000000000000000003"),
     fecha: ISODate("2026-10-05"),
     turno: "MATUTINO",
@@ -194,10 +117,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 6,
     _id: ObjectId("c00000000000000000000006"),
     estancia: 12,
-    infante: 199427,
+    infante: ObjectId("900000000000000000000013"),
     grupo: ObjectId("a00000000000000000000003"),
     fecha: ISODate("2026-10-05"),
     turno: "MATUTINO",
@@ -216,10 +138,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 7,
     _id: ObjectId("c00000000000000000000007"),
     estancia: 12,
-    infante: 199434,
+    infante: ObjectId("90000000000000000000001a"),
     grupo: ObjectId("a00000000000000000000003"),
     fecha: ISODate("2026-10-05"),
     turno: "MATUTINO",
@@ -238,10 +159,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 8,
     _id: ObjectId("c00000000000000000000008"),
     estancia: 12,
-    infante: 199447,
+    infante: ObjectId("900000000000000000000027"),
     grupo: ObjectId("a00000000000000000000003"),
     fecha: ISODate("2026-10-05"),
     turno: "MATUTINO",
@@ -261,10 +181,9 @@ const asistencias = [
   },
   // ---- 2026-10-05 | EBDI 33 ----
   {
-    id: 9,
     _id: ObjectId("c00000000000000000000009"),
     estancia: 33,
-    infante: 199411,
+    infante: ObjectId("900000000000000000000003"),
     grupo: ObjectId("a00000000000000000000005"),
     fecha: ISODate("2026-10-05"),
     turno: "MATUTINO",
@@ -283,10 +202,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 10,
     _id: ObjectId("c0000000000000000000000a"),
     estancia: 33,
-    infante: 199416,
+    infante: ObjectId("900000000000000000000008"),
     grupo: ObjectId("a00000000000000000000004"),
     fecha: ISODate("2026-10-05"),
     turno: "MATUTINO",
@@ -305,10 +223,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 11,
     _id: ObjectId("c0000000000000000000000b"),
     estancia: 33,
-    infante: 199419,
+    infante: ObjectId("90000000000000000000000b"),
     grupo: ObjectId("a00000000000000000000004"),
     fecha: ISODate("2026-10-05"),
     turno: "MATUTINO",
@@ -327,10 +244,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 12,
     _id: ObjectId("c0000000000000000000000c"),
     estancia: 33,
-    infante: 199423,
+    infante: ObjectId("90000000000000000000000f"),
     grupo: ObjectId("a00000000000000000000004"),
     fecha: ISODate("2026-10-05"),
     turno: "MATUTINO",
@@ -349,10 +265,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 13,
     _id: ObjectId("c0000000000000000000000d"),
     estancia: 33,
-    infante: 199425,
+    infante: ObjectId("900000000000000000000011"),
     grupo: ObjectId("a00000000000000000000004"),
     fecha: ISODate("2026-10-05"),
     turno: "MATUTINO",
@@ -371,10 +286,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 14,
     _id: ObjectId("c0000000000000000000000e"),
     estancia: 33,
-    infante: 199432,
+    infante: ObjectId("900000000000000000000018"),
     grupo: ObjectId("a00000000000000000000005"),
     fecha: ISODate("2026-10-05"),
     turno: "MATUTINO",
@@ -393,10 +307,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 15,
     _id: ObjectId("c0000000000000000000000f"),
     estancia: 33,
-    infante: 199443,
+    infante: ObjectId("900000000000000000000023"),
     grupo: ObjectId("a00000000000000000000004"),
     fecha: ISODate("2026-10-05"),
     turno: "MATUTINO",
@@ -415,10 +328,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 16,
     _id: ObjectId("c00000000000000000000010"),
     estancia: 33,
-    infante: 199450,
+    infante: ObjectId("90000000000000000000002a"),
     grupo: ObjectId("a00000000000000000000005"),
     fecha: ISODate("2026-10-05"),
     turno: "MATUTINO",
@@ -438,10 +350,9 @@ const asistencias = [
   },
   // ---- 2026-10-05 | EBDI 64 ----
   {
-    id: 17,
     _id: ObjectId("c00000000000000000000011"),
     estancia: 64,
-    infante: 199410,
+    infante: ObjectId("900000000000000000000002"),
     grupo: ObjectId("a00000000000000000000006"),
     fecha: ISODate("2026-10-05"),
     turno: "MATUTINO",
@@ -460,10 +371,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 18,
     _id: ObjectId("c00000000000000000000012"),
     estancia: 64,
-    infante: 199426,
+    infante: ObjectId("900000000000000000000012"),
     grupo: ObjectId("a00000000000000000000007"),
     fecha: ISODate("2026-10-05"),
     turno: "MATUTINO",
@@ -482,10 +392,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 19,
     _id: ObjectId("c00000000000000000000013"),
     estancia: 64,
-    infante: 199428,
+    infante: ObjectId("900000000000000000000014"),
     grupo: ObjectId("a00000000000000000000007"),
     fecha: ISODate("2026-10-05"),
     turno: "MATUTINO",
@@ -504,10 +413,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 20,
     _id: ObjectId("c00000000000000000000014"),
     estancia: 64,
-    infante: 199433,
+    infante: ObjectId("900000000000000000000019"),
     grupo: ObjectId("a00000000000000000000007"),
     fecha: ISODate("2026-10-05"),
     turno: "MATUTINO",
@@ -526,10 +434,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 21,
     _id: ObjectId("c00000000000000000000015"),
     estancia: 64,
-    infante: 199446,
+    infante: ObjectId("900000000000000000000026"),
     grupo: ObjectId("a00000000000000000000007"),
     fecha: ISODate("2026-10-05"),
     turno: "MATUTINO",
@@ -548,10 +455,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 22,
     _id: ObjectId("c00000000000000000000016"),
     estancia: 64,
-    infante: 199452,
+    infante: ObjectId("90000000000000000000002c"),
     grupo: ObjectId("a00000000000000000000006"),
     fecha: ISODate("2026-10-05"),
     turno: "MATUTINO",
@@ -571,10 +477,9 @@ const asistencias = [
   },
   // ---- 2026-10-05 | EBDI 88 ----
   {
-    id: 23,
     _id: ObjectId("c00000000000000000000017"),
     estancia: 88,
-    infante: 199456,
+    infante: ObjectId("900000000000000000000030"),
     grupo: ObjectId("a00000000000000000000008"),
     fecha: ISODate("2026-10-05"),
     turno: "MATUTINO",
@@ -594,10 +499,9 @@ const asistencias = [
   },
   // ---- 2026-10-06 | EBDI 7 ----
   {
-    id: 24,
     _id: ObjectId("c00000000000000000000018"),
     estancia: 7,
-    infante: 199414,
+    infante: ObjectId("900000000000000000000006"),
     grupo: ObjectId("a00000000000000000000001"),
     fecha: ISODate("2026-10-06"),
     turno: "MATUTINO",
@@ -616,10 +520,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 25,
     _id: ObjectId("c00000000000000000000019"),
     estancia: 7,
-    infante: 199417,
+    infante: ObjectId("900000000000000000000009"),
     grupo: ObjectId("a00000000000000000000002"),
     fecha: ISODate("2026-10-06"),
     turno: "MATUTINO",
@@ -638,10 +541,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 26,
     _id: ObjectId("c0000000000000000000001a"),
     estancia: 7,
-    infante: 199445,
+    infante: ObjectId("900000000000000000000025"),
     grupo: ObjectId("a00000000000000000000002"),
     fecha: ISODate("2026-10-06"),
     turno: "MATUTINO",
@@ -660,10 +562,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 27,
     _id: ObjectId("c0000000000000000000001b"),
     estancia: 7,
-    infante: 199451,
+    infante: ObjectId("90000000000000000000002b"),
     grupo: ObjectId("a00000000000000000000002"),
     fecha: ISODate("2026-10-06"),
     turno: "MATUTINO",
@@ -683,10 +584,9 @@ const asistencias = [
   },
   // ---- 2026-10-06 | EBDI 12 ----
   {
-    id: 28,
     _id: ObjectId("c0000000000000000000001c"),
     estancia: 12,
-    infante: 199418,
+    infante: ObjectId("90000000000000000000000a"),
     grupo: ObjectId("a00000000000000000000003"),
     fecha: ISODate("2026-10-06"),
     turno: "MATUTINO",
@@ -705,10 +605,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 29,
     _id: ObjectId("c0000000000000000000001d"),
     estancia: 12,
-    infante: 199427,
+    infante: ObjectId("900000000000000000000013"),
     grupo: ObjectId("a00000000000000000000003"),
     fecha: ISODate("2026-10-06"),
     turno: "MATUTINO",
@@ -727,10 +626,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 30,
     _id: ObjectId("c0000000000000000000001e"),
     estancia: 12,
-    infante: 199434,
+    infante: ObjectId("90000000000000000000001a"),
     grupo: ObjectId("a00000000000000000000003"),
     fecha: ISODate("2026-10-06"),
     turno: "MATUTINO",
@@ -749,10 +647,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 31,
     _id: ObjectId("c0000000000000000000001f"),
     estancia: 12,
-    infante: 199447,
+    infante: ObjectId("900000000000000000000027"),
     grupo: ObjectId("a00000000000000000000003"),
     fecha: ISODate("2026-10-06"),
     turno: "MATUTINO",
@@ -772,10 +669,9 @@ const asistencias = [
   },
   // ---- 2026-10-06 | EBDI 33 ----
   {
-    id: 32,
     _id: ObjectId("c00000000000000000000020"),
     estancia: 33,
-    infante: 199411,
+    infante: ObjectId("900000000000000000000003"),
     grupo: ObjectId("a00000000000000000000005"),
     fecha: ISODate("2026-10-06"),
     turno: "MATUTINO",
@@ -794,10 +690,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 33,
     _id: ObjectId("c00000000000000000000021"),
     estancia: 33,
-    infante: 199416,
+    infante: ObjectId("900000000000000000000008"),
     grupo: ObjectId("a00000000000000000000004"),
     fecha: ISODate("2026-10-06"),
     turno: "MATUTINO",
@@ -816,10 +711,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 34,
     _id: ObjectId("c00000000000000000000022"),
     estancia: 33,
-    infante: 199419,
+    infante: ObjectId("90000000000000000000000b"),
     grupo: ObjectId("a00000000000000000000004"),
     fecha: ISODate("2026-10-06"),
     turno: "MATUTINO",
@@ -838,10 +732,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 35,
     _id: ObjectId("c00000000000000000000023"),
     estancia: 33,
-    infante: 199423,
+    infante: ObjectId("90000000000000000000000f"),
     grupo: ObjectId("a00000000000000000000004"),
     fecha: ISODate("2026-10-06"),
     turno: "MATUTINO",
@@ -860,10 +753,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 36,
     _id: ObjectId("c00000000000000000000024"),
     estancia: 33,
-    infante: 199425,
+    infante: ObjectId("900000000000000000000011"),
     grupo: ObjectId("a00000000000000000000004"),
     fecha: ISODate("2026-10-06"),
     turno: "MATUTINO",
@@ -882,10 +774,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 37,
     _id: ObjectId("c00000000000000000000025"),
     estancia: 33,
-    infante: 199432,
+    infante: ObjectId("900000000000000000000018"),
     grupo: ObjectId("a00000000000000000000005"),
     fecha: ISODate("2026-10-06"),
     turno: "MATUTINO",
@@ -904,10 +795,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 38,
     _id: ObjectId("c00000000000000000000026"),
     estancia: 33,
-    infante: 199443,
+    infante: ObjectId("900000000000000000000023"),
     grupo: ObjectId("a00000000000000000000004"),
     fecha: ISODate("2026-10-06"),
     turno: "MATUTINO",
@@ -926,10 +816,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 39,
     _id: ObjectId("c00000000000000000000027"),
     estancia: 33,
-    infante: 199450,
+    infante: ObjectId("90000000000000000000002a"),
     grupo: ObjectId("a00000000000000000000005"),
     fecha: ISODate("2026-10-06"),
     turno: "MATUTINO",
@@ -949,10 +838,9 @@ const asistencias = [
   },
   // ---- 2026-10-06 | EBDI 64 ----
   {
-    id: 40,
     _id: ObjectId("c00000000000000000000028"),
     estancia: 64,
-    infante: 199410,
+    infante: ObjectId("900000000000000000000002"),
     grupo: ObjectId("a00000000000000000000006"),
     fecha: ISODate("2026-10-06"),
     turno: "MATUTINO",
@@ -971,10 +859,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 41,
     _id: ObjectId("c00000000000000000000029"),
     estancia: 64,
-    infante: 199426,
+    infante: ObjectId("900000000000000000000012"),
     grupo: ObjectId("a00000000000000000000007"),
     fecha: ISODate("2026-10-06"),
     turno: "MATUTINO",
@@ -993,10 +880,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 42,
     _id: ObjectId("c0000000000000000000002a"),
     estancia: 64,
-    infante: 199428,
+    infante: ObjectId("900000000000000000000014"),
     grupo: ObjectId("a00000000000000000000007"),
     fecha: ISODate("2026-10-06"),
     turno: "MATUTINO",
@@ -1015,10 +901,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 43,
     _id: ObjectId("c0000000000000000000002b"),
     estancia: 64,
-    infante: 199433,
+    infante: ObjectId("900000000000000000000019"),
     grupo: ObjectId("a00000000000000000000007"),
     fecha: ISODate("2026-10-06"),
     turno: "MATUTINO",
@@ -1037,10 +922,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 44,
     _id: ObjectId("c0000000000000000000002c"),
     estancia: 64,
-    infante: 199446,
+    infante: ObjectId("900000000000000000000026"),
     grupo: ObjectId("a00000000000000000000007"),
     fecha: ISODate("2026-10-06"),
     turno: "MATUTINO",
@@ -1059,10 +943,9 @@ const asistencias = [
     deleted_at: null
   },
   {
-    id: 45,
     _id: ObjectId("c0000000000000000000002d"),
     estancia: 64,
-    infante: 199452,
+    infante: ObjectId("90000000000000000000002c"),
     grupo: ObjectId("a00000000000000000000006"),
     fecha: ISODate("2026-10-06"),
     turno: "MATUTINO",
@@ -1082,10 +965,9 @@ const asistencias = [
   },
   // ---- 2026-10-06 | EBDI 88 ----
   {
-    id: 46,
     _id: ObjectId("c0000000000000000000002e"),
     estancia: 88,
-    infante: 199456,
+    infante: ObjectId("900000000000000000000030"),
     grupo: ObjectId("a00000000000000000000008"),
     fecha: ISODate("2026-10-06"),
     turno: "MATUTINO",

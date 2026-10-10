@@ -2,111 +2,6 @@
 
 use("ISSTE");
 
-
-// Template de un ticket, recordatorio de que tipo de datos se espera en los campos
-/*
-const templateTicket = {
-  id: 0,                     // id ascendente por coleccion
-  asistencia: null,          // ObjectId de la asistencia que origino el ticket
-  infante: 0,                // id_infante
-  estancia: 0,               // ebdi
-  estado: "",                // "ABIERTO" | "EN_PROCESO" | "ESCALADO" | "CERRADO"
-  semaforo: "",              // "VERDE" | "AMARILLO" | "ROJO"
-  causa: null,               // "ENF_CASA" | "ACC_EXT" | "PER_TUT" | "NO_LOC"
-  justificacion: null,       // { tipo: "", motivo: "", justificada: false }
-  intentosContacto: [],      // [{ numero: 1, fechaHora: null, exitoso: false, resumen: "", registradoPor: "" }]
-  alertaAmarilla: { activa: false, desde: null, limiteSegundoIntento: null, segundoIntentoHecho: false },
-  escalado: null,            // Cuando escalo por no hacer el segundo intento
-  asesoria: null,            // ObjectId de la asesoria
-  bloqueoIngreso: false,     // Candado de requiere alta medica
-  contactosNotificados: [],  // [{ nombre: "", fechaHora: null, medio: "", resultado: "" }]
-  fechaApertura: null,
-  fechaCierre: null,
-  cerradoPor: null,          // usuario que cerro el caso
-  deleted_at: null           // Borrado logico
-};
-*/
-
-
-
-
-// Coleccion con validacion
-db.createCollection("tickets", {
-  validator: {
-    $jsonSchema: {
-      bsonType: "object",
-      required: ["id", "asistencia", "infante", "estancia", "estado", "semaforo", "intentosContacto", "alertaAmarilla", "bloqueoIngreso", "contactosNotificados", "fechaApertura"],
-      properties: {
-        id: { bsonType: "number" },
-        asistencia: { bsonType: "objectId" },
-        infante: { bsonType: "number" },
-        estancia: { bsonType: "number" },
-        estado: { enum: ["ABIERTO", "EN_PROCESO", "ESCALADO", "CERRADO"] },
-        semaforo: { enum: ["VERDE", "AMARILLO", "ROJO"] },
-        causa: { enum: ["ENF_CASA", "ACC_EXT", "PER_TUT", "NO_LOC", null] },
-        justificacion: {
-          bsonType: ["object", "null"],
-          required: ["tipo", "motivo", "justificada"],
-          properties: {
-            tipo: { bsonType: "string", maxLength: 30 },
-            motivo: { bsonType: "string", maxLength: 200 },
-            justificada: { bsonType: "bool" }
-          }
-        },
-        intentosContacto: {
-          bsonType: "array",
-          items: {
-            bsonType: "object",
-            required: ["numero", "fechaHora", "exitoso", "registradoPor"],
-            properties: {
-              numero: { bsonType: "int", minimum: 1 },
-              fechaHora: { bsonType: "date" },
-              exitoso: { bsonType: "bool" },
-              resumen: { bsonType: "string", maxLength: 500 },
-              registradoPor: { bsonType: "string", maxLength: 50 }
-            }
-          }
-        },
-        alertaAmarilla: {
-          bsonType: "object",
-          required: ["activa", "desde", "limiteSegundoIntento", "segundoIntentoHecho"],
-          properties: {
-            activa: { bsonType: "bool" },
-            desde: { bsonType: ["date", "null"] },
-            limiteSegundoIntento: { bsonType: ["date", "null"] },
-            segundoIntentoHecho: { bsonType: "bool" }
-          }
-        },
-        escalado: { bsonType: ["date", "null"] },
-        asesoria: { bsonType: ["objectId", "null"] },
-        bloqueoIngreso: { bsonType: "bool" },
-        contactosNotificados: {
-          bsonType: "array",
-          items: {
-            bsonType: "object",
-            required: ["nombre", "fechaHora", "medio", "resultado"],
-            properties: {
-              nombre: { bsonType: "string", maxLength: 150 },
-              fechaHora: { bsonType: "date" },
-              medio: { bsonType: "string", maxLength: 20 },
-              resultado: { bsonType: "string", maxLength: 200 }
-            }
-          }
-        },
-        fechaApertura: { bsonType: "date" },
-        fechaCierre: { bsonType: ["date", "null"] },
-        cerradoPor: { bsonType: ["string", "null"] },
-        deleted_at: { bsonType: ["date", "null"] }
-      }
-    }
-  }
-});
-
-db.tickets.createIndex({ id: 1 }, { unique: true });
-db.tickets.createIndex({ asistencia: 1 }, { unique: true });
-db.tickets.createIndex({ estancia: 1, estado: 1 });
-db.tickets.createIndex({ infante: 1 });
-
 // ---------------------------------------------------------------------------
 // Dummy data: 5 tickets
 // Tickets de las faltas de Asistencias.js. _id fijos (d0...) para Asesorias, NotasConfidenciales y Bitacora
@@ -114,11 +9,10 @@ db.tickets.createIndex({ infante: 1 });
 
 const tickets = [
   {
-    id: 1,
     // Enfermedad en casa, requiere alta medica (bloqueo de ingreso activo)
     _id: ObjectId("d00000000000000000000001"),
     asistencia: ObjectId("c00000000000000000000002"),
-    infante: 199417,
+    infante: ObjectId("900000000000000000000009"),
     estancia: 7,
     estado: "EN_PROCESO",
     semaforo: "VERDE",
@@ -144,11 +38,10 @@ const tickets = [
     deleted_at: null
   },
   {
-    id: 2,
     // Primer intento sin respuesta, alerta amarilla activa
     _id: ObjectId("d00000000000000000000002"),
     asistencia: ObjectId("c00000000000000000000022"),
-    infante: 199419,
+    infante: ObjectId("90000000000000000000000b"),
     estancia: 33,
     estado: "EN_PROCESO",
     semaforo: "AMARILLO",
@@ -193,11 +86,10 @@ const tickets = [
     deleted_at: null
   },
   {
-    id: 3,
     // No localizado: no se hizo el segundo intento a tiempo y se escalo
     _id: ObjectId("d00000000000000000000003"),
     asistencia: ObjectId("c0000000000000000000000d"),
-    infante: 199425,
+    infante: ObjectId("900000000000000000000011"),
     estancia: 33,
     estado: "ESCALADO",
     semaforo: "ROJO",
@@ -235,11 +127,10 @@ const tickets = [
     deleted_at: null
   },
   {
-    id: 4,
     // Permiso del tutor, cerrado
     _id: ObjectId("d00000000000000000000004"),
     asistencia: ObjectId("c0000000000000000000000f"),
-    infante: 199443,
+    infante: ObjectId("900000000000000000000023"),
     estancia: 33,
     estado: "CERRADO",
     semaforo: "VERDE",
@@ -265,11 +156,10 @@ const tickets = [
     deleted_at: null
   },
   {
-    id: 5,
     // Accidente fuera de la estancia, cerrado
     _id: ObjectId("d00000000000000000000005"),
     asistencia: ObjectId("c00000000000000000000003"),
-    infante: 199445,
+    infante: ObjectId("900000000000000000000025"),
     estancia: 7,
     estado: "CERRADO",
     semaforo: "VERDE",

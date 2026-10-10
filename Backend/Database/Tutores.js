@@ -2,60 +2,6 @@
 
 use("ISSTE");
 
-
-// Template de un tutor, recordatorio de que tipo de datos se espera en los campos
-/*
-const templateTutor = {
-  id: 0,                     // id ascendente por coleccion
-  nombre: "",
-  paterno: "",
-  materno: "",
-  curp: "",
-  telefono: "",              // Contacto para seguimiento
-  correo: null,              // Contacto alterno
-  codigoCredencial: "",      // Valor del QR
-  infantes: [],              // id_infante de los infantes a su cargo
-  activo: true,              // Vigencia del tutor
-  deleted_at: null           // Borrado logico
-};
-*/
-
-
-
-
-// Coleccion con validacion
-db.createCollection("tutores", {
-  validator: {
-    $jsonSchema: {
-      bsonType: "object",
-      required: ["id", "nombre", "paterno", "curp", "telefono", "codigoCredencial", "infantes", "activo"],
-      properties: {
-        id: { bsonType: "number" },
-        nombre: { bsonType: "string", maxLength: 50 },
-        paterno: { bsonType: "string", maxLength: 50 },
-        materno: { bsonType: "string", maxLength: 50 },
-        curp: { bsonType: "string", minLength: 18, maxLength: 18 },
-        telefono: { bsonType: "string", maxLength: 10 },
-        correo: { bsonType: ["string", "null"] },
-        codigoCredencial: { bsonType: "string" },
-        infantes: {
-          bsonType: "array",
-          minItems: 1,
-          uniqueItems: true,
-          items: { bsonType: "number" }
-        },
-        activo: { bsonType: "bool" },
-        deleted_at: { bsonType: ["date", "null"] }
-      }
-    }
-  }
-});
-
-db.tutores.createIndex({ id: 1 }, { unique: true });
-db.tutores.createIndex({ curp: 1 }, { unique: true });
-db.tutores.createIndex({ codigoCredencial: 1 }, { unique: true });
-db.tutores.createIndex({ infantes: 1 });
-
 // ---------------------------------------------------------------------------
 // Dummy data: 80 tutores
 // Un tutor (madre y a veces padre) por cada infante de Infantes.js. _id fijos (b0...) porque infantes.tutores los referencia
@@ -63,7 +9,6 @@ db.tutores.createIndex({ infantes: 1 });
 
 const tutores = [
   {
-    id: 1,
     _id: ObjectId("b00000000000000000000001"),
     nombre: "Laura",
     paterno: "Ortiz",
@@ -72,12 +17,11 @@ const tutores = [
     telefono: "2228797309",
     correo: "laura.ortiz74@ejemplo.com",
     codigoCredencial: "TUT-015-0001",
-    infantes: [199409],
+    infantes: [ObjectId("900000000000000000000001")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 2,
     _id: ObjectId("b00000000000000000000002"),
     nombre: "Héctor",
     paterno: "Hernández",
@@ -86,12 +30,11 @@ const tutores = [
     telefono: "2227075364",
     correo: null,
     codigoCredencial: "TUT-015-0002",
-    infantes: [199409],
+    infantes: [ObjectId("900000000000000000000001")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 3,
     _id: ObjectId("b00000000000000000000003"),
     nombre: "Gabriela",
     paterno: "Rodríguez",
@@ -100,12 +43,11 @@ const tutores = [
     telefono: "3318844729",
     correo: "gabriela.rodriguez44@ejemplo.com",
     codigoCredencial: "TUT-064-0003",
-    infantes: [199410],
+    infantes: [ObjectId("900000000000000000000002")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 4,
     _id: ObjectId("b00000000000000000000004"),
     nombre: "Leticia",
     paterno: "Rojas",
@@ -114,12 +56,11 @@ const tutores = [
     telefono: "7229871689",
     correo: "leticia.rojas52@ejemplo.com",
     codigoCredencial: "TUT-033-0004",
-    infantes: [199411],
+    infantes: [ObjectId("900000000000000000000003")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 5,
     _id: ObjectId("b00000000000000000000005"),
     nombre: "Elizabeth",
     paterno: "Ortiz",
@@ -128,12 +69,11 @@ const tutores = [
     telefono: "8178809320",
     correo: null,
     codigoCredencial: "TUT-009-0005",
-    infantes: [199412],
+    infantes: [ObjectId("900000000000000000000004")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 6,
     _id: ObjectId("b00000000000000000000006"),
     nombre: "Brenda",
     paterno: "Torres",
@@ -142,12 +82,11 @@ const tutores = [
     telefono: "5517784864",
     correo: "brenda.torres30@ejemplo.com",
     codigoCredencial: "TUT-001-0006",
-    infantes: [199413],
+    infantes: [ObjectId("900000000000000000000005")],
     activo: false,
     deleted_at: null
   },
   {
-    id: 7,
     _id: ObjectId("b00000000000000000000007"),
     nombre: "Diana",
     paterno: "Rodríguez",
@@ -156,12 +95,11 @@ const tutores = [
     telefono: "5500297875",
     correo: "diana.rodriguez35@ejemplo.com",
     codigoCredencial: "TUT-007-0007",
-    infantes: [199414],
+    infantes: [ObjectId("900000000000000000000006")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 8,
     _id: ObjectId("b00000000000000000000008"),
     nombre: "Alejandra",
     paterno: "Reyes",
@@ -170,12 +108,11 @@ const tutores = [
     telefono: "8168045717",
     correo: null,
     codigoCredencial: "TUT-071-0008",
-    infantes: [199415],
+    infantes: [ObjectId("900000000000000000000007")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 9,
     _id: ObjectId("b00000000000000000000009"),
     nombre: "Brenda",
     paterno: "Chávez",
@@ -184,12 +121,11 @@ const tutores = [
     telefono: "7224751362",
     correo: null,
     codigoCredencial: "TUT-033-0009",
-    infantes: [199416],
+    infantes: [ObjectId("900000000000000000000008")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 10,
     _id: ObjectId("b0000000000000000000000a"),
     nombre: "Miguel",
     paterno: "Rodríguez",
@@ -198,12 +134,11 @@ const tutores = [
     telefono: "7228193319",
     correo: "miguel.rodriguez75@ejemplo.com",
     codigoCredencial: "TUT-033-0010",
-    infantes: [199416],
+    infantes: [ObjectId("900000000000000000000008")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 11,
     _id: ObjectId("b0000000000000000000000b"),
     nombre: "Guadalupe",
     paterno: "Pérez",
@@ -212,12 +147,11 @@ const tutores = [
     telefono: "5599728379",
     correo: "guadalupe.perez41@ejemplo.com",
     codigoCredencial: "TUT-007-0011",
-    infantes: [199417],
+    infantes: [ObjectId("900000000000000000000009")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 12,
     _id: ObjectId("b0000000000000000000000c"),
     nombre: "Patricia",
     paterno: "Chávez",
@@ -226,12 +160,11 @@ const tutores = [
     telefono: "7222948662",
     correo: "patricia.chavez21@ejemplo.com",
     codigoCredencial: "TUT-012-0012",
-    infantes: [199418],
+    infantes: [ObjectId("90000000000000000000000a")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 13,
     _id: ObjectId("b0000000000000000000000d"),
     nombre: "Brenda",
     paterno: "Díaz",
@@ -240,12 +173,11 @@ const tutores = [
     telefono: "7220087547",
     correo: "brenda.diaz46@ejemplo.com",
     codigoCredencial: "TUT-033-0013",
-    infantes: [199419],
+    infantes: [ObjectId("90000000000000000000000b")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 14,
     _id: ObjectId("b0000000000000000000000e"),
     nombre: "Carlos",
     paterno: "Cruz",
@@ -254,12 +186,11 @@ const tutores = [
     telefono: "7229922983",
     correo: null,
     codigoCredencial: "TUT-033-0014",
-    infantes: [199419],
+    infantes: [ObjectId("90000000000000000000000b")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 15,
     _id: ObjectId("b0000000000000000000000f"),
     nombre: "Sandra",
     paterno: "Domínguez",
@@ -268,12 +199,11 @@ const tutores = [
     telefono: "2223208073",
     correo: "sandra.dominguez5@ejemplo.com",
     codigoCredencial: "TUT-015-0015",
-    infantes: [199420],
+    infantes: [ObjectId("90000000000000000000000c")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 16,
     _id: ObjectId("b00000000000000000000010"),
     nombre: "Andrés",
     paterno: "Chávez",
@@ -282,12 +212,11 @@ const tutores = [
     telefono: "2222838222",
     correo: null,
     codigoCredencial: "TUT-015-0016",
-    infantes: [199420],
+    infantes: [ObjectId("90000000000000000000000c")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 17,
     _id: ObjectId("b00000000000000000000011"),
     nombre: "Mónica",
     paterno: "Chávez",
@@ -296,12 +225,11 @@ const tutores = [
     telefono: "3377647258",
     correo: "monica.chavez34@ejemplo.com",
     codigoCredencial: "TUT-020-0017",
-    infantes: [199421],
+    infantes: [ObjectId("90000000000000000000000d")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 18,
     _id: ObjectId("b00000000000000000000012"),
     nombre: "Raúl",
     paterno: "Ruiz",
@@ -310,12 +238,11 @@ const tutores = [
     telefono: "3341330175",
     correo: "raul.ruiz68@ejemplo.com",
     codigoCredencial: "TUT-020-0018",
-    infantes: [199421],
+    infantes: [ObjectId("90000000000000000000000d")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 19,
     _id: ObjectId("b00000000000000000000013"),
     nombre: "Sandra",
     paterno: "Morales",
@@ -324,12 +251,11 @@ const tutores = [
     telefono: "8152589831",
     correo: null,
     codigoCredencial: "TUT-071-0019",
-    infantes: [199422],
+    infantes: [ObjectId("90000000000000000000000e")],
     activo: false,
     deleted_at: null
   },
   {
-    id: 20,
     _id: ObjectId("b00000000000000000000014"),
     nombre: "Paola",
     paterno: "Ramírez",
@@ -338,12 +264,11 @@ const tutores = [
     telefono: "7222141621",
     correo: "paola.ramirez72@ejemplo.com",
     codigoCredencial: "TUT-033-0020",
-    infantes: [199423],
+    infantes: [ObjectId("90000000000000000000000f")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 21,
     _id: ObjectId("b00000000000000000000015"),
     nombre: "Mario",
     paterno: "Gómez",
@@ -352,12 +277,11 @@ const tutores = [
     telefono: "7221854914",
     correo: "mario.gomez24@ejemplo.com",
     codigoCredencial: "TUT-033-0021",
-    infantes: [199423],
+    infantes: [ObjectId("90000000000000000000000f")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 22,
     _id: ObjectId("b00000000000000000000016"),
     nombre: "Adriana",
     paterno: "Castillo",
@@ -366,12 +290,11 @@ const tutores = [
     telefono: "8101304118",
     correo: null,
     codigoCredencial: "TUT-009-0022",
-    infantes: [199424],
+    infantes: [ObjectId("900000000000000000000010")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 23,
     _id: ObjectId("b00000000000000000000017"),
     nombre: "Luis",
     paterno: "Ruiz",
@@ -380,12 +303,11 @@ const tutores = [
     telefono: "8199065939",
     correo: null,
     codigoCredencial: "TUT-009-0023",
-    infantes: [199424],
+    infantes: [ObjectId("900000000000000000000010")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 24,
     _id: ObjectId("b00000000000000000000018"),
     nombre: "Karina",
     paterno: "Reyes",
@@ -394,12 +316,11 @@ const tutores = [
     telefono: "7224645060",
     correo: null,
     codigoCredencial: "TUT-033-0024",
-    infantes: [199425],
+    infantes: [ObjectId("900000000000000000000011")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 25,
     _id: ObjectId("b00000000000000000000019"),
     nombre: "Leticia",
     paterno: "García",
@@ -408,12 +329,11 @@ const tutores = [
     telefono: "3385380129",
     correo: "leticia.garcia3@ejemplo.com",
     codigoCredencial: "TUT-064-0025",
-    infantes: [199426],
+    infantes: [ObjectId("900000000000000000000012")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 26,
     _id: ObjectId("b0000000000000000000001a"),
     nombre: "Carlos",
     paterno: "Jiménez",
@@ -422,12 +342,11 @@ const tutores = [
     telefono: "3394069256",
     correo: "carlos.jimenez46@ejemplo.com",
     codigoCredencial: "TUT-064-0026",
-    infantes: [199426],
+    infantes: [ObjectId("900000000000000000000012")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 27,
     _id: ObjectId("b0000000000000000000001b"),
     nombre: "Mónica",
     paterno: "Rojas",
@@ -436,12 +355,11 @@ const tutores = [
     telefono: "7228864230",
     correo: "monica.rojas85@ejemplo.com",
     codigoCredencial: "TUT-012-0027",
-    infantes: [199427],
+    infantes: [ObjectId("900000000000000000000013")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 28,
     _id: ObjectId("b0000000000000000000001c"),
     nombre: "Raúl",
     paterno: "Reyes",
@@ -450,12 +368,11 @@ const tutores = [
     telefono: "7225291280",
     correo: "raul.reyes34@ejemplo.com",
     codigoCredencial: "TUT-012-0028",
-    infantes: [199427],
+    infantes: [ObjectId("900000000000000000000013")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 29,
     _id: ObjectId("b0000000000000000000001d"),
     nombre: "Brenda",
     paterno: "Gutiérrez",
@@ -464,12 +381,11 @@ const tutores = [
     telefono: "3370382653",
     correo: "brenda.gutierrez32@ejemplo.com",
     codigoCredencial: "TUT-064-0029",
-    infantes: [199428],
+    infantes: [ObjectId("900000000000000000000014")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 30,
     _id: ObjectId("b0000000000000000000001e"),
     nombre: "Héctor",
     paterno: "Díaz",
@@ -478,12 +394,11 @@ const tutores = [
     telefono: "3355778794",
     correo: null,
     codigoCredencial: "TUT-064-0030",
-    infantes: [199428],
+    infantes: [ObjectId("900000000000000000000014")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 31,
     _id: ObjectId("b0000000000000000000001f"),
     nombre: "Alejandra",
     paterno: "Flores",
@@ -492,12 +407,11 @@ const tutores = [
     telefono: "8186021458",
     correo: null,
     codigoCredencial: "TUT-071-0031",
-    infantes: [199429],
+    infantes: [ObjectId("900000000000000000000015")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 32,
     _id: ObjectId("b00000000000000000000020"),
     nombre: "Jorge",
     paterno: "Aguilar",
@@ -506,12 +420,11 @@ const tutores = [
     telefono: "8110839490",
     correo: null,
     codigoCredencial: "TUT-071-0032",
-    infantes: [199429],
+    infantes: [ObjectId("900000000000000000000015")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 33,
     _id: ObjectId("b00000000000000000000021"),
     nombre: "Mónica",
     paterno: "Castillo",
@@ -520,12 +433,11 @@ const tutores = [
     telefono: "8158440932",
     correo: "monica.castillo50@ejemplo.com",
     codigoCredencial: "TUT-071-0033",
-    infantes: [199430],
+    infantes: [ObjectId("900000000000000000000016")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 34,
     _id: ObjectId("b00000000000000000000022"),
     nombre: "Héctor",
     paterno: "Navarro",
@@ -534,12 +446,11 @@ const tutores = [
     telefono: "8163097658",
     correo: "hector.navarro18@ejemplo.com",
     codigoCredencial: "TUT-071-0034",
-    infantes: [199430],
+    infantes: [ObjectId("900000000000000000000016")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 35,
     _id: ObjectId("b00000000000000000000023"),
     nombre: "Rosa",
     paterno: "Reyes",
@@ -548,12 +459,11 @@ const tutores = [
     telefono: "2228051543",
     correo: null,
     codigoCredencial: "TUT-015-0035",
-    infantes: [199431],
+    infantes: [ObjectId("900000000000000000000017")],
     activo: false,
     deleted_at: null
   },
   {
-    id: 36,
     _id: ObjectId("b00000000000000000000024"),
     nombre: "Roberto",
     paterno: "Navarro",
@@ -562,12 +472,11 @@ const tutores = [
     telefono: "2222157116",
     correo: null,
     codigoCredencial: "TUT-015-0036",
-    infantes: [199431],
+    infantes: [ObjectId("900000000000000000000017")],
     activo: false,
     deleted_at: null
   },
   {
-    id: 37,
     _id: ObjectId("b00000000000000000000025"),
     nombre: "Claudia",
     paterno: "Gómez",
@@ -576,12 +485,11 @@ const tutores = [
     telefono: "7227951117",
     correo: "claudia.gomez46@ejemplo.com",
     codigoCredencial: "TUT-033-0037",
-    infantes: [199432],
+    infantes: [ObjectId("900000000000000000000018")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 38,
     _id: ObjectId("b00000000000000000000026"),
     nombre: "Javier",
     paterno: "Salazar",
@@ -590,12 +498,11 @@ const tutores = [
     telefono: "7223256885",
     correo: null,
     codigoCredencial: "TUT-033-0038",
-    infantes: [199432],
+    infantes: [ObjectId("900000000000000000000018")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 39,
     _id: ObjectId("b00000000000000000000027"),
     nombre: "Adriana",
     paterno: "Gutiérrez",
@@ -604,12 +511,11 @@ const tutores = [
     telefono: "3355696327",
     correo: null,
     codigoCredencial: "TUT-064-0039",
-    infantes: [199433],
+    infantes: [ObjectId("900000000000000000000019")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 40,
     _id: ObjectId("b00000000000000000000028"),
     nombre: "Miguel",
     paterno: "Ortiz",
@@ -618,12 +524,11 @@ const tutores = [
     telefono: "3364515474",
     correo: null,
     codigoCredencial: "TUT-064-0040",
-    infantes: [199433],
+    infantes: [ObjectId("900000000000000000000019")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 41,
     _id: ObjectId("b00000000000000000000029"),
     nombre: "Patricia",
     paterno: "Cruz",
@@ -632,12 +537,11 @@ const tutores = [
     telefono: "7229766085",
     correo: "patricia.cruz38@ejemplo.com",
     codigoCredencial: "TUT-012-0041",
-    infantes: [199434],
+    infantes: [ObjectId("90000000000000000000001a")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 42,
     _id: ObjectId("b0000000000000000000002a"),
     nombre: "Ricardo",
     paterno: "Pérez",
@@ -646,12 +550,11 @@ const tutores = [
     telefono: "7227883655",
     correo: "ricardo.perez99@ejemplo.com",
     codigoCredencial: "TUT-012-0042",
-    infantes: [199434],
+    infantes: [ObjectId("90000000000000000000001a")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 43,
     _id: ObjectId("b0000000000000000000002b"),
     nombre: "Guadalupe",
     paterno: "Reyes",
@@ -660,12 +563,11 @@ const tutores = [
     telefono: "3325996775",
     correo: null,
     codigoCredencial: "TUT-020-0043",
-    infantes: [199435],
+    infantes: [ObjectId("90000000000000000000001b")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 44,
     _id: ObjectId("b0000000000000000000002c"),
     nombre: "María",
     paterno: "Torres",
@@ -674,12 +576,11 @@ const tutores = [
     telefono: "3345037849",
     correo: null,
     codigoCredencial: "TUT-020-0044",
-    infantes: [199436],
+    infantes: [ObjectId("90000000000000000000001c")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 45,
     _id: ObjectId("b0000000000000000000002d"),
     nombre: "Gabriela",
     paterno: "Cruz",
@@ -688,12 +589,11 @@ const tutores = [
     telefono: "8173924196",
     correo: "gabriela.cruz29@ejemplo.com",
     codigoCredencial: "TUT-009-0045",
-    infantes: [199437],
+    infantes: [ObjectId("90000000000000000000001d")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 46,
     _id: ObjectId("b0000000000000000000002e"),
     nombre: "Alejandro",
     paterno: "Martínez",
@@ -702,12 +602,11 @@ const tutores = [
     telefono: "8110460288",
     correo: "alejandro.martinez18@ejemplo.com",
     codigoCredencial: "TUT-009-0046",
-    infantes: [199437],
+    infantes: [ObjectId("90000000000000000000001d")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 47,
     _id: ObjectId("b0000000000000000000002f"),
     nombre: "Verónica",
     paterno: "López",
@@ -716,12 +615,11 @@ const tutores = [
     telefono: "8147540720",
     correo: "veronica.lopez62@ejemplo.com",
     codigoCredencial: "TUT-071-0047",
-    infantes: [199438],
+    infantes: [ObjectId("90000000000000000000001e")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 48,
     _id: ObjectId("b00000000000000000000030"),
     nombre: "Elizabeth",
     paterno: "Chávez",
@@ -730,12 +628,11 @@ const tutores = [
     telefono: "8164390618",
     correo: null,
     codigoCredencial: "TUT-071-0048",
-    infantes: [199439],
+    infantes: [ObjectId("90000000000000000000001f")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 49,
     _id: ObjectId("b00000000000000000000031"),
     nombre: "Arturo",
     paterno: "Martínez",
@@ -744,12 +641,11 @@ const tutores = [
     telefono: "8179188957",
     correo: null,
     codigoCredencial: "TUT-071-0049",
-    infantes: [199439],
+    infantes: [ObjectId("90000000000000000000001f")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 50,
     _id: ObjectId("b00000000000000000000032"),
     nombre: "Adriana",
     paterno: "Rodríguez",
@@ -758,12 +654,11 @@ const tutores = [
     telefono: "8186193073",
     correo: "adriana.rodriguez68@ejemplo.com",
     codigoCredencial: "TUT-071-0050",
-    infantes: [199440],
+    infantes: [ObjectId("900000000000000000000020")],
     activo: false,
     deleted_at: null
   },
   {
-    id: 51,
     _id: ObjectId("b00000000000000000000033"),
     nombre: "Luis",
     paterno: "Jiménez",
@@ -772,12 +667,11 @@ const tutores = [
     telefono: "8128347285",
     correo: null,
     codigoCredencial: "TUT-071-0051",
-    infantes: [199440],
+    infantes: [ObjectId("900000000000000000000020")],
     activo: false,
     deleted_at: null
   },
   {
-    id: 52,
     _id: ObjectId("b00000000000000000000034"),
     nombre: "Gabriela",
     paterno: "Salazar",
@@ -786,12 +680,11 @@ const tutores = [
     telefono: "5522290044",
     correo: null,
     codigoCredencial: "TUT-105-0052",
-    infantes: [199441],
+    infantes: [ObjectId("900000000000000000000021")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 53,
     _id: ObjectId("b00000000000000000000035"),
     nombre: "Iván",
     paterno: "García",
@@ -800,12 +693,11 @@ const tutores = [
     telefono: "5552722022",
     correo: "ivan.garcia70@ejemplo.com",
     codigoCredencial: "TUT-105-0053",
-    infantes: [199441],
+    infantes: [ObjectId("900000000000000000000021")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 54,
     _id: ObjectId("b00000000000000000000036"),
     nombre: "Sandra",
     paterno: "Salazar",
@@ -814,12 +706,11 @@ const tutores = [
     telefono: "5517625280",
     correo: "sandra.salazar70@ejemplo.com",
     codigoCredencial: "TUT-105-0054",
-    infantes: [199442],
+    infantes: [ObjectId("900000000000000000000022")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 55,
     _id: ObjectId("b00000000000000000000037"),
     nombre: "Iván",
     paterno: "Pérez",
@@ -828,12 +719,11 @@ const tutores = [
     telefono: "5545028316",
     correo: "ivan.perez76@ejemplo.com",
     codigoCredencial: "TUT-105-0055",
-    infantes: [199442],
+    infantes: [ObjectId("900000000000000000000022")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 56,
     _id: ObjectId("b00000000000000000000038"),
     nombre: "Sandra",
     paterno: "Navarro",
@@ -842,12 +732,11 @@ const tutores = [
     telefono: "7227352866",
     correo: null,
     codigoCredencial: "TUT-033-0056",
-    infantes: [199443],
+    infantes: [ObjectId("900000000000000000000023")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 57,
     _id: ObjectId("b00000000000000000000039"),
     nombre: "Karina",
     paterno: "Gómez",
@@ -856,12 +745,11 @@ const tutores = [
     telefono: "2229713311",
     correo: "karina.gomez72@ejemplo.com",
     codigoCredencial: "TUT-015-0057",
-    infantes: [199444],
+    infantes: [ObjectId("900000000000000000000024")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 58,
     _id: ObjectId("b0000000000000000000003a"),
     nombre: "Gabriela",
     paterno: "Pérez",
@@ -870,12 +758,11 @@ const tutores = [
     telefono: "5544560787",
     correo: "gabriela.perez19@ejemplo.com",
     codigoCredencial: "TUT-007-0058",
-    infantes: [199445],
+    infantes: [ObjectId("900000000000000000000025")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 59,
     _id: ObjectId("b0000000000000000000003b"),
     nombre: "Alejandro",
     paterno: "Ruiz",
@@ -884,12 +771,11 @@ const tutores = [
     telefono: "5512835769",
     correo: null,
     codigoCredencial: "TUT-007-0059",
-    infantes: [199445],
+    infantes: [ObjectId("900000000000000000000025")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 60,
     _id: ObjectId("b0000000000000000000003c"),
     nombre: "Fernanda",
     paterno: "González",
@@ -898,12 +784,11 @@ const tutores = [
     telefono: "3317758881",
     correo: null,
     codigoCredencial: "TUT-064-0060",
-    infantes: [199446],
+    infantes: [ObjectId("900000000000000000000026")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 61,
     _id: ObjectId("b0000000000000000000003d"),
     nombre: "Claudia",
     paterno: "Gómez",
@@ -912,12 +797,11 @@ const tutores = [
     telefono: "7229797802",
     correo: "claudia.gomez50@ejemplo.com",
     codigoCredencial: "TUT-012-0061",
-    infantes: [199447],
+    infantes: [ObjectId("900000000000000000000027")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 62,
     _id: ObjectId("b0000000000000000000003e"),
     nombre: "Mario",
     paterno: "Flores",
@@ -926,12 +810,11 @@ const tutores = [
     telefono: "7222840019",
     correo: "mario.flores12@ejemplo.com",
     codigoCredencial: "TUT-012-0062",
-    infantes: [199447],
+    infantes: [ObjectId("900000000000000000000027")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 63,
     _id: ObjectId("b0000000000000000000003f"),
     nombre: "Brenda",
     paterno: "Hernández",
@@ -940,12 +823,11 @@ const tutores = [
     telefono: "3335736385",
     correo: "brenda.hernandez61@ejemplo.com",
     codigoCredencial: "TUT-020-0063",
-    infantes: [199448],
+    infantes: [ObjectId("900000000000000000000028")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 64,
     _id: ObjectId("b00000000000000000000040"),
     nombre: "Sandra",
     paterno: "Chávez",
@@ -954,12 +836,11 @@ const tutores = [
     telefono: "5596780736",
     correo: "sandra.chavez61@ejemplo.com",
     codigoCredencial: "TUT-058-0064",
-    infantes: [199449],
+    infantes: [ObjectId("900000000000000000000029")],
     activo: false,
     deleted_at: null
   },
   {
-    id: 65,
     _id: ObjectId("b00000000000000000000041"),
     nombre: "Andrés",
     paterno: "Gutiérrez",
@@ -968,12 +849,11 @@ const tutores = [
     telefono: "5543854690",
     correo: "andres.gutierrez18@ejemplo.com",
     codigoCredencial: "TUT-058-0065",
-    infantes: [199449],
+    infantes: [ObjectId("900000000000000000000029")],
     activo: false,
     deleted_at: null
   },
   {
-    id: 66,
     _id: ObjectId("b00000000000000000000042"),
     nombre: "Gabriela",
     paterno: "Aguilar",
@@ -982,12 +862,11 @@ const tutores = [
     telefono: "7228276116",
     correo: "gabriela.aguilar10@ejemplo.com",
     codigoCredencial: "TUT-033-0066",
-    infantes: [199450],
+    infantes: [ObjectId("90000000000000000000002a")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 67,
     _id: ObjectId("b00000000000000000000043"),
     nombre: "Héctor",
     paterno: "Vázquez",
@@ -996,12 +875,11 @@ const tutores = [
     telefono: "7222845142",
     correo: "hector.vazquez34@ejemplo.com",
     codigoCredencial: "TUT-033-0067",
-    infantes: [199450],
+    infantes: [ObjectId("90000000000000000000002a")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 68,
     _id: ObjectId("b00000000000000000000044"),
     nombre: "Guadalupe",
     paterno: "Ortiz",
@@ -1010,12 +888,11 @@ const tutores = [
     telefono: "5580578037",
     correo: "guadalupe.ortiz58@ejemplo.com",
     codigoCredencial: "TUT-007-0068",
-    infantes: [199451],
+    infantes: [ObjectId("90000000000000000000002b")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 69,
     _id: ObjectId("b00000000000000000000045"),
     nombre: "Guadalupe",
     paterno: "Gómez",
@@ -1024,12 +901,11 @@ const tutores = [
     telefono: "3307418288",
     correo: null,
     codigoCredencial: "TUT-064-0069",
-    infantes: [199452],
+    infantes: [ObjectId("90000000000000000000002c")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 70,
     _id: ObjectId("b00000000000000000000046"),
     nombre: "Luis",
     paterno: "Torres",
@@ -1038,12 +914,11 @@ const tutores = [
     telefono: "3385386713",
     correo: "luis.torres7@ejemplo.com",
     codigoCredencial: "TUT-064-0070",
-    infantes: [199452],
+    infantes: [ObjectId("90000000000000000000002c")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 71,
     _id: ObjectId("b00000000000000000000047"),
     nombre: "Guadalupe",
     paterno: "Ramírez",
@@ -1052,12 +927,11 @@ const tutores = [
     telefono: "5528385642",
     correo: "guadalupe.ramirez31@ejemplo.com",
     codigoCredencial: "TUT-001-0071",
-    infantes: [199453],
+    infantes: [ObjectId("90000000000000000000002d")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 72,
     _id: ObjectId("b00000000000000000000048"),
     nombre: "Iván",
     paterno: "Mendoza",
@@ -1066,12 +940,11 @@ const tutores = [
     telefono: "5529837252",
     correo: "ivan.mendoza96@ejemplo.com",
     codigoCredencial: "TUT-001-0072",
-    infantes: [199453],
+    infantes: [ObjectId("90000000000000000000002d")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 73,
     _id: ObjectId("b00000000000000000000049"),
     nombre: "Elizabeth",
     paterno: "Sánchez",
@@ -1080,12 +953,11 @@ const tutores = [
     telefono: "5595851904",
     correo: null,
     codigoCredencial: "TUT-105-0073",
-    infantes: [199454],
+    infantes: [ObjectId("90000000000000000000002e")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 74,
     _id: ObjectId("b0000000000000000000004a"),
     nombre: "José",
     paterno: "Domínguez",
@@ -1094,12 +966,11 @@ const tutores = [
     telefono: "5549992480",
     correo: null,
     codigoCredencial: "TUT-105-0074",
-    infantes: [199454],
+    infantes: [ObjectId("90000000000000000000002e")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 75,
     _id: ObjectId("b0000000000000000000004b"),
     nombre: "María",
     paterno: "Hernández",
@@ -1108,12 +979,11 @@ const tutores = [
     telefono: "3372987112",
     correo: "maria.hernandez32@ejemplo.com",
     codigoCredencial: "TUT-020-0075",
-    infantes: [199455],
+    infantes: [ObjectId("90000000000000000000002f")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 76,
     _id: ObjectId("b0000000000000000000004c"),
     nombre: "María",
     paterno: "Díaz",
@@ -1122,12 +992,11 @@ const tutores = [
     telefono: "2226079113",
     correo: "maria.diaz20@ejemplo.com",
     codigoCredencial: "TUT-088-0076",
-    infantes: [199456],
+    infantes: [ObjectId("900000000000000000000030")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 77,
     _id: ObjectId("b0000000000000000000004d"),
     nombre: "Raúl",
     paterno: "Mendoza",
@@ -1136,12 +1005,11 @@ const tutores = [
     telefono: "2226477447",
     correo: null,
     codigoCredencial: "TUT-088-0077",
-    infantes: [199456],
+    infantes: [ObjectId("900000000000000000000030")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 78,
     _id: ObjectId("b0000000000000000000004e"),
     nombre: "Paola",
     paterno: "Díaz",
@@ -1150,12 +1018,11 @@ const tutores = [
     telefono: "8146352136",
     correo: "paola.diaz28@ejemplo.com",
     codigoCredencial: "TUT-071-0078",
-    infantes: [199457],
+    infantes: [ObjectId("900000000000000000000031")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 79,
     _id: ObjectId("b0000000000000000000004f"),
     nombre: "Roberto",
     paterno: "Ortiz",
@@ -1164,12 +1031,11 @@ const tutores = [
     telefono: "8163984886",
     correo: null,
     codigoCredencial: "TUT-071-0079",
-    infantes: [199457],
+    infantes: [ObjectId("900000000000000000000031")],
     activo: true,
     deleted_at: null
   },
   {
-    id: 80,
     _id: ObjectId("b00000000000000000000050"),
     nombre: "Claudia",
     paterno: "Aguilar",
@@ -1178,7 +1044,7 @@ const tutores = [
     telefono: "5593426927",
     correo: "claudia.aguilar5@ejemplo.com",
     codigoCredencial: "TUT-007-0080",
-    infantes: [199458],
+    infantes: [ObjectId("900000000000000000000032")],
     activo: false,
     deleted_at: null
   }

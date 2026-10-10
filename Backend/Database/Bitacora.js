@@ -2,73 +2,6 @@
 
 use("ISSTE");
 
-
-// Template de un registro de bitacora, recordatorio de que tipo de datos se espera en los campos
-/*
-const templateBitacora = {
-  id: 0,                     // id ascendente por coleccion
-  usuario: "",               // usuario que hizo la accion
-  rol: "",                   // Rol que tenia en ese momento
-  ip: "",
-  userAgent: "",             // Navegador o dispositivo
-  fechaHora: null,           // Momento exacto del cambio
-  accion: "",                // "LLAMADA" | "CAMBIO_ESTATUS" | "VER_NOTA" | "CREAR" | "ACTUALIZAR" | "CERRAR_TICKET" | etc
-  coleccion: "",             // Coleccion afectada
-  registro: null,            // Documento afectado (_id, id_infante, ebdi o usuario segun la coleccion)
-  datosAnteriores: null,     // Valores antes del cambio
-  datosNuevos: null          // Valores despues del cambio
-};
-*/
-
-
-
-
-// Coleccion con validacion
-db.createCollection("bitacora", {
-  validator: {
-    $jsonSchema: {
-      bsonType: "object",
-      required: ["id", "usuario", "rol", "ip", "userAgent", "fechaHora", "accion", "coleccion"],
-      properties: {
-        id: { bsonType: "number" },
-        usuario: { bsonType: "string", maxLength: 50 },
-        rol: { enum: ["ADMINISTRADOR_CENTRAL",
-                      "SUPERVISOR_CENTRAL",
-                      "SUPERVISOR_REGIONAL",
-                      "DIRECTORA_ESTANCIA",
-                      "MEDICO_ESTANCIA",
-                      "TRABAJO_SOCIAL",
-                      "CAPTURISTA_DOCENTE" ]
-        },
-        ip: { bsonType: "string", maxLength: 45 },
-        userAgent: { bsonType: "string" },
-        fechaHora: { bsonType: "date" },
-        accion: { bsonType: "string", maxLength: 30 },
-        coleccion: { enum: ["infantes",
-                            "usuarios",
-                            "estancias",
-                            "grupos",
-                            "tutores",
-                            "asistencias",
-                            "tickets",
-                            "asesorias",
-                            "notasConfidenciales",
-                            "consentimientos",
-                            "historico" ]
-        },
-        registro: { bsonType: ["objectId", "number", "string", "null"] },
-        datosAnteriores: { bsonType: ["object", "null"] },
-        datosNuevos: { bsonType: ["object", "null"] }
-      }
-    }
-  }
-});
-
-db.bitacora.createIndex({ id: 1 }, { unique: true });
-db.bitacora.createIndex({ fechaHora: -1 });
-db.bitacora.createIndex({ coleccion: 1, registro: 1 });
-db.bitacora.createIndex({ usuario: 1 });
-
 // ---------------------------------------------------------------------------
 // Dummy data: 9 registros de bitacora
 // Acciones sobre los tickets de Tickets.js. La bitacora no tiene borrado logico porque no se edita desde la app
@@ -76,7 +9,6 @@ db.bitacora.createIndex({ usuario: 1 });
 
 const bitacora = [
   {
-    id: 1,
     usuario: "ts.ebdi007",
     rol: "TRABAJO_SOCIAL",
     ip: "10.90.7.30",
@@ -89,7 +21,6 @@ const bitacora = [
     datosNuevos: { intentosContacto: [{ numero: 1, exitoso: true }] }
   },
   {
-    id: 2,
     usuario: "med.ebdi007",
     rol: "MEDICO_ESTANCIA",
     ip: "10.90.7.31",
@@ -102,7 +33,6 @@ const bitacora = [
     datosNuevos: { requiereAltaMedica: true, fechaRetornoEstimada: ISODate("2026-10-09") }
   },
   {
-    id: 3,
     usuario: "med.ebdi007",
     rol: "MEDICO_ESTANCIA",
     ip: "10.90.7.31",
@@ -110,12 +40,11 @@ const bitacora = [
     fechaHora: ISODate("2026-10-05T10:00:04-06:00"),
     accion: "ACTUALIZAR",
     coleccion: "infantes",
-    registro: 199417,
+    registro: ObjectId("900000000000000000000009"),
     datosAnteriores: { bloqueoIngreso: false },
     datosNuevos: { bloqueoIngreso: true }
   },
   {
-    id: 4,
     usuario: "ts.ebdi007",
     rol: "TRABAJO_SOCIAL",
     ip: "10.90.7.30",
@@ -128,7 +57,6 @@ const bitacora = [
     datosNuevos: { estatus: "AUSENTE_JUSTIFICADO" }
   },
   {
-    id: 5,
     usuario: "ts.ebdi007",
     rol: "TRABAJO_SOCIAL",
     ip: "10.90.7.30",
@@ -141,7 +69,6 @@ const bitacora = [
     datosNuevos: { estado: "CERRADO", cerradoPor: "ts.ebdi007" }
   },
   {
-    id: 6,
     usuario: "med.ebdi007",
     rol: "MEDICO_ESTANCIA",
     ip: "10.90.7.31",
@@ -154,7 +81,6 @@ const bitacora = [
     datosNuevos: null
   },
   {
-    id: 7,
     usuario: "med.ebdi033",
     rol: "MEDICO_ESTANCIA",
     ip: "10.150.33.31",
@@ -167,7 +93,6 @@ const bitacora = [
     datosNuevos: { estatus: "AUSENTE_JUSTIFICADO" }
   },
   {
-    id: 8,
     usuario: "med.ebdi033",
     rol: "MEDICO_ESTANCIA",
     ip: "10.150.33.31",
@@ -180,7 +105,6 @@ const bitacora = [
     datosNuevos: { estado: "CERRADO", cerradoPor: "med.ebdi033" }
   },
   {
-    id: 9,
     usuario: "dir.ebdi033",
     rol: "DIRECTORA_ESTANCIA",
     ip: "10.150.33.31",
