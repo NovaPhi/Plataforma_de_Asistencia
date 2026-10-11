@@ -30,7 +30,6 @@ const app = express();
 dotenv.config();
 app.use(cors());
 app.use(bodyParser.json());
-
 const PORT = process.env.PORT || 3000;
 const MONGO_URL = process.env.MONGO_URL ;
 
@@ -44,6 +43,22 @@ mongoose.connect(MONGO_URL).then(() => {
   console.error("Error al conectar a la base de datos:", error);
 });
 
+// Modelos de Mongoose
+// Relaciona el nombre de cada colección con su modelo
+const modelos = {
+	usuarios: Usuario,
+	infantes: Infante,
+	estancias: Estancia,
+	grupos: Grupo,
+	tutores: Tutor,
+	asistencias: Asistencia,
+	tickets: Ticket,
+	asesorias: Asesoria,
+	notasConfidenciales: NotaConfidencial,
+	consentimientos: Consentimiento,
+	bitacora: Bitacora,
+	historico: Historico
+};
 
 
 async function getList(collection, req, res){
@@ -53,8 +68,8 @@ async function getList(collection, req, res){
 	let fin=Number(req.query._end);
 	let sorter={}
 	sorter[sortBy]=sortOrder;
-	let dataUsuario = await db.collection("usuarios").find({"id":id});
-	let data=await db.collection(collection).find({}).sort(sorter).project({_id:0}).toArray();
+	// Query de mongoose
+	let data=await modelos[collection].find({}).sort("id").exec();
 	res.set("Access-Control-Expose-Headers", "X-Total-Count");
 	res.set("X-Total-Count", data.length);
 	data=await data.slice(inicio, fin);
@@ -64,21 +79,21 @@ async function getList(collection, req, res){
 async function getMany(collection, req, res){
 	let data=[]
 	for(let index=0;index<req.query.id.length; index++){
-		let dataParcial=await db.collection(collection).find({id:Number(req.query.id[index])}).project({_id:0}).toArray();
+		let dataParcial=await db.collection(collection).find({id:Number(req.query.id[index])}).toArray();
 		data=await data.concat(dataParcial);
 	}
 	res.json(data);
 }
 
 async function getManyReference(collection, req, res){
-	let data=await db.collection("infantes").find(req.query).project({_id:0}).toArray();
+	let data=await db.collection("infantes").find(req.query).toArray();
 	res.set("Access-Control-Expose-Headers", "X-Total-Count");
 	res.set("X-Total-Count", data.length);
 	res.json(data);
 }
 
 async function getOne(collection, id, req,res){
-	let data=await db.collection(collection).find({"id":id}).project({"_id":0}).toArray();
+	let data=await db.collection(collection).find({"_id":id}).toArray();
 	res.json(data[0]);
 }
 
@@ -105,15 +120,18 @@ async function createData(collection, req, res){
 
 
 
-app.get("/Productos", async (req,res)=>{
+app.get("/users", async (req,res)=>{
 	try{
 		let token=req.get("Authentication");
 		let verifiedToken=await jwt.verify(token, process.env.JWTSECRET);
 		if("_sort" in req.query){
+			console.log("entrando a getList");
 			await getList("infantes", req, res);
 		}else if("id" in req.query){
+			console.log("entrando a getMany");
 			await getMany("infantes", req, res);
 		}else{
+			console.log("entrando a getManyReference");
 			await getManyReference("infantes", req, res);
 		}
 	}catch{
@@ -159,6 +177,7 @@ app.post("/login", async (req, res)=>{
 	let data=await Usuario.findOne({"usuario":user});
 	if(data==null){
 		res.sendStatus(401);
+
 	}else if(await argon2.verify(data.passwordHash, pass)){
 		let token=jwt.sign({"usuario":data.usuario}, process.env.JWTSECRET, {expiresIn:900});
 		res.json({"token": token, "id":data.usuario});

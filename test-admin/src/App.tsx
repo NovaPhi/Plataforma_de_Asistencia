@@ -7,7 +7,7 @@ import { PasaLista } from "./Pase_de_Lista";
 import { Bitacora } from "./Bitacora";
 import { Historicos } from "./Datos_Historicos";
 import { dataProvider } from "./dataProvider";
-import { authProvider } from "./AuthProvider";
+import authProvider from "./AuthProvider";
 import { i18nProvider } from "./i18nProvider";
 import { Dashboard } from "./Dashboard";
 import PostIcon from "@mui/icons-material/Book";
