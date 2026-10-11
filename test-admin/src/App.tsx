@@ -2,7 +2,7 @@ import { Admin, Resource, ListGuesser } from "react-admin";
 import { Layout } from "./Layout";
 import { theme } from "./Theme";
 import { Escaneo_Credencial } from "./Escaneo_QR";
-import { Seguimientos } from "./Seguimiento";
+import { SeguimientoList } from "./Seguimiento"
 import { PasaLista } from "./Pase_de_Lista";
 import { Bitacora } from "./Bitacora";
 import { Historicos } from "./Datos_Historicos";
@@ -19,6 +19,6 @@ export const App = () => (
     <Resource name="Bitacora" list={Bitacora} />
     <Resource name="Incidencias" list={Historicos}/>
     <Resource name="Escaneo" list={Escaneo_Credencial}/> 
-    <Resource name="Seguimiento" list={Seguimientos}/>
+    <Resource name="Seguimiento" list={SeguimientoList}/>
   </Admin>
 );
