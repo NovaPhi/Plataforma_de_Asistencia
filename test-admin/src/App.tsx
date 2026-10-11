@@ -16,6 +16,7 @@ export const App = () => (
   <Admin authProvider={authProvider} i18nProvider={i18nProvider} dataProvider={dataProvider} dashboard={Dashboard} layout={Layout} theme={theme}>
     <Resource name="users" list={ListGuesser} />
     <Resource name="pase-lista" list={PasaLista} icon={PostIcon}/>
+    <Resource name="Escanear Credencial" list={Escaneo_Credencial}/>
     <Resource name="Bitacora" list={Bitacora} />
     <Resource name="Incidencias" list={Historicos}/>
     <Resource name="Escaneo" list={Escaneo_Credencial}/> 
