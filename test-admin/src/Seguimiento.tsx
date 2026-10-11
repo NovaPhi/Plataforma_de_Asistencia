@@ -2,11 +2,13 @@ import { useState } from "react";
 import { useGetIdentity } from "react-admin";
 import {Alert, Box, Button, Card, CardContent, CardHeader, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, MenuItem, Radio, RadioGroup, Tab, Tabs, TextField, Typography,} from "@mui/material";
 
-
+// los 4 estados por los que pasa un caso, cada uno es una pestaña
 type Estado = "abierto" | "seguimiento" | "alta_medica" | "cerrado";
  
+// una llamada que se hizo al tutor (cada vez que se guarda "Registrar llamada" se crea una)
 type Intento = { fecha: string; resultado: string; responsable: string };
  
+// un caso de inasistencia, es lo que se muestra en la tarjeta y en el expediente
 type Caso = {
   id: string;
   nombre: string;
@@ -19,6 +21,7 @@ type Caso = {
   intentos: Intento[];
 };
  
+// pestañas de arriba, el value tiene que coincidir con el estado del caso para filtrar
 const TABS: { value: Estado; label: string }[] = [
   { value: "abierto", label: "Abiertos" },
   { value: "seguimiento", label: "En seguimiento" },
@@ -26,6 +29,7 @@ const TABS: { value: Estado; label: string }[] = [
   { value: "cerrado", label: "Cerrados" },
 ];
  
+// traduce el estado interno al texto que ve el usuario (chip de la tarjeta y expediente)
 const ETIQUETA_ESTADO: Record<Estado, string> = {
   abierto: "Abierto",
   seguimiento: "En seguimiento",
@@ -33,8 +37,11 @@ const ETIQUETA_ESTADO: Record<Estado, string> = {
   cerrado: "Cerrado",
 };
  
+
+// opciones de causa, las usan el formulario del expediente y el dialogo de llamada
 const CAUSAS = ["Enfermedad en casa", "Accidente fuera del plantel", "Permiso particular o tramite", "Sin respuesta del tutor"];
  
+// datos temporales para ver el diseño, reemplazar cuando haya backend
 const CASOS_EJEMPLO: Caso[] = [
   {
     id: "1", nombre: "Niño/a de ejemplo 1", sala: "Sala A", fechaFalta: "00/00/0000",
@@ -48,6 +55,8 @@ const CASOS_EJEMPLO: Caso[] = [
   },
 ];
  
+
+// filtros de sala y fecha, por ahora solo son visuales (no filtran la lista)
 const Filtros = () => (
   <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", my: 2 }}>
     <TextField select size="small" label="Sala" defaultValue="" sx={{ minWidth: 200 }}>
@@ -60,6 +69,9 @@ const Filtros = () => (
   </Box>
 );
  
+// tarjeta de la lista de la izquierda, un resumen del caso
+// activo: es true si es el caso que esta abierto en el expediente, le pone el borde de color
+// onSelect: avisa al padre que se pico "Abrir expediente" para que lo muestre a la derecha
 const CasoCard = ({ caso, activo, onSelect }: {
   caso: Caso; activo: boolean; onSelect: () => void;
 }) => (
@@ -70,10 +82,12 @@ const CasoCard = ({ caso, activo, onSelect }: {
         {caso.sala} · Falta del {caso.fechaFalta} · Folio {caso.folio}
       </Typography>
       <Box><Chip size="small" variant="outlined" color="primary" label={ETIQUETA_ESTADO[caso.estado]} /></Box>
+      {/* el aviso amarillo solo sale si el caso trae una alerta */}
       {caso.alerta && <Alert severity="warning" sx={{ py: 0 }}>{caso.alerta}</Alert>}
       <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1 }}>
         <Box>
           <Typography variant="caption">Causa</Typography>
+          {/* muestra solo la ultima llamada (la primera del arreglo) */}
           <Typography variant="body2">{caso.causa ?? "Sin definir"}</Typography>
         </Box>
         <Box>
@@ -90,6 +104,8 @@ const CasoCard = ({ caso, activo, onSelect }: {
   </Card>
 );
  
+
+// par de etiqueta chiquita arriba y valor en negritas abajo, se usa en los datos del expediente
 const Dato = ({ etiqueta, valor }: { etiqueta: string; valor: string }) => (
   <Box>
     <Typography variant="caption" color="text.secondary">{etiqueta}</Typography>
@@ -97,6 +113,9 @@ const Dato = ({ etiqueta, valor }: { etiqueta: string; valor: string }) => (
   </Box>
 );
 
+// opciones en forma de tarjeta (radio con borde), solo se puede elegir una
+// valor: la opcion elegida, onChange: avisa cual eligio, columnas: cuantas por fila en pantalla grande
+// se usa en el dialogo de llamada (resultado y causa)
 const OpcionesTarjeta = ({ valor, onChange, opciones, columnas }: {valor: string; onChange: (v: string) => void; opciones: string[]; columnas: number;}) => (
   <RadioGroup
     value={valor}
@@ -109,6 +128,7 @@ const OpcionesTarjeta = ({ valor, onChange, opciones, columnas }: {valor: string
         value={o}
         control={<Radio />}
         label={o}
+        // la opcion elegida se resalta con borde y fondo de color
         sx={{
           m: 0, px: 1, py: 0.5, border: 2, borderRadius: 1,
           borderColor: valor === o ? "primary.main" : "divider",
@@ -120,7 +140,9 @@ const OpcionesTarjeta = ({ valor, onChange, opciones, columnas }: {valor: string
   </RadioGroup>
 );
 
+// formulario que va dentro del expediente: causa, asesoria, fecha de retorno y notas
 const FormularioCausa = ({ caso }: { caso: Caso }) => {
+  // emmpieza con la causa que ya tenga el caso, si no tiene queda vacio
   const [causa, setCausa] = useState(caso.causa ?? "");
   const [asesoria, setAsesoria] = useState("");
   const [fechaRetorno, setFechaRetorno] = useState("");
@@ -128,6 +150,7 @@ const FormularioCausa = ({ caso }: { caso: Caso }) => {
   return (
     <Box sx={{ display: "grid", gap: 2 }}>
       <Typography fontWeight={700}>Causa de la inasistencia</Typography>
+      {/* mismo estilo de tarjetas que OpcionesTarjeta pero con las causas directo */}
       <RadioGroup
         value={causa}
         onChange={(e) => setCausa(e.target.value)}
@@ -157,6 +180,7 @@ const FormularioCausa = ({ caso }: { caso: Caso }) => {
           value={asesoria}
           onChange={(e) => setAsesoria(e.target.value)}
         />
+        {/* type="date" hace que salga el calendario, el shrink evita que la etiqueta se encime con el formato */}
         <TextField
           label="Fecha probable de retorno"
           type="date"
@@ -176,13 +200,17 @@ const FormularioCausa = ({ caso }: { caso: Caso }) => {
   );
 };
 
+// lo que devuelve el dialogo de llamada al darle guardar
 type DatosLlamada = { resultado: string; causa: string; notas: string; hora: string };
  
+// opciones de como termino la llamada
 const RESULTADOS = ["Contestó", "No contestó", "Número equivocado"];
  
+// hora actual del dispositivo en formato 24h 
 const horaActual = () =>
   new Date().toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", hour12: false });
  
+// menu que sale al picar "Registrar llamada"
 const RegistrarLlamadaDialog = ({ caso, onClose, onGuardar }: {caso: Caso; onClose: () => void; onGuardar: (d: DatosLlamada) => void;}) => {
   const [hora] = useState(horaActual); 
   const [resultado, setResultado] = useState("");
@@ -232,6 +260,7 @@ const RegistrarLlamadaDialog = ({ caso, onClose, onGuardar }: {caso: Caso; onClo
  
 
  
+// panel de la derecha con todo el detalle del caso seleccionado
 const Expediente = ({ caso, onRegistrarLlamada  }: { caso?: Caso; onRegistrarLlamada: () => void }) => {
   if (!caso) {
     return (
@@ -244,6 +273,7 @@ const Expediente = ({ caso, onRegistrarLlamada  }: { caso?: Caso; onRegistrarLla
     <Card variant="outlined">
       <CardHeader title={`Expediente de ${caso.nombre}`} />
       <CardContent sx={{ display: "grid", gap: 3 }}>
+        {/* datos generales del caso en 3 columnas */}
         <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 2 }}>
           <Dato etiqueta="Niña o niño" valor={caso.nombre} />
           <Dato etiqueta="Sala" valor={caso.sala} />
@@ -251,7 +281,7 @@ const Expediente = ({ caso, onRegistrarLlamada  }: { caso?: Caso; onRegistrarLla
           <Dato etiqueta="Fecha de la falta" valor={caso.fechaFalta} />
           <Dato etiqueta="Estado" valor={ETIQUETA_ESTADO[caso.estado]} />
         </Box>
- 
+        {/* lista de todas las llamadas hechas, la mas reciente arriba */}
         <Box>
           <Typography fontWeight={700} gutterBottom>Historial de llamadas</Typography>
           {caso.intentos.length === 0 && <Typography variant="body2">Sin llamadas registradas.</Typography>}
@@ -281,6 +311,7 @@ const Expediente = ({ caso, onRegistrarLlamada  }: { caso?: Caso; onRegistrarLla
   );
 };
  
+// pantalla principal, aqui vive todo el estado y se conectan los demas componentes
 export const SeguimientoList = () => {
   const { identity } = useGetIdentity();
   const [casos, setCasos] = useState<Caso[]>(CASOS_EJEMPLO);
