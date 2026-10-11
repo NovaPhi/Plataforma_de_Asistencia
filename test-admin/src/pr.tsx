@@ -24,6 +24,7 @@ export const crearProductos = ()=>(
         <SimpleForm>
             <TextInput source="matricula" />
             <TextInput source="nombre" />
+            <TextInput source="curp" />
         </SimpleForm>
     </Create>
 );

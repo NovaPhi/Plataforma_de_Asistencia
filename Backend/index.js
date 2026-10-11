@@ -33,7 +33,7 @@ app.use(bodyParser.json());
 const PORT = process.env.PORT || 3000;
 const MONGO_URL = process.env.MONGO_URL ;
 
-mongoose.connect("mongodb://127.0.0.1:27017").then(() => {
+mongoose.connect(MONGO_URL).then(() => {
   console.log("Conectado a la base de datos");
   app.listen(PORT, () => {
     console.log(`Servidor escuchando en el puerto ${PORT}`);
@@ -93,20 +93,20 @@ async function getManyReference(collection, req, res){
 }
 
 async function getOne(collection, id, req,res){
-	let data=await modelos[collection].find({"id":id}).toArray();
-	res.json(data[0]);
+	let data=await modelos[collection].findOne({"_id":id}).exec();
+	res.json(data);
 }
 
 async function updateData(collection, req, res){
 	let valores=req.body;
-	valores["id"]=Number(valores["id"]);
-	let data=await modelos[collection].updateOne({"id":valores["id"]},{"$set":valores});
-	data=await modelos[collection].find({"id":valores["id"]}).project({"_id":0}).toArray();
-	res.json(data[0]);
+	valores["id"]=valores["id"];
+	let data=await modelos[collection].updateOne({"_id":valores["id"]},{"$set":valores});
+	data=await modelos[collection].findOne({"_id":valores["id"]}).exec();
+	res.json(data);
 }
 
 async function deleteData(collection, id, req, res){
-	let data=await modelos[collection].deleteOne({"id":id});
+	let data=await modelos[collection].deleteOne({"_id":id});
 	res.json(data);
 }
 
@@ -140,7 +140,7 @@ app.get("/productos", async (req,res)=>{
 });
 
 app.get("/Productos/:id", async(req, res)=>{
-	await getOne("infantes", Number(req.params.id), req, res);
+	await getOne("infantes", req.params.id, req, res);
 });
 
 app.put("/Productos/:id", async(req, res)=>{
@@ -148,7 +148,7 @@ app.put("/Productos/:id", async(req, res)=>{
 });
 
 app.delete("/Productos/:id", async(req, res)=>{
-	await deleteData("infantes", Number(req.params.id), req, res);
+	await deleteData("infantes", req.params.id, req, res);
 });
 
 app.post("/Productos/", async(req, res)=>{
