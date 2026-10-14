@@ -30,18 +30,18 @@ const TABS: { value: Estado; label: string }[] = [
 ];
  
 // traduce el estado interno al texto que ve el usuario (chip de la tarjeta y expediente)
+// Record obliga a tener una etiqueta por cada estado, si falta una marca error
 const ETIQUETA_ESTADO: Record<Estado, string> = {
   abierto: "Abierto",
   seguimiento: "En seguimiento",
   alta_medica: "Requiere alta médica",
   cerrado: "Cerrado",
 };
- 
 
 // opciones de causa, las usan el formulario del expediente y el dialogo de llamada
 const CAUSAS = ["Enfermedad en casa", "Accidente fuera del plantel", "Permiso particular o tramite", "Sin respuesta del tutor"];
  
-// datos temporales para ver el diseño, reemplazar cuando haya backend
+// datos temporales hechos por CLOUD para ver el diseño, reemplazar cuando haya backend
 const CASOS_EJEMPLO: Caso[] = [
   {
     id: "1", nombre: "Niño/a de ejemplo 1", sala: "Sala A", fechaFalta: "00/00/0000",
@@ -59,6 +59,7 @@ const CASOS_EJEMPLO: Caso[] = [
 // filtros de sala y fecha, por ahora solo son visuales (no filtran la lista)
 const Filtros = () => (
   <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", my: 2 }}>
+    {/* select de sala, solo tiene la opcion "todas" mientras no haya salas reales */}
     <TextField select size="small" label="Sala" defaultValue="" sx={{ minWidth: 200 }}>
       <MenuItem value="">Todas las salas</MenuItem>
     </TextField>
@@ -72,9 +73,8 @@ const Filtros = () => (
 // tarjeta de la lista de la izquierda, un resumen del caso
 // activo: es true si es el caso que esta abierto en el expediente, le pone el borde de color
 // onSelect: avisa al padre que se pico "Abrir expediente" para que lo muestre a la derecha
-const CasoCard = ({ caso, activo, onSelect }: {
-  caso: Caso; activo: boolean; onSelect: () => void;
-}) => (
+const CasoCard = ({ caso, activo, onSelect }: {caso: Caso; activo: boolean; onSelect: () => void;}) => (
+  // el borde es de color primario si es el caso seleccionado, si no es gris
   <Card variant="outlined" sx={{ borderWidth: 2, borderColor: activo ? "primary.main" : "divider" }}>
     <CardContent sx={{ display: "grid", gap: 1 }}>
       <Typography fontWeight={700}>{caso.nombre}</Typography>
@@ -87,12 +87,13 @@ const CasoCard = ({ caso, activo, onSelect }: {
       <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1 }}>
         <Box>
           <Typography variant="caption">Causa</Typography>
-          {/* muestra solo la ultima llamada (la primera del arreglo) */}
+          {/* ?? pone "Sin definir" cuando el caso todavia no tiene causa */}
           <Typography variant="body2">{caso.causa ?? "Sin definir"}</Typography>
         </Box>
         <Box>
           <Typography variant="caption">Intentos de contacto</Typography>
           <Typography variant="body2">
+            {/* muestra solo la ultima llamada (la primera del arreglo), si no hay ninguna dice "Ninguno" */}
             {caso.intentos[0] ? `${caso.intentos[0].fecha} · ${caso.intentos[0].resultado}` : "Ninguno"}
           </Typography>
         </Box>
@@ -117,11 +118,13 @@ const Dato = ({ etiqueta, valor }: { etiqueta: string; valor: string }) => (
 // valor: la opcion elegida, onChange: avisa cual eligio, columnas: cuantas por fila en pantalla grande
 // se usa en el dialogo de llamada (resultado y causa)
 const OpcionesTarjeta = ({ valor, onChange, opciones, columnas }: {valor: string; onChange: (v: string) => void; opciones: string[]; columnas: number;}) => (
+  // RadioGroup junta los radios para que solo uno pueda estar marcado
   <RadioGroup
     value={valor}
     onChange={(e) => onChange(e.target.value)}
     sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: `repeat(${columnas}, 1fr)` }, gap: 1.5 }}
   >
+    {/* map crea una tarjeta por cada opcion, key ayuda a react a distinguirlas */}
     {opciones.map((o) => (
       <FormControlLabel
         key={o}
@@ -144,8 +147,11 @@ const OpcionesTarjeta = ({ valor, onChange, opciones, columnas }: {valor: string
 const FormularioCausa = ({ caso }: { caso: Caso }) => {
   // emmpieza con la causa que ya tenga el caso, si no tiene queda vacio
   const [causa, setCausa] = useState(caso.causa ?? "");
+  // lo que se escribe en "Asesoria brindada"
   const [asesoria, setAsesoria] = useState("");
+  // fecha del calendario, guarda el texto en formato aaaa-mm-dd
   const [fechaRetorno, setFechaRetorno] = useState("");
+  // notas privadas del expediente
   const [notas, setNotas] = useState("");
   return (
     <Box sx={{ display: "grid", gap: 2 }}>
@@ -162,6 +168,7 @@ const FormularioCausa = ({ caso }: { caso: Caso }) => {
             value={c}
             control={<Radio />}
             label={c}
+            // resalta la causa elegida igual que OpcionesTarjeta
             sx={{
               m: 0, px: 1, py: 0.5, border: 2, borderRadius: 1,
               borderColor: causa === c ? "primary.main" : "divider",
@@ -172,6 +179,7 @@ const FormularioCausa = ({ caso }: { caso: Caso }) => {
         ))}
       </RadioGroup>
  
+       {/* asesoria y fecha lado a lado en pantalla grande */}
       <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr", sm: "3fr 2fr" } }}>
         <TextField
           label="Asesoría brindada"
@@ -190,6 +198,7 @@ const FormularioCausa = ({ caso }: { caso: Caso }) => {
           onChange={(e) => setFechaRetorno(e.target.value)}
         />
       </Box>
+      {/* multiline hace que sea un cuadro de texto grande, minRows es el "alto" minimo */}
       <TextField
         label="Notas confidenciales"
         multiline minRows={3} fullWidth
@@ -211,22 +220,27 @@ const horaActual = () =>
   new Date().toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", hour12: false });
  
 // menu que sale al picar "Registrar llamada"
+// caso: el caso al que se le registra la llamada, onClose: cierra el menu sin guardar nada, onGuardar: manda los datos capturados al padre (SeguimientoList) para que los agregue al caso
 const RegistrarLlamadaDialog = ({ caso, onClose, onGuardar }: {caso: Caso; onClose: () => void; onGuardar: (d: DatosLlamada) => void;}) => {
+  // la hora se toma una sola vez cuando se abre el menu
   const [hora] = useState(horaActual); 
   const [resultado, setResultado] = useState("");
   const [causa, setCausa] = useState(caso.causa ?? "");
   const [notas, setNotas] = useState("");
  
   return (
+    // onClose se dispara tambien al picar fuera del menu o con la tecla Esc
     <Dialog open onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         Registrar llamada
+        {/* la tecla Esc tambien cierra el menu, el chip solo lo avisa */}
         <Button variant="outlined" color="inherit" onClick={onClose}>
           Cerrar&nbsp;<Chip size="small" variant="outlined" label="Esc" />
         </Button>
       </DialogTitle>
  
       <DialogContent sx={{ display: "grid", gap: 2 }}>
+        {/* resumen del caso para que se sepa a quien se le esta registrando la llamada */}
         <Typography variant="body2" color="text.secondary">
           {caso.nombre} · Folio {caso.folio} · Hora de la llamada: <b>{hora}</b> (se registra sola)
         </Typography>
@@ -247,6 +261,7 @@ const RegistrarLlamadaDialog = ({ caso, onClose, onGuardar }: {caso: Caso; onClo
  
       <DialogActions sx={{ p: 2 }}>
         <Button
+          {/* no deja guardar hasta que se elija el resultado, la causa y las notas son opcionales */}
           variant="contained"
           disabled={!resultado}
           onClick={() => onGuardar({ resultado, causa, notas, hora })}
@@ -261,7 +276,9 @@ const RegistrarLlamadaDialog = ({ caso, onClose, onGuardar }: {caso: Caso; onClo
 
  
 // panel de la derecha con todo el detalle del caso seleccionado
+// onRegistrarLlamada: abre el menu de llamada
 const Expediente = ({ caso, onRegistrarLlamada  }: { caso?: Caso; onRegistrarLlamada: () => void }) => {
+  // si no hay caso elegido solo se muestra el mensaje y no se dibuja nada mas
   if (!caso) {
     return (
       <Card variant="outlined">
@@ -284,7 +301,9 @@ const Expediente = ({ caso, onRegistrarLlamada  }: { caso?: Caso; onRegistrarLla
         {/* lista de todas las llamadas hechas, la mas reciente arriba */}
         <Box>
           <Typography fontWeight={700} gutterBottom>Historial de llamadas</Typography>
+          {/* si no hay llamadas se avisa en lugar de dejar el espacio vacio */}
           {caso.intentos.length === 0 && <Typography variant="body2">Sin llamadas registradas.</Typography>}
+          {/* idx se usa como key porque los intentos todavia no tienen id propio */}
           {caso.intentos.map((i, idx) => (
             <Box key={idx} sx={{ display: "flex", gap: 1, alignItems: "flex-start", mb: 1 }}>
               <Box>
@@ -295,6 +314,7 @@ const Expediente = ({ caso, onRegistrarLlamada  }: { caso?: Caso; onRegistrarLla
           ))}
         </Box>
  
+        {/* el key hace que el formulario se reinicie al cambiar de caso y no arrastre lo escrito del anterior */}
         <FormularioCausa key={caso.id} caso={caso} />
  
         <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
@@ -302,6 +322,7 @@ const Expediente = ({ caso, onRegistrarLlamada  }: { caso?: Caso; onRegistrarLla
           <Button variant="outlined">
             Notificar a contactos de emergencia
           </Button>
+          {/* ml auto lo empuja a la derecha, color error lo pone rojo */}
           <Button variant="outlined" color="error" sx={{ ml: "auto" }}>
             Cerrar caso
           </Button>
@@ -313,6 +334,7 @@ const Expediente = ({ caso, onRegistrarLlamada  }: { caso?: Caso; onRegistrarLla
  
 // pantalla principal, aqui vive todo el estado y se conectan los demas componentes
 export const SeguimientoList = () => {
+  // datos del usuario logueado, se usa su nombre como responsable de la llamada
   const { identity } = useGetIdentity();
   const [casos, setCasos] = useState<Caso[]>(CASOS_EJEMPLO);
   const [dialogoAbierto, setDialogoAbierto] = useState(false);
@@ -320,16 +342,22 @@ export const SeguimientoList = () => {
   const [seleccionado, setSeleccionado] = useState<string | undefined>();
  
   const visibles = casos.filter((c) => c.estado === tab);
+  // busca el caso completo a partir del id para mostrarlo en el expediente
   const actual = casos.find((c) => c.id === seleccionado);
  
-const guardarLlamada = (d: DatosLlamada) => {
+// se ejecuta cuando se da "Guardar llamada" en el menu
+// arma el intento nuevo, lo pone hasta arriba del historial del caso seleccionado y cierra el menu
+  const guardarLlamada = (d: DatosLlamada) => {
     const fecha = new Date().toLocaleDateString("es-MX", { day: "2-digit", month: "2-digit", year: "numeric" });
+    // el intento que se va a agregar al historial, junta la fecha con la hora que ya traia el menu
     const intento: Intento = {
       fecha: `${fecha} ${d.hora}`,
       resultado: d.resultado,
       responsable: identity?.fullName ?? "",
       notas: d.notas,
     };
+    // solo cambia el caso seleccionado, los demas se quedan igual
+    // si se eligio una causa en el menu tambien se actualiza en el caso o conserva la anterior si viene vacia
     setCasos((prev) =>
       prev.map((c) =>
         c.id === seleccionado
@@ -344,6 +372,7 @@ const guardarLlamada = (d: DatosLlamada) => {
     <Card>
       <CardHeader title="Seguimiento de inasistencias" />
       <CardContent>
+        {/* cada pestaña muestra cuantos casos tiene ese estado, al cambiar de pestaña se actualiza la lista */}
         <Tabs value={tab} onChange={(_, v: Estado) => setTab(v)}>
           {TABS.map((t) => (
             <Tab
@@ -361,12 +390,14 @@ const guardarLlamada = (d: DatosLlamada) => {
             <Typography variant="caption" fontWeight={700}>
               {visibles.length} casos · ordenados por urgencia
             </Typography>
+            {/* una tarjeta por cada caso de la pestaña, la seleccionada se marca con activo */}
             {visibles.map((c) => (
               <CasoCard key={c.id} caso={c} activo={c.id === seleccionado} onSelect={() => setSeleccionado(c.id)} />
             ))}
           </Box>
           <Expediente caso={actual} onRegistrarLlamada={() => setDialogoAbierto(true)} />
         </Box>
+        {/* el menu solo existe mientras esta abierto, asi cada vez que se abre empieza limpio y con la hora nueva */}
         {actual && dialogoAbierto && (
           <RegistrarLlamadaDialog caso={actual} onClose={() => setDialogoAbierto(false)} onGuardar={guardarLlamada} />
         )}
