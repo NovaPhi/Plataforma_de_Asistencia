@@ -196,6 +196,7 @@ app.get("/Productos/:id", async(req, res)=>{
 	await getOne("infantes", req.params.id, req, res);
 });
 
+
 app.put("/Productos/:id", async(req, res)=>{
 	try{
 		let usuario=await dataUsuarios(req);
@@ -208,6 +209,7 @@ app.put("/Productos/:id", async(req, res)=>{
 		res.sendStatus(401);
 	}
 });
+
 
 app.delete("/Productos/:id", async(req, res)=>{
 	try{

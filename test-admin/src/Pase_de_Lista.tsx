@@ -1,3 +1,8 @@
+// Recive los alumnos en forma de array y regresa los alumnos que faltaron y presentes a bd
+// recive los presente y faltante de escaneo
+
+// LA API TE VA A REGRESAR UN OBJETO DE USUARIOS, EN EL FORNT VAS A PODER VER LAS ESTANCIAS 
+//EN LA PARTE DE CAMBIAR DE SALA, CON EL OBJETO DE LA API VAS A PODER MOSTRAR LAS SALAS QUE TIENE ESE USUAARIO
 
 import {
   Card, CardHeader, Menu, MenuItem, Button, Stack, CardContent, Box,
@@ -8,8 +13,9 @@ import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 
 
-
-const salas = ["A1", "A2"]; //este valor venga de BD despues
+//API
+// Recibir las salas en forma de array
+const salas = ["A1", "A2"]; //este valor venga de BD despues USUARIO.SALA
 
 
 type Estado = 
@@ -108,7 +114,7 @@ export const PasaLista = () => {
     // Marca de cada estudiante que es guardado por ID donde todos empiezan como presente
     // la funcion es un constructor
     const [marcas, setMarcas] = useState<Record<string, Estado>>(() =>
-        Object.fromEntries(estudiantes.map((e) => [e.Id, "Presente" as Estado]))
+        Object.fromEntries(estudiantes.map((e) => [e.Id, "Falta" as Estado]))
     );
     
     const marcar = (id: string, estado: Estado) => {

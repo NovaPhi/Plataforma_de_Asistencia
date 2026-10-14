@@ -6,13 +6,9 @@ import { Seguimientos } from "./Seguimiento";
 import { PasaLista } from "./Pase_de_Lista";
 import { Bitacora } from "./Bitacora";
 import { Historicos } from "./Datos_Historicos";
-import { Escaneo_Credencial } from "./Escaneo_QR";
-import { Seguimientos } from "./Seguimiento";
-import { PasaLista } from "./Pase_de_Lista";
-import { Bitacora } from "./Bitacora";
-import { Historicos } from "./Datos_Historicos";
+import { VBD } from "./VistaBD";
 import { dataProvider } from "./dataProvider";
-import authProvider from "./AuthProvider";
+import {authProvider} from "./AuthProvider";
 import { i18nProvider } from "./i18nProvider";
 import { Dashboard } from "./Dashboard";
 import PostIcon from "@mui/icons-material/Book";
@@ -24,11 +20,7 @@ export const App = () => (
     <Resource name="Escanear Credencial" list={Escaneo_Credencial}/>
     <Resource name="Bitacora" list={Bitacora} />
     <Resource name="Incidencias" list={Historicos}/>
-    <Resource name="Escaneo" list={Escaneo_Credencial}/> 
     <Resource name="Seguimiento" list={Seguimientos}/>
-    <Resource name="productos" list={listarProductos} edit={editarProductos} create={crearProductos} />
-    <CustomRoutes>
-      <Route path="/registrarse" element={<Registrarse />}/>
-    </CustomRoutes>
+    <Resource name="BD" list={VBD}/>
   </Admin>
 );

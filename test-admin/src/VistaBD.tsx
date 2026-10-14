@@ -2,7 +2,7 @@
 //LA API MANDA OBJETOS USA NOTACION PUNTO
 // recibe todos los bloques de la api y regresa cualquier cambio hecho en front
 
-import { Box, Card, CardContent, CardHeader, Stack } from "@mui/material"
+import { Box, Card, CardContent, CardHeader, Pagination, Stack } from "@mui/material"
 import {DataTable,ListContextProvider,ResourceContextProvider,useList,BooleanField,DateField, EmailField, Labeled, email,} from "react-admin"
 
 // ---- TEMP TEST DATA (remove later) ----
@@ -66,8 +66,8 @@ const mockUsuarios = Array.from({ length: 30 }, (_, i) => {
 })
 
 export const VBD = () => {
-    const listContext = useList({ data: mockInfantes, perPage: mockInfantes.length })
-    const listUsuarios = useList({ data: mockUsuarios, perPage: mockUsuarios.length })
+    const listContext = useList({ data: mockInfantes, perPage: 10 })
+    const listUsuarios = useList({ data: mockUsuarios, perPage: 10})
 
     return (
         <Stack spacing={2}>
@@ -80,19 +80,7 @@ export const VBD = () => {
                     <ListContextProvider value={listUsuarios}>
                         <CardContent sx={{pt: 0}}>
                             <Box>
-                                <DataTable
-                                    bulkActionButtons={false}
-                                    sx={{
-                                        maxHeight: "50vh",
-                                        "& .RaDataTable-tableWrapper": { maxHeight: "50vh", overflow: "auto" },
-                                        "& .MuiTableCell-head": {
-                                            position: "sticky",
-                                            top: 0,
-                                            zIndex: 1,
-                                            backgroundColor: "background.paper",
-                                        },
-                                    }}
-                                > 
+                                <DataTable bulkActionButtons={false} sx={{ maxHeight: "50vh", overflowY: "auto" }}>
                                     <DataTable.Col source="NumEmpleado"/>
                                     <DataTable.Col source="Usuario"/>
                                     <DataTable.Col source="Pssword"/>
@@ -105,6 +93,7 @@ export const VBD = () => {
                                     <DataTable.Col source="Activo" field={BooleanField}/>
                                     <DataTable.Col source="Rol"/>
                                 </DataTable>
+                                <Pagination/>  
                             </Box>
                         </CardContent>
                     </ListContextProvider>
@@ -116,29 +105,17 @@ export const VBD = () => {
             </Card>
             <Card>
                 <CardHeader title="Grupos"/>
+                {/* <DataTable source="Infantes.Matricula" label="Matricula"/>*/}
             </Card> 
             <Card>
                 <CardHeader title="Salas"/>
             </Card>
             <Card sx={{ minWidth: 0, maxWidth: "100%" }}>
-                <CardHeader title="Infantes" />
-                <ResourceContextProvider value="infantes">
-                    <ListContextProvider value={listContext}>
-                        <CardContent sx={{ pt: 0 }}>
-                            <Box>
-                                <DataTable                                     
-                                    bulkActionButtons={false}
-                                    sx={{
-                                        maxHeight: "50vh",
-                                        "& .RaDataTable-tableWrapper": { maxHeight: "50vh", overflow: "auto" },
-                                        "& .MuiTableCell-head": {
-                                            position: "sticky",
-                                            top: 0,
-                                            zIndex: 1,
-                                            backgroundColor: "background.paper",
-                                        },
-                                    }}
-                                >
+                <CardHeader title="Infantes" />     
+                <CardContent sx={{ pt: 0 }}>
+                    <ResourceContextProvider value="infantes">
+                        <ListContextProvider value={listContext}>
+                                <DataTable bulkActionButtons={false} sx={{ maxHeight: "50vh", overflowY: "auto" }}>
                                     <DataTable.Col source="Id"/>
                                     <DataTable.Col source="Matricula"/>
                                     <DataTable.Col source="Ur"/>
@@ -153,11 +130,11 @@ export const VBD = () => {
                                     <DataTable.Col source="Activo" field={BooleanField}/>
                                     <DataTable.Col source="Inscripcion" field={DateField}/>
                                 </DataTable>
-                            </Box>
-                        </CardContent>
-                    </ListContextProvider>
-                </ResourceContextProvider>
-                
+                            <Pagination />
+                        </ListContextProvider>
+                    </ResourceContextProvider>        
+                </CardContent>
+                    
             </Card>
             <Card>
                 <CardHeader title="tutores"/>
