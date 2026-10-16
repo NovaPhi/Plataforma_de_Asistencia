@@ -6,7 +6,7 @@ import {Alert, Box, Button, Card, CardContent, CardHeader, Chip, Dialog, DialogA
 type Estado = "abierto" | "seguimiento" | "alta_medica" | "cerrado";
  
 // una llamada que se hizo al tutor (cada vez que se guarda "Registrar llamada" se crea una)
-type Intento = { fecha: string; resultado: string; responsable: string };
+type Intento = { fecha: string; resultado: string; responsable: string; notas?: string };
  
 // un caso de inasistencia, es lo que se muestra en la tarjeta y en el expediente
 type Caso = {
@@ -261,7 +261,7 @@ const RegistrarLlamadaDialog = ({ caso, onClose, onGuardar }: {caso: Caso; onClo
  
       <DialogActions sx={{ p: 2 }}>
         <Button
-          {/* no deja guardar hasta que se elija el resultado, la causa y las notas son opcionales */}
+          // no deja guardar hasta que se elija el resultado, la causa y las notas son opcionales 
           variant="contained"
           disabled={!resultado}
           onClick={() => onGuardar({ resultado, causa, notas, hora })}

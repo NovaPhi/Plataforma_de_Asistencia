@@ -25,12 +25,19 @@ type Registro = {
   tipo: Tipo;
 };
 
-//datos temporales
-const estudiantes = [
-  { Id: "1", Nombre: "Camila Aguilar Soto", Matricula: "20230112" },
-  { Id: "2", Nombre: "Diego Castillo Mora", Matricula: "20230135" },
-  { Id: "3", Nombre: "Valeria Núñez Pérez", Matricula: "20230148" },
-];
+type Infante ={
+    _id: string;
+    nombre: string;
+    paterno: string;
+    materno: string;
+    matricula: string;
+};
+
+type Metodo = "QR" | "MANUAL";
+
+const GRUPO_ID = "ID_DEL_GRUPO";
+
+const nombreCompleto = (i:Infante) => `${i.nombre} ${i.paterno} ${i.materno}`; 
 
 // devuelve las iniciales de un nombre para que el resultado se vea chido como en correos y asi
 const iniciales = (nombre: string) =>
@@ -102,14 +109,89 @@ export const Escaneo_Credencial = () =>{
     const [errorScan, setErrorScan] = useState("");
     const [Registros, setRegistros] = useState<Registro[]>([]);
     const [manual,setManual] = useState("");
+    const [infantes, setInfantes] = useState<Infante[]>([]);
+
+
+    /*
+    * se llama una vez al abrir la pantalla
+    * no recibe nada
+    * regresa un arreglo con los infantes que puede accesar el usaurio
+    * estilo [{_id,nombre, etc..}]
+    * la matricula debe ser string ya que asi viene en el qr y la trae como texto y es lo que usa para comparar valor y encontrar chamacos
+    * no mandes los infantes con activo: false que se supone que estan borrados
+    * seguimos con los mismos mensajes de falla de 4xx o 5xx
+    */
+    const handleGetData = async() => {
+        const request = new Request("http://localhost:3000/Pase_de_Lista/infantes", {
+        method: "GET",
+        headers: new Headers({ "Content-Type": "application/json" }),
+    });
+        try{
+            const res = await fetch(request);
+            if (res.status < 200 || res.status >= 300){
+                throw new Error(res.statusText);
+            }
+            setInfantes(await res.json());
+        } catch{
+            throw new Error("No se pudo cargar la lista de infantes");
+        }
+    };
+
+    /*
+     * esto se llama cada vez que hay un escaneo ya sea qr o manual
+    * recibe el jaosn con infante (id), grupo, si llego o se va, y el metodo osea si es por qr o manual
+    * si es que llego guarda la hora de ingreso el metodo y la fecha del infante
+    * regres 2xx si se guarda (esto es pa todo)
+    * EL STATUS PRESENTE LO TIENE QUE CAMBIAR AUTOMATICAMENTE EN API POQUE NO ES SEGURO Y SE PUEDE FALSIFICAR UN ESTADO PRESENTE
+    * QUE UN TRIGGER EN BACK LO PONGA CON LA HORA DE INGRESO
+    * SI VIENE UN STATUS ESPECIAL DE TICKECT NO LO CAMBIES 
+    * SE EL CHAMACO VA A SALIR Y NO EXISTE HORA DE ENTRADA LA RESPUESTA DEBERA SER UN ERROR 4XX
+    * si existe hora de ingreso guarda la hora de engreso y no cambia el status 
+    * lo de cliente Uuid si esta repetido ignorar si no se crea otro registro para hacer mas facil luego hacer el gualdado local
+    */
+    const handleSentData = async (infantes: Infante, metodo: Metodo) => {
+        const request = new Request("http://localhost:3000/Pase_de_Lista/escaneo", {
+            method: "POST",
+            body: JSON.stringify({
+                infantes: infantes._id,
+                grupo: GRUPO_ID,
+                tipo,
+                metodo,
+                fecha: new Date(). toLocaleDateString("sv-SE"),
+                turno: 'MATUTINO',
+                capturadoEN: new Date().toISOString(),
+                // genera un id unico por escaneo que es usado para evitar registros duplicados
+                clientUuid: crypto.randomUUID(), 
+            }),
+            headers: new Headers({"Content-Type": "application/json"}),
+        });
+        let res: Response;
+        try{
+            res = await fetch(request);
+        } catch{
+            throw new Error("Error de conexion con el servidor");
+        }
+        if (res.status < 200 || res.status >= 300){
+            const msg = await res.text();
+            throw new Error(msg || res.statusText);
+        }
+    };
+
+    useEffect(()=>{
+        handleGetData().catch((error)=>{
+            console.error(error);
+            setErrorScan(error.message);
+        });
+    }, []);
+    
 
     // se llama cuando encuentra el qr o se le da el texto manual
-    const alEscanear = (texto: string) => {
+    const alEscanear = async (texto: string, metodo:Metodo) => {
         // limpia espacios
         const matricula = texto.trim();
         if (!matricula) return;
         // Busca al bro con la matricula que coincida
-        const est = estudiantes.find((e) => e.Matricula === texto.trim());
+        const est = infantes.find((i) => i.matricula === matricula);
         
         // no existe muestra el error y termina
         if(!est) {
@@ -123,19 +205,30 @@ export const Escaneo_Credencial = () =>{
             minute: "2-digit",
             hour12: false,
         });
+
+        // debe validar la reglas de egreso sin ingreso
+        try{
+            await handleSentData(est, metodo);
+        } catch(error){
+            console.error(error);
+            setLeido(null);
+            setErrorScan((error as Error).message);
+            return;
+        }
         
         //limpia el error si es una buena lectura y lo muestra aqui va le post a la api con la regla de que no hay egreso sin ingreso lo valida con la backend
         //AGREGAR MENSAJE DE ERROR CUANDO INTENTA SALIR SIN ENTRAR
         setErrorScan("");
         setLeido({
-            Nombre: est.Nombre,
-            Matricula: est.Matricula,
+            Nombre: nombreCompleto(est),
+            Matricula: est.matricula,
             tipo,
             Hora:hora,
         });
+        setManual("");
         // agrega registro al inicio de la lista 
         setRegistros((prev) => 
-            [{Id: `${est.Id}-${Date.now()}`, Hora: hora, Nombre: est.Nombre, tipo }, ...prev]
+            [{Id: `${est._id}-${Date.now()}`, Hora: hora, Nombre: est.nombre, tipo }, ...prev]
         );
 
         setManual("");
@@ -204,7 +297,7 @@ export const Escaneo_Credencial = () =>{
                         }}
                     >
                         {/*cada Qr leido lo manda a la funcion de escaneo*/}
-                        <LectorQR onScan={alEscanear}/>
+                        <LectorQR onScan={(t) => alEscanear(t,"QR")}/>
                     </Box>
                     {/*instrucciones para el usuario*/}
                     <Typography variant="h6" gutterBottom align="center">
@@ -227,7 +320,7 @@ export const Escaneo_Credencial = () =>{
                             {/*tiene si fue valido error o esta esperando*/} 
                             {leido ? (
                                 <>
-                                // datos del estudiante con iniciales nombre y matricula
+                                {/*datos del estudiante con iniciales nombre y matricula*/}
                                 <Box sx={{display: "flex", alignItems: "center", gap: 2, my:2}}>
                                     <Avatar sx={{width:56, height: 56}}> {iniciales(leido.Nombre)}</Avatar>
                                     <Box>
@@ -239,7 +332,7 @@ export const Escaneo_Credencial = () =>{
                                         </Typography>
                                     </Box>
                                 </Box>
-                                // confirmaacion con severity que pone color dependiendo y el tipo de movimiento y hora
+                                {/*confirmacion con severity que pone color dependiendo y el tipo de movimiento y hora*/}
                                 <Alert severity="success">
                                     <strong>
                                         {leido.tipo} registrado {leido.Hora}
@@ -276,14 +369,14 @@ export const Escaneo_Credencial = () =>{
                             placeholder="8 Digitos"
                             value={manual}
                             onChange={(e) => setManual(e.target.value)}
-                            onKeyDown={(e) => e.key === "Enter" && alEscanear(manual)}
+                            onKeyDown={(e) => e.key === "Enter" && alEscanear(manual, "MANUAL")}
                             sx={{ flex: 1, maxWidth: { sm: 420 } }}
                         />
                     </Box>
                     {/*boton que busca con el texto escrito que es la misma logica que qr pero el texto lo ingresamos manualmente*/}
                     <Button
                     variant="contained"
-                    onClick={() => alEscanear(manual)}
+                    onClick={() => alEscanear(manual, "MANUAL")}
                     sx ={{minWidth: {sm:150},fontWeight:600}} 
                     >    
                     Buscar

@@ -96,7 +96,7 @@ type Filtro = { sala: string; tipo: string; gravedad: string };
 const Filtros = ({ filtro, salas, onChange }: {filtro: Filtro; salas: string[]; onChange: (f: Filtro) => void;}) => (
   <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", my: 2 }}>
     <TextField select size="small" label="Sala" value={filtro.sala} sx={{ minWidth: 200 }}
-      {/* ...filtro copia los otros dos filtros y solo cambia el campo que se toco */}
+      //...filtro copia los otros dos filtros y solo cambia el campo que se toco 
       onChange={(e) => onChange({ ...filtro, sala: e.target.value })}>
       <MenuItem value="">Todas las salas</MenuItem>
       {salas.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
