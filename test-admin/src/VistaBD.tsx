@@ -74,6 +74,19 @@ const handleEdit = (coleccion: Coleccion, id:string, datos: object) =>
 const handleDelete = (coleccion:Coleccion, id:string) =>
     handleEdit(coleccion, id, {activo: false});
 
+
+/**
+ * Funcion auxiliar para los titulos de usuario
+ */
+const titulosColeccion: Record<Coleccion, { singular: string; nuevo: string }> = {
+    usuarios: { singular: "usuario", nuevo: "Nuevo usuario" },
+    estancias: { singular: "estancia", nuevo: "Nueva estancia" },
+    grupos: { singular: "grupo", nuevo: "Nuevo grupo" },
+    salas: { singular: "sala", nuevo: "Nueva sala" },
+    infantes: { singular: "infante", nuevo: "Nuevo infante" },
+    tutores: { singular: "tutor", nuevo: "Nuevo tutor" },
+};
+
 export const VBD = () => {
 
     // se usan los hooks use state para renderizar la info y cambiar por decier asi el estado de 
@@ -191,7 +204,7 @@ export const VBD = () => {
             <Card sx={{ minWidth: 0, maxWidth: "100%" }}>
                 <CardHeader 
                     title="Usuarios"
-                    action={<Button variant = "contained" onClick={() => abrirNuevo("usuarios")}> Nuevo </Button>}
+                    action={<Button variant = "contained" onClick={() => abrirNuevo("usuarios")}> Nuevo Usuario</Button>}
                 
                 />
                 {/*Resource context provider y list context provider le dan a la Datatable los datos sin usar el dataprovider y solo con los datos que recibe*/}
@@ -229,7 +242,10 @@ export const VBD = () => {
                 </ResourceContextProvider>
             </Card>
             <Card>
-                <CardHeader title="Estancias"/>
+                <CardHeader 
+                    title="Estancias"
+                    action={<Button variant = "contained" onClick={() => abrirNuevo("estancias")}> Nueva Estancia</Button>}
+                />
                 <ResourceContextProvider value="Estancias">
                     <ListContextProvider value={listEstancias}>
                         <CardContent sx={{pt: 0}}>
@@ -259,7 +275,10 @@ export const VBD = () => {
                 
             </Card>
             <Card>
-                <CardHeader title="Grupos"/>
+                <CardHeader 
+                    title="Grupos"
+                    action={<Button variant = "contained" onClick={() => abrirNuevo("grupos")}> Nuevo Grupo </Button>}
+                />
                 {/* <DataTable source="Infantes.Matricula" label="Matricula"/>*/}
                 <ResourceContextProvider value="Grupos">
                     <ListContextProvider value={listGrupos}>
@@ -282,7 +301,10 @@ export const VBD = () => {
                 </ResourceContextProvider>
             </Card>
             <Card sx={{ minWidth: 0, maxWidth: "100%" }}>
-                <CardHeader title="Infantes" />     
+                <CardHeader 
+                    title="Infantes" 
+                    action={<Button variant = "contained" onClick={() => abrirNuevo("infantes")}> Nuevo Infante</Button>}
+                />     
                 <CardContent sx={{ pt: 0 }}>
                     <ResourceContextProvider value="infantes">
                         <ListContextProvider value={listInfantes}>
@@ -313,7 +335,10 @@ export const VBD = () => {
                 </CardContent>
             </Card>
             <Card>
-                <CardHeader title="Tutores"/>
+                <CardHeader 
+                    title="Tutores"
+                    action={<Button variant = "contained" onClick={() => abrirNuevo("tutores")}> Nuevo Tutor</Button>}
+                />
                 <CardContent sx={{pt: 0}}>
                     <ResourceContextProvider value="Tutores">
                         <ListContextProvider value={listTutores}>
@@ -350,7 +375,9 @@ export const VBD = () => {
             {dialogo && (
                 <Dialog open onClose={() => setDialogo(null)} fullWidth maxWidth="sm">
                     <DialogTitle>
-                        {dialogo.registro ? "Editar" : "Nuevo"}, {dialogo.coleccion}
+                        {dialogo.registro 
+                        ? `Editar ${titulosColeccion[dialogo.coleccion]}.singular` 
+                        : titulosColeccion[dialogo.coleccion].nuevo}
                     </DialogTitle>
 
                     <DialogContent sx={{display: "grid", gap: 2, pt:2}}>
