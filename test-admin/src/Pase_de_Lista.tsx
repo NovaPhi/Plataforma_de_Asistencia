@@ -65,7 +65,9 @@ export const PasaLista = () => {
     const handleGetData = async () => {
         const request = new Request("http://localhost:3000/infantes", {
             method: "GET",
-            headers: new Headers({ "Content-Type": "application/json" }),
+            headers: new Headers({ "Content-Type": "application/json",
+                "Authentication": sessionStorage.getItem("auth") ?? "",
+            }),
         });
         try {
             const res = await fetch(request);

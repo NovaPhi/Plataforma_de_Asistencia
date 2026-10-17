@@ -8,10 +8,13 @@ import { Bitacora } from "./Bitacora";
 import { HistorialList } from "./Datos_Historicos";
 import { VBD } from "./VistaBD";
 import { dataProvider } from "./dataProvider";
-import {authProvider} from "./AuthProvider";
+import authProvider from "./AuthProvider";
 import { i18nProvider } from "./i18nProvider";
 import { Dashboard } from "./Dashboard";
 import PostIcon from "@mui/icons-material/Book";
+import Registrarse from "./registrarse";
+import {Route} from "react-router-dom";
+
  
 export const App = () => (
   <Admin authProvider={authProvider} i18nProvider={i18nProvider} dataProvider={dataProvider} dashboard={Dashboard} layout={Layout} theme={theme}>
@@ -22,5 +25,8 @@ export const App = () => (
     <Resource name="Incidencias" list={HistorialList}/>
     <Resource name="Seguimiento" list={SeguimientoList}/>
     <Resource name="BD" list={VBD}/>
+    <CustomRoutes>
+            <Route path="/registrarse" element={<Registrarse />}/>
+        </CustomRoutes>
   </Admin>
 );

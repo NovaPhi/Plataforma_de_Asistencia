@@ -146,13 +146,19 @@ async function getOne(collection, id, req,res){
 	res.json(data);
 }
 
+async function getAll(collection, req, res){
+	let query=modelos[collection].find({});
+	let data=await query.exec();
+	res.json(data);
+}
+
 // Actualiza un registro de una coleccion por su id
 async function updateData(collection, req, res){
 	let valores=req.body;
 	valores["id"]=valores["id"];
-	let data=await modelos[collection].updateOne({"_id":valores["id"]},{"$set":valores});
-	data=await modelos[collection].findOne({"_id":valores["id"]}).exec();
-	res.json(data);
+	let r = await modelos[collection].updateOne({ _id: req.params.id }, { $set: valores });
+	r =await modelos[collection].findOne({"_id":valores["id"]}).exec();
+	res.json(r);
 }
 
 // Borra un registro de una coleccion por su id
@@ -162,20 +168,45 @@ async function deleteData(collection, id, req, res){
 }
 
 // Crea un registro de una coleccion
-async function createData(collection, req, res){
-	let valores=req.body;
-	valores["id"]=Number(valores["id"]);
-	let data=await modelos[collection].create(valores);
-	res.json(data);
+async function createData(collection, req, res) {
+	if (!modelos[collection]) {
+		return res.status(404).json({ error: "Colección no válida" });
+	}
 
+	// Copia del body sin los campos que nunca deben venir del cliente
+	delete req.body._id;
+	delete req.body.id;
+	delete req.body.__v;
+	delete req.body.passwordHash;
+	req.body.activo = true;
+
+	// Los usuarios necesitan contraseña: se guarda el hash, nunca el texto
+	if (collection === "usuarios") {
+		if (!req.body.password) {
+			return res.status(400).json({ error: "La contraseña es obligatoria" });
+		}
+		req.body.passwordHash = await argon2.hash(req.body.password, {
+			type: argon2.argon2id,
+			memoryCost: 64 * 1024,
+			timeCost: 3,
+			parallelism: 1
+		});
+		delete req.body.password; // nunca se guarda el texto plano
+	}
+
+	if (typeof req.body.rol === "string") req.body.rol = [req.body.rol];
+
+	await modelos[collection].create(req.body);
+	res.sendStatus(201);
 }
 
 
-
-app.get("/productos", async (req,res)=>{
+/*
+app.get("/", async (req,res)=>{
 	try{
 		let usuario=await dataUsuarios(req);
 		let campos=camposVisibles(usuario);
+		console.log("Entro");
 		if(campos!==null && campos.length==0){
 			res.sendStatus(403);
 			return;
@@ -190,10 +221,143 @@ app.get("/productos", async (req,res)=>{
 	}catch{
 		res.sendStatus(401);	
 	}
-});
+});*/
 
 app.get("/Productos/:id", async(req, res)=>{
 	await getOne("infantes", req.params.id, req, res);
+});
+
+app.get("/Pase_de_Lista/infantes", async (req, res) => {
+    const data = await Infante.find({ activo: { $ne: false } }).lean();
+    res.json(data);
+});
+
+app.patch("/Pase_de_Lista/base_de_datos/:coleccion/:id", async (req, res) => {
+	try {
+		let usuario = await dataUsuarios(req);
+		if (!puedeModificar(usuario)) {
+			return res.sendStatus(403);
+		}
+		await updateData(req.params.coleccion, req, res);
+	} catch (error) {
+		console.error("ERROR EN PATCH:", error.message);
+		res.sendStatus(401);
+	}
+});
+app.post("/Pase_de_Lista/base_de_datos/:coleccion", async (req, res) => {
+	try {
+		let usuario = await dataUsuarios(req);
+		if (!puedeModificar(usuario)) {
+			return res.sendStatus(403);
+		}
+
+		await createData(req.params.coleccion, req, res);
+	} catch (error) {
+		console.error("ERROR EN POST:", error.message);
+		res.sendStatus(401);
+	}
+});
+
+app.get("/infantes", async (req, res) => {
+	try {
+		const usuario = await dataUsuarios(req);
+		const grupos = await Grupo.find({ educador: usuario.usuario }).lean();
+		const infanteIds = grupos.flatMap(grupo => grupo.infantes);
+
+		const infantes = await Infante.find({
+			_id: { $in: infanteIds },
+			activo: { $ne: false }
+		}).lean();
+
+		const asistencias = await Asistencia.find({
+			infante: { $in: infantes.map(i => i._id) },
+			deleted_at: null
+		})
+			.sort({ fecha: -1, capturadoEn: -1 })
+			.lean();
+
+		// Ordenadas de más reciente a más antigua: la primera de cada niño es la que cuenta
+		const estatusPorInfante = new Map();
+		for (const a of asistencias) {
+			const key = String(a.infante);
+			if (!estatusPorInfante.has(key)) {
+				estatusPorInfante.set(key, a.estatus);
+			}
+		}
+
+		const resultado = infantes.map(infante => ({
+			nombre: infante.nombre,
+			paterno: infante.paterno,
+			materno: infante.materno,
+			matricula: infante.matricula,
+			estatus: estatusPorInfante.get(String(infante._id)) ?? null
+		}));
+		console.log("estatusPorInfante", estatusPorInfante);
+		res.json(resultado);
+	} catch (error) {
+		console.error("Error en infantes:", error);
+		res.status(500).json({ error: "Error al obtener los infantes" });
+	}
+});
+
+app.get("/PASE_DE_LISTA/base_de_datos", async (req, res) => {
+	try {
+
+		const resultado = {};
+		//map no espera a que termine cada iteracion, por eso se usa Promise.all para esperar a que todas terminen
+		// Promise.all espera a que todas terminen y devuelve un array con los resultados
+		await Promise.all(
+			Object.entries(modelos).map(async ([nombre, modelo]) => {
+				// $ne: false excluye solo los borrados lógicos (activo: false)
+				// y no descarta las colecciones/registros que no tienen el campo "activo"
+				let query = modelo.find({ activo: { $ne: false } });
+
+				
+
+				// lean() devuelve objetos planos: se queda el _id (sin pasar por el toJSON que lo borra)
+				// y los ObjectId, incluido el educador de grupos, viajan como string al serializar
+				resultado[nombre] = await query.lean();
+			})
+		);
+
+		// Cada colección siempre existe en la respuesta; si está vacía queda []
+		res.json(resultado);
+	} catch (error) {
+	
+		console.error("Error en base_de_datos:", error);
+		res.status(500).json({ error: "Error al obtener la base de datos" });
+	}
+});
+
+
+app.post("/Pase_de_Lista/escaneo", async (req, res) => {
+  try {
+    const { matricula, grupo, tipo, metodo, fecha, turno, capturadoEN, clientUuid } = req.body;
+
+	if (!matricula || !grupo || !tipo || !clientUuid) {
+	return res.status(400).json({ error: "Faltan campos obligatorios" });
+	}
+
+	const inf = await Infante.findOne({ matricula });
+	if (!inf) return res.status(404).json({ error: "Infante no encontrado" });
+	if(inf.activo === false) return res.status(400).json({ error: "Infante inactivo" });
+	const nueva = await modelos["asistencias"].create({
+	infante: inf._id,
+	grupo, tipo, metodo, fecha, turno, horaIngreso:capturadoEN, clientUuid,
+	});
+
+    res.status(201).json(nueva);
+  	} catch (error) {
+		if (error.code === 11000) {
+		const existente = await Asistencia.findOne({ clientUuid: req.body.clientUuid });
+		return res.status(200).json(existente);
+		}
+		console.error("Error al registrar asistencia:", error);
+		if (error.name === "ValidationError") {
+		return res.status(400).json({ error: error.message });
+		}
+		res.status(500).json({ error: error.message });
+	}
 });
 
 

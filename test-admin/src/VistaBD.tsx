@@ -31,7 +31,9 @@ const enviar = async (method: "POST" | "PATCH", url: string, body:object) => {
     const request = new Request(url, {
         method,
         body: JSON.stringify(body),
-        headers: new Headers({"Content-Type": "application/json"}),
+        headers: new Headers({"Content-Type": "application/json",
+             "Authentication": sessionStorage.getItem("auth") ?? "",
+        }),
     });
     let res: Response;
     try{
@@ -161,7 +163,9 @@ export const VBD = () => {
     const handleGetData = async () => {
         const request = new Request("http://localhost:3000/PASE_DE_LISTA/base_de_datos", {
             method: "GET",
-            headers: new Headers({"Content-Type": "application/json"}),
+            headers: new Headers({"Content-Type": "application/json",
+                    "Authentication": sessionStorage.getItem("auth") ?? "",
+            }),
         });
         try{
             const res = await fetch(request);
@@ -213,15 +217,15 @@ export const VBD = () => {
                         <CardContent sx={{pt: 0}}>
                             <Box>
                                 <DataTable bulkActionButtons={false} >
-                                    <DataTable.Col source="NumEmpleado"/>
-                                    <DataTable.Col source="Usuario"/>
-                                    <DataTable.Col source="Nombre"/>
-                                    <DataTable.Col source="Paterno"/>
-                                    <DataTable.Col source="Materno"/>
-                                    <DataTable.Col source="Correo" field={EmailField}>
+                                    <DataTable.Col source="numeroEmpleado"/>
+                                    <DataTable.Col source="usuario"/>
+                                    <DataTable.Col source="nombre"/>
+                                    <DataTable.Col source="paterno"/>
+                                    <DataTable.Col source="materno"/>
+                                    <DataTable.Col source="correo" field={EmailField}>
                                     </DataTable.Col>
-                                    <DataTable.Col source="Telefono"/>
-                                    <DataTable.Col source="Rol"/>
+                                    <DataTable.Col source="telefono"/>
+                                    <DataTable.Col source="rol"/>
                                     <DataTable.Col label="Acciones" render={(r:Register) => (
                                         <Box sx={{display: "flex", gap: 1}}>
                                             <Button size="small" onClick={() => abrirEditar("usuarios", r)}>Editar</Button>
@@ -251,14 +255,14 @@ export const VBD = () => {
                         <CardContent sx={{pt: 0}}>
                             <Box>
                                 <DataTable bulkActionButtons={false}>
-                                    <DataTable.Col source="EBDI"/>
+                                    <DataTable.Col source="ebdi"/>
                                     <DataTable.Col source="nombre"/>
-                                    <DataTable.Col source="Ur"/>
-                                    <DataTable.Col source="Domicilio"/>
+                                    <DataTable.Col source="ur"/>
+                                    <DataTable.Col source="domicilio"/>
                                     <DataTable.Col source="telefono" />
                                     {/*use notacion punto por lo que quedamos que lo recibe como un objeto y no como arreglo AVISAR PARA CAMBIAR */}
-                                    <DataTable.Col source="salas.nombre" label="Sala"/>
-                                    <DataTable.Col source="salas.capacidad" label="Capacidad de la sala"/>
+                                    <DataTable.Col source="salas.0.nombre" label="Sala"/>
+                                    <DataTable.Col source="salas.0.capacidad" label="Capacidad de la sala"/>
                                     <DataTable.Col label="Acciones" render={(r:Register) => (
                                         <Box sx={{display: "flex", gap: 1}}>
                                             <Button size="small" onClick={() => abrirEditar("estancias", r)}>Editar</Button>
@@ -283,9 +287,9 @@ export const VBD = () => {
                 <ResourceContextProvider value="Grupos">
                     <ListContextProvider value={listGrupos}>
                         <DataTable bulkActionButtons={false}>
-                            <DataTable.Col source="estancia._id" label="Id de estancia"/>
+                            <DataTable.Col source="_id" label="Id de estancia"/>
                             <DataTable.Col source="sala"/>
-                            <DataTable.Col source="cicloescolar"/>
+                            <DataTable.Col source="cicloEscolar"/>
                             <DataTable.Col source="turno"/>
                             <DataTable.Col source="educador"/>
                             <DataTable.Col label="Acciones" render={(r:Register) => (
@@ -309,18 +313,18 @@ export const VBD = () => {
                     <ResourceContextProvider value="infantes">
                         <ListContextProvider value={listInfantes}>
                             <DataTable bulkActionButtons={false}>
-                                <DataTable.Col source="Id"/>
-                                <DataTable.Col source="Matricula"/>
-                                <DataTable.Col source="Ur"/>
-                                <DataTable.Col source="EBDI"/>
-                                <DataTable.Col source="Nombre"/>
-                                <DataTable.Col source="Paterno"/>
-                                <DataTable.Col source="Materno"/>
-                                <DataTable.Col source="Genero"/>
-                                <DataTable.Col source="Curp"/>
-                                <DataTable.Col source="Fnac" field={DateField}/>
-                                <DataTable.Col source="Freg" field={DateField}/>
-                                <DataTable.Col source="Inscripcion" field={DateField}/>
+                                <DataTable.Col source="_id" label="Id"/>
+                                <DataTable.Col source="matricula"/>
+                                <DataTable.Col source="ur"/>
+                                <DataTable.Col source="ebdi"/>
+                                <DataTable.Col source="nombre"/>
+                                <DataTable.Col source="paterno"/>
+                                <DataTable.Col source="materno"/>
+                                <DataTable.Col source="genero"/>
+                                <DataTable.Col source="curp"/>
+                                <DataTable.Col source="fnac" field={DateField}/>
+                                <DataTable.Col source="freg" field={DateField}/>
+                                <DataTable.Col source="inscripcion" field={DateField}/>
                                 <DataTable.Col label="Acciones" render={(r:Register) => (
                                     <Box sx={{display: "flex", gap: 1}}>
                                         <Button size="small" onClick={() => abrirEditar("infantes", r)}>Editar</Button>
