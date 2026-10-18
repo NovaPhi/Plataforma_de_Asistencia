@@ -5,6 +5,9 @@ import cors from "cors";
 import bodyParser from "body-parser";
 import argon2 from "argon2";
 import jwt from "jsonwebtoken";
+import fs from "fs";
+import https from "https";
+
 
 import Usuario from "./models/Usuarios.js";
 import Infante from "./models/Infantes.js";
@@ -18,6 +21,8 @@ import NotaConfidencial from "./models/NotasConfidenciales.js";
 import Consentimiento from "./models/Consentimientos.js";
 import Bitacora from "./models/Bitacora.js";
 import Historico from "./models/Historico.js";
+
+
 
 // React Admin necesita un campo "id" en cada registro: se manda el _id como id
 mongoose.set("toJSON", {
@@ -33,11 +38,18 @@ app.use(bodyParser.json());
 const PORT = process.env.PORT || 3000;
 const MONGO_URL = process.env.MONGO_URL ;
 
+const options={
+	key: fs.readFileSync("backend.key"),
+	cert: fs.readFileSync("backend.crt")
+};
+
+
+
 mongoose.connect(MONGO_URL).then(() => {
   console.log("Conectado a la base de datos");
-  app.listen(PORT, () => {
-    console.log(`Servidor escuchando en el puerto ${PORT}`);
-  });
+  https.createServer(options,app).listen(PORT, async ()=>{
+	console.log(`Backend corriendo en puerto ${PORT}`);
+});
   
 }).catch((error) => {
   console.error("Error al conectar a la base de datos:", error);
@@ -178,7 +190,9 @@ async function createData(collection, req, res) {
 	delete req.body.id;
 	delete req.body.__v;
 	delete req.body.passwordHash;
+	delete req.body.rol;
 	req.body.activo = true;
+	req.body.rol = ["CAPTURISTA_DOCENTE"]; // rol por defecto para nuevos usuarios
 
 	// Los usuarios necesitan contraseña: se guarda el hash, nunca el texto
 	if (collection === "usuarios") {
@@ -250,8 +264,15 @@ app.post("/Pase_de_Lista/base_de_datos/:coleccion", async (req, res) => {
 		if (!puedeModificar(usuario)) {
 			return res.sendStatus(403);
 		}
-
-		await createData(req.params.coleccion, req, res);
+		try {
+			await createData(req.params.coleccion, req, res);
+			await log(usuario.usuario, "crear registro", req.params.coleccion, null, req.body);
+		}
+		catch (error) {
+			console.error("Error al crear registro:", error);
+			res.status(500).json({ error: "Error al crear el registro" });
+		}
+	
 	} catch (error) {
 		console.error("ERROR EN POST:", error.message);
 		res.sendStatus(401);
@@ -419,11 +440,13 @@ app.post("/registrarse", async(req, res)=>{
 });
 
 app.post("/login", async (req, res)=>{
+	console.log("Login request body:", req.body);
 	let user=req.body.username;
 	let pass=req.body.password;
 	let data=await Usuario.findOne({"usuario":user});
 	console.log(data);
 	if(data==null){
+		
 		res.sendStatus(401);
 
 	}else if(await argon2.verify(data.passwordHash, pass)){
@@ -434,6 +457,30 @@ app.post("/login", async (req, res)=>{
 	}
 });
 
+async function log(sujeto, accion, coleccion,objetoBefore,objeto){
+	//console.log("Logueando accion:", sujeto, accion, coleccion, objetoBefore, objeto);
+	let nuevoLog={};
+	nuevoLog["usuario"]=sujeto;
+	let usuario = sujeto;
+	let rol =await Usuario.findOne({"usuario":usuario}).select("rol").exec();
+	nuevoLog["rol"]= rol[0];
+	console.log("Rol del usuario:", nuevoLog["rol"]);
+	nuevoLog["fechaHora"]=new Date();
+	nuevoLog["accion"]=accion;
+	nuevoLog["coleccion"]=coleccion;
+	nuevoLog["ip"]="NO IMPLEMENTADO";
+	nuevoLog["userAgent"]="NO IMPLEMENTADO";
+	nuevoLog["registro"]= await modelos[coleccion].findOne({"_id":objeto.id}).exec();
+	if(objetoBefore==null){
+		nuevoLog["datosAnteriores"]=null;
+	}
+	else{
+	nuevoLog["datosAnteriores"]= objetoBefore;
+	}
+	nuevoLog["datosNuevos"]= objeto;
+
+	await Bitacora.create(nuevoLog);
+}
 
 
 

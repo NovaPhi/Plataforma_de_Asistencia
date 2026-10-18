@@ -1,0 +1,33 @@
+{
+  "version": "2.0.0",
+  "options": {
+    "shell": {
+      "executable": "cmd.exe",
+      "args": ["/d", "/c"]
+    }
+  },
+  "tasks": [
+    {
+      "label": "Backend",
+      "type": "shell",
+      "command": "node index.js",
+      "options": { "cwd": "${workspaceFolder}/Backend" },
+      "problemMatcher": [],
+      "presentation": { "panel": "dedicated", "group": "frontBack" }
+    },
+    {
+      "label": "Frontend",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": { "cwd": "${workspaceFolder}/test-admin" },
+      "problemMatcher": [],
+      "presentation": { "panel": "dedicated", "group": "frontBack" }
+    },
+    {
+      "label": "frontBack",
+      "dependsOn": ["Backend", "Frontend"],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    }
+  ]
+}

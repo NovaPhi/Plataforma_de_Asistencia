@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {Box, Card, CardHeader, Grid, Stack, Typography, Button, ToggleButtonGroup, ToggleButton, CardContent, Avatar, Alert, TextField, ListItem, List, ListItemText} from "@mui/material";
 import { Html5Qrcode } from "html5-qrcode";
+import { API_URL } from "./config";
 import LoginIcon from "@mui/icons-material/Login";
 import LogoutIcon from "@mui/icons-material/Logout";
 
@@ -122,7 +123,7 @@ export const Escaneo_Credencial = () =>{
     * seguimos con los mismos mensajes de falla de 4xx o 5xx
     */
     const handleGetData = async() => {
-        const request = new Request("http://localhost:3000/Pase_de_Lista/infantes", {
+        const request = new Request(`${API_URL}/Pase_de_Lista/infantes`, {
         method: "GET",
         headers: new Headers({ "Content-Type": "application/json" }),
     });
@@ -152,7 +153,7 @@ export const Escaneo_Credencial = () =>{
     const handleSentData = async (infantes: Infante, metodo: Metodo) => {
         console.log("INFANTE RECIBIDO:", infantes);
         console.log("_id:", infantes._id, "| id:", (infantes as any).id);
-        const request = new Request("http://localhost:3000/Pase_de_Lista/escaneo", {
+        const request = new Request(`${API_URL}/Pase_de_Lista/escaneo`, {
             method: "POST",
             body: JSON.stringify({
                 matricula: infantes.matricula,

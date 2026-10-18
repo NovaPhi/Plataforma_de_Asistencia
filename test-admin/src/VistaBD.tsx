@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import { Box, Card, CardContent, CardHeader,Stack, Button, Dialog, DialogTitle, DialogContent, TextField, MenuItem, DialogActions } from "@mui/material"
 import {DataTable,ListContextProvider,ResourceContextProvider,useList,DateField, EmailField, Pagination} from "react-admin"
+import { API_URL } from "./config";
 
 
 // los registros de la BD 
@@ -55,7 +56,7 @@ const enviar = async (method: "POST" | "PATCH", url: string, body:object) => {
 * si falla regresa alerta 4xx con el mensaje 
 */
 const handleCreate = (coleccion:Coleccion, datos: object) =>
-    enviar("POST", `${"http://localhost:3000/Pase_de_Lista/base_de_datos"}/${coleccion}`, datos);
+    enviar("POST", `${API_URL}/Pase_de_Lista/base_de_datos/${coleccion}`, datos);
 
 /*
 * el patch se llama al picar guardar en el dialogo cuando se edita un registro
@@ -65,7 +66,7 @@ const handleCreate = (coleccion:Coleccion, datos: object) =>
 * regresa los mismos codigos que el handle delete
 */
 const handleEdit = (coleccion: Coleccion, id:string, datos: object) =>
-    enviar("PATCH", `${"http://localhost:3000/Pase_de_Lista/base_de_datos"}/${coleccion}/${id}`, datos);
+    enviar("PATCH", `${API_URL}/Pase_de_Lista/base_de_datos/${coleccion}/${id}`, datos);
 
 /*
 * API Patch se llama al picar eliminar y ya despues se tiene que confirmar (el patch es como edit pero solo ciertos datos)
@@ -161,7 +162,7 @@ export const VBD = () => {
     * el educador de grupos espero que me lo mandes como string o se rompe esta madre la info deberia de ser _id
     */}
     const handleGetData = async () => {
-        const request = new Request("http://localhost:3000/PASE_DE_LISTA/base_de_datos", {
+        const request = new Request(`${API_URL}/PASE_DE_LISTA/base_de_datos`, {
             method: "GET",
             headers: new Headers({"Content-Type": "application/json",
                     "Authentication": sessionStorage.getItem("auth") ?? "",
