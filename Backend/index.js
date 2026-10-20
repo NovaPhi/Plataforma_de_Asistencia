@@ -266,7 +266,7 @@ app.post("/Pase_de_Lista/base_de_datos/:coleccion", async (req, res) => {
 		}
 		try {
 			await createData(req.params.coleccion, req, res);
-			await log(usuario.usuario, "crear registro", req.params.coleccion, null, req.body);
+			await log(usuario.usuario, "crear registro", null, req);
 		}
 		catch (error) {
 			console.error("Error al crear registro:", error);
@@ -457,19 +457,21 @@ app.post("/login", async (req, res)=>{
 	}
 });
 
-async function log(sujeto, accion, coleccion,objetoBefore,objeto){
+async function log(sujeto, accion, objetoBefore, req){
+	let coleccion = req.params.coleccion;
+	let objeto = req.body;
 	//console.log("Logueando accion:", sujeto, accion, coleccion, objetoBefore, objeto);
 	let nuevoLog={};
 	nuevoLog["usuario"]=sujeto;
 	let usuario = sujeto;
 	let rol =await Usuario.findOne({"usuario":usuario}).select("rol").exec();
-	nuevoLog["rol"]= rol[0];
+	nuevoLog["rol"]= rol?.rol;
 	console.log("Rol del usuario:", nuevoLog["rol"]);
 	nuevoLog["fechaHora"]=new Date();
 	nuevoLog["accion"]=accion;
 	nuevoLog["coleccion"]=coleccion;
-	nuevoLog["ip"]="NO IMPLEMENTADO";
-	nuevoLog["userAgent"]="NO IMPLEMENTADO";
+	nuevoLog["ip"]= req.ip;
+	nuevoLog["userAgent"]= req.get("User-Agent");
 	nuevoLog["registro"]= await modelos[coleccion].findOne({"_id":objeto.id}).exec();
 	if(objetoBefore==null){
 		nuevoLog["datosAnteriores"]=null;
