@@ -27,7 +27,8 @@ type Incidencia = {
 };
 
 // lo que se captura en el formulario de "Registrar incidencia"
-type NuevaIncidencia = {nombre: string; sala: string; tipo: string; gravedad: Gravedad; descripcion: string;};
+// el nombre y la sala los saca la API del infante con esa matricula
+type NuevaIncidencia = {matricula: string; tipo: string; gravedad: Gravedad; descripcion: string;};
 
 // lo que se captura en el menu de "Registrar accion" y se manda a la API
 type DatosAccion = { tipo: string; notas: string };
@@ -134,7 +135,7 @@ const IncidenciaCard = ({ inc, activo, onSelect }: {inc: Incidencia; activo: boo
         </Box>
         <Typography sx={{ fontWeight: 700 }}>{inc.nombre}</Typography>
         <Typography variant="caption">
-          {inc.sala} · {inc.fechaHora} · Folio {inc.folio}
+          {inc.sala} · {fechaTexto(inc.fechaHora)} · Folio {inc.folio}
         </Typography>
         {/* el aviso amarillo solo sale si sigue activa y todavia no se avisa al tutor */}
         {inc.estado !== "resuelta" && !inc.tutorNotificado && (
@@ -174,11 +175,11 @@ const Detalle = ({ inc, guardando, onRegistrarAccion, onNotificar, onResolver }:
           <Dato etiqueta="Niña o niño" valor={inc.nombre} />
           <Dato etiqueta="Sala" valor={inc.sala} />
           <Dato etiqueta="Tipo" valor={inc.tipo} />
-          <Dato etiqueta="Fecha y hora" valor={inc.fechaHora} />
+          <Dato etiqueta="Fecha y hora" valor={fechaTexto(inc.fechaHora)} />
           <Dato etiqueta="Reportó" valor={inc.reporto} />
           <Dato etiqueta="Estado" valor={ETIQUETA_ESTADO[inc.estado]} />
           {/* estos dos solo aparecen cuando ya fue resuelta */}
-          {inc.resolucion && <Dato etiqueta="Resuelta el" valor={inc.resolucion.fecha} />}
+          {inc.resolucion && <Dato etiqueta="Resuelta el" valor={fechaTexto(inc.resolucion.fecha)} />}
           {inc.resolucion && <Dato etiqueta="Resuelta por" valor={inc.resolucion.por} />}
         </Box>
 
@@ -195,7 +196,7 @@ const Detalle = ({ inc, guardando, onRegistrarAccion, onNotificar, onResolver }:
           {/* i se usa como key porque las acciones todavia no tienen id propio */}
           {inc.acciones.map((a, i) => (
             <Typography key={i} variant="body2" sx={{ mb: 0.5 }}>
-              <b>{a.hora}</b> · {a.texto} · {a.responsable}
+              <b>{fechaTexto(a.hora)}</b> · {a.texto} · {a.responsable}
             </Typography>
           ))}
           {/* recordatorio de que falta avisar al tutor, desaparece al notificar o al resolver */}
@@ -258,7 +259,7 @@ const RegistrarAccionDialog = ({ inc, guardando, onClose, onGuardar }: {inc: Inc
 const RegistrarIncidenciaDialog = ({ guardando, onClose, onGuardar }: {guardando: boolean; onClose: () => void; onGuardar: (n: NuevaIncidencia) => void;}) => {
   // todos los campos del formulario viven juntos en un solo objeto
   // arranca con gravedad "leve" para que ya haya una elegida
-  const [datos, setDatos] = useState<NuevaIncidencia>({nombre: "", sala: "", tipo: "", gravedad: "leve", descripcion: "",});
+  const [datos, setDatos] = useState<NuevaIncidencia>({matricula: "", tipo: "", gravedad: "leve", descripcion: "",});
   // ...d copia lo que ya estaba y [campo] reemplaza solo el que se escribio
   const cambiar = (campo: keyof NuevaIncidencia) => (e: { target: { value: string } }) => setDatos((d) => ({ ...d, [campo]: e.target.value }));
   return (
@@ -266,8 +267,7 @@ const RegistrarIncidenciaDialog = ({ guardando, onClose, onGuardar }: {guardando
       <DialogTitle>Registrar incidencia</DialogTitle>
       {/* el pt con !important evita que la etiqueta del primer campo quede cortada debajo del titulo */}
       <DialogContent sx={{ display: "grid", gap: 2, pt: "8px !important" }}>
-        <TextField label="Niña o niño" value={datos.nombre} onChange={cambiar("nombre")} />
-        <TextField label="Sala" value={datos.sala} onChange={cambiar("sala")} />
+        <TextField label="Matrícula de la niña o niño" value={datos.matricula} onChange={cambiar("matricula")} />
         <TextField select label="Tipo" value={datos.tipo} onChange={cambiar("tipo")}>
           {TIPOS.map((t) => <MenuItem key={t} value={t}>{t}</MenuItem>)}
         </TextField>
@@ -281,8 +281,8 @@ const RegistrarIncidenciaDialog = ({ guardando, onClose, onGuardar }: {guardando
       </DialogContent>
       <DialogActions sx={{ p: 2 }}>
         <Button onClick={onClose}>Cancelar</Button>
-        {/* no deja guardar si falta el nombre o el tipo, lo demas es opcional */}
-        <Button variant="contained" disabled={!datos.nombre || !datos.tipo || guardando} onClick={() => onGuardar(datos)}>
+        {/* no deja guardar si falta la matricula o el tipo, lo demas es opcional */}
+        <Button variant="contained" disabled={!datos.matricula || !datos.tipo || guardando} onClick={() => onGuardar(datos)}>
           {guardando ? "Guardando..." : "Guardar incidencia"}
         </Button>
       </DialogActions>

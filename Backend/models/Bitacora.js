@@ -23,7 +23,8 @@ const bitacoraSchema = new Schema({
            "asesorias",
            "notasConfidenciales",
            "consentimientos",
-           "historico"]
+           "historico",
+           "incidencias"]
   },
   registro: { type: Schema.Types.Mixed, default: null },               // _id, ebdi o usuario segun la coleccion
   datosAnteriores: { type: Schema.Types.Mixed, default: null },        // Valores antes del cambio

@@ -21,6 +21,7 @@ import NotaConfidencial from "./models/NotasConfidenciales.js";
 import Consentimiento from "./models/Consentimientos.js";
 import Bitacora from "./models/Bitacora.js";
 import Historico from "./models/Historico.js";
+import Incidencia from "./models/Incidencias.js";
 
 
 
@@ -69,7 +70,8 @@ const modelos = {
 	notasConfidenciales: NotaConfidencial,
 	consentimientos: Consentimiento,
 	bitacora: Bitacora,
-	historico: Historico
+	historico: Historico,
+	incidencias: Incidencia
 };
 
 // Campos de infantes que puede ver cada rol en getList. null = todos los campos
@@ -95,6 +97,13 @@ const etiquetasCausa = {
 	PER_TUT: "Permiso particular o tramite",
 	NO_LOC: "Sin respuesta del tutor"
 };
+
+// Opciones de como termino una llamada al tutor (las mismas del enum en Tickets.js)
+const resultadosLlamada = ["Contestó", "No contestó", "Número equivocado"];
+
+// Opciones de tipo y gravedad de una incidencia (las mismas del enum en Incidencias.js)
+const tiposIncidencia = ["Accidente", "Enfermedad", "Conducta"];
+const gravedadesIncidencia = ["grave", "moderada", "leve"];
 
 // Traduce el estado del ticket al estado (pestaña) del frontend de seguimiento
 const estadosSeguimiento = {
@@ -183,12 +192,15 @@ async function getAll(collection, req, res){
 }
 
 // Actualiza un registro de una coleccion por su id
+// Regresa el registro como estaba antes del cambio para la bitacora
 async function updateData(collection, req, res){
 	let valores=req.body;
 	valores["id"]=valores["id"];
+	let antes=await modelos[collection].findOne({"_id":req.params.id}).lean();
 	let r = await modelos[collection].updateOne({ _id: req.params.id }, { $set: valores });
 	r =await modelos[collection].findOne({"_id":valores["id"]}).exec();
 	res.json(r);
+	return antes;
 }
 
 // Borra un registro de una coleccion por su id
@@ -247,7 +259,10 @@ app.patch("/Pase_de_Lista/base_de_datos/:coleccion/:id", async (req, res) => {
 		if (!puedeModificar(usuario)) {
 			return res.sendStatus(403);
 		}
-		await updateData(req.params.coleccion, req, res);
+		let antes = await updateData(req.params.coleccion, req, res);
+		// VistaBD hace el borrado logico mandando activo:false
+		let accion = req.body.activo === false ? "ELIMINAR" : "ACTUALIZAR";
+		await log(usuario.usuario, accion, antes, req, req.params.id);
 	} catch (error) {
 		console.error("ERROR EN PATCH:", error.message);
 		res.sendStatus(401);
@@ -263,7 +278,7 @@ app.post("/Pase_de_Lista/base_de_datos/:coleccion", async (req, res) => {
 			const nuevo = await createData(req.params.coleccion, req, res);
 			console.log("Nuevo registro creado:", nuevo);
 			if (nuevo) {
-				await log(usuario.usuario, "crear registro", null, req, nuevo._id);
+				await log(usuario.usuario, "CREAR", null, req, nuevo._id);
 			}
 		}
 		catch (error) {
@@ -439,10 +454,10 @@ app.get("/bitacora", async (req, res) => {
 	}
 });
 
-async function log(sujeto, accion, objetoBefore, req, registro){
-	let coleccion = req.params.coleccion;
+// coleccionLog es opcional: se usa en las rutas que no traen :coleccion en la URL (como /incidencias)
+async function log(sujeto, accion, objetoBefore, req, registro, coleccionLog){
+	let coleccion = coleccionLog ?? req.params.coleccion;
 	let objeto = req.body;
-	//console.log("Logueando accion:", sujeto, accion, coleccion, objetoBefore, objeto);
 	let nuevoLog={};
 	nuevoLog["usuario"]=sujeto;
 	let usuario = sujeto;
@@ -466,7 +481,12 @@ async function log(sujeto, accion, objetoBefore, req, registro){
 	let { passwordHash, password, ...datosNuevos } = objeto ?? {};
 	nuevoLog["datosNuevos"]= datosNuevos;
 
-	await Bitacora.create(nuevoLog);
+	// si falla la bitacora no se rompe la peticion, al cliente ya se le respondio
+	try{
+		await Bitacora.create(nuevoLog);
+	}catch(error){
+		console.error("Error al guardar en bitacora:", error.message);
+	}
 }
 
 app.get("/seguimiento", async (req, res) => {
@@ -477,7 +497,7 @@ app.get("/seguimiento", async (req, res) => {
 		return res.sendStatus(401);
 	}
 	try {
-		// cada falta injustificada es un caso, la mas reciente primero
+		// cada falta es un caso, la mas reciente primero
 		const faltas = await Asistencia.find({
 			deleted_at: null
 		})
@@ -492,7 +512,10 @@ app.get("/seguimiento", async (req, res) => {
 		]);
 
 		// Map por id para no hacer una consulta por cada falta
-		const infantesPorId = new Map(infantes.map(i => [String(i._id), i]));
+		// utilizamos un diccionario debido a que de esa forma no tenemos que recorrer 
+		// el arreglo de infantes, grupos y tickets para cada falta, si no que accedemos directamente 
+		// al objeto correspondiente
+		const infantesPorId = new Map(infantes.map(i => [String(i._id), i])); // el diccionario sale como {infanteId: infante}
 		const gruposPorId = new Map(grupos.map(g => [String(g._id), g]));
 		const ticketsPorAsistencia = new Map(tickets.map(t => [String(t.asistencia), t]));
 
@@ -544,6 +567,252 @@ app.get("/seguimiento", async (req, res) => {
 	} catch (error) {
 		console.error("Error en seguimiento:", error);
 		res.status(500).json({ error: "Error al obtener los seguimientos" });
+	}
+});
+
+// Registra una llamada al tutor en el caso de la falta :id (el id del caso es el _id de la asistencia)
+// Si la falta todavia no tiene ticket se crea en este momento. Regresa el caso ya actualizado
+app.post("/seguimiento/:id/llamadas", async (req, res) => {
+	let usuario;
+	try {
+		usuario = await dataUsuarios(req);
+	} catch {
+		return res.sendStatus(401);
+	}
+	try {
+		const { resultado, causa, notas } = req.body;
+		if (!resultadosLlamada.includes(resultado)) {
+			return res.status(400).json({ error: "Resultado de llamada no válido" });
+		}
+		// el frontend manda la etiqueta ("Enfermedad en casa"), en el ticket se guarda el codigo ("ENF_CASA")
+		// causa vacia significa que no se eligio ninguna y se deja la que ya tenga el ticket
+		const codigoCausa = Object.keys(etiquetasCausa).find(k => etiquetasCausa[k] === causa);
+		if (causa && !codigoCausa) {
+			return res.status(400).json({ error: "Causa no válida" });
+		}
+
+		const falta = await Asistencia.findOne({ _id: req.params.id, deleted_at: null }).lean();
+		if (!falta) return res.sendStatus(404);
+		const [infante, grupo] = await Promise.all([
+			Infante.findOne({ _id: falta.infante, activo: { $ne: false } }).lean(),
+			Grupo.findOne({ _id: falta.grupo }).lean()
+		]);
+		if (!infante) return res.sendStatus(404);
+
+		// sin lean() porque aqui si se modifica el ticket y se guarda con save()
+		let ticket = await Ticket.findOne({ asistencia: falta._id, deleted_at: null });
+		if (!ticket) {
+			ticket = new Ticket({
+				asistencia: falta._id,
+				infante: falta.infante,
+				estancia: falta.estancia,
+				estado: "ABIERTO",
+				fechaApertura: new Date()
+			});
+		}
+
+		if (ticket.estado === "CERRADO") {
+			return res.status(400).json({ error: "El caso ya está cerrado" });
+		}
+		//dentro de ticket.intentosContacto se hce un push de un objeto con los datos de la llamada,
+		// incluyendo el resultado, notas y quien la registro
+		// esto se hace por que el ticket puede tener varios intentos de contacto, y se quiere guardar
+		// un historial de todos ellos
+		ticket.intentosContacto.push({
+			numero: ticket.intentosContacto.length + 1,
+			fechaHora: new Date(),
+			exitoso: resultado === "Contestó",
+			resultado,
+			resumen: notas || undefined,
+			registradoPor: usuario.usuario
+		});
+		// con la primera llamada el caso pasa a "En seguimiento"
+		if (ticket.estado === "ABIERTO") ticket.estado = "EN_PROCESO";
+		if (codigoCausa) ticket.causa = codigoCausa;
+		// la alerta amarilla pide un segundo intento: con la segunda llamada ya queda hecho
+		if (ticket.alertaAmarilla?.activa && ticket.intentosContacto.length >= 2) {
+			ticket.alertaAmarilla.segundoIntentoHecho = true;
+		}
+
+		const esNuevo = ticket.isNew;
+		await ticket.save();
+		// la asistencia guarda la referencia al ticket que genero
+		if (esNuevo) {
+			await Asistencia.updateOne({ _id: falta._id }, { $set: { ticket: ticket._id } });
+		}
+		await log(usuario.usuario, "LLAMADA", null, req, ticket._id, "tickets");
+
+		// se regresa el caso con la misma forma que el GET /seguimiento
+		let estado = estadosSeguimiento[ticket.estado] ?? "abierto";
+		if (estado !== "cerrado" && ticket.bloqueoIngreso) estado = "alta_medica";
+
+		let alerta;
+		if (ticket.escalado) {
+			alerta = "Caso escalado: no se hizo el segundo intento";
+		} else if (ticket.alertaAmarilla?.activa && !ticket.alertaAmarilla.segundoIntentoHecho) {
+			alerta = "Segundo intento pendiente";
+		}
+
+		// el frontend toma intentos[0] como la ultima llamada, por eso van de la mas reciente a la mas antigua
+		const intentos = [...ticket.intentosContacto]
+			.sort((a, b) => new Date(b.fechaHora) - new Date(a.fechaHora))
+			.map(i => ({
+				fecha: i.fechaHora,
+				resultado: i.resultado ?? (i.exitoso ? "Contestó" : "No contestó"),
+				responsable: i.registradoPor,
+				notas: i.resumen
+			}));
+
+		res.status(201).json({
+			id: falta._id,
+			nombre: `${infante.nombre ?? ""} ${infante.paterno ?? ""} ${infante.materno ?? ""}`.trim(),
+			sala: grupo?.sala ?? "Sin sala",
+			fechaFalta: falta.fecha,
+			folio: infante.matricula,
+			estado,
+			alerta,
+			causa: etiquetasCausa[ticket.causa],
+			intentos
+		});
+	} catch (error) {
+		console.error("Error al registrar llamada:", error);
+		if (error.name === "ValidationError") {
+			return res.status(400).json({ error: error.message });
+		}
+		res.status(500).json({ error: "Error al registrar la llamada" });
+	}
+});
+
+app.get("/incidencias", async (req, res) => {
+	// primero se valida quien es, si el token es malo o vencio responde 401
+	try {
+		await dataUsuarios(req);
+	} catch {
+		return res.sendStatus(401);
+	}
+	try {
+		// todas las incidencias, la mas reciente primero
+		//.lean() se encarga de que los ObjectId se serialicen como string y no como objeto
+		const incidencias = await Incidencia.find({ deleted_at: null })
+			.sort({ fechaHora: -1 })
+			.lean();
+
+		// se traen de una vez los infantes y grupos de todas las incidencias
+		// no se filtra por activo porque las historicas pueden ser de infantes que ya se dieron de baja
+		const [infantes, grupos] = await Promise.all([
+			Infante.find({ _id: { $in: incidencias.map(i => i.infante) } }).lean(),
+			Grupo.find({ _id: { $in: incidencias.map(i => i.grupo) } }).lean()
+		]);
+
+		// Map por id para no hacer una consulta por cada incidencia
+		const infantesPorId = new Map(infantes.map(i => [String(i._id), i]));
+		const gruposPorId = new Map(grupos.map(g => [String(g._id), g]));
+
+		const resultado = [];
+		for (const inc of incidencias) {
+			const infante = infantesPorId.get(String(inc.infante));
+			// si el infante ya no existe, no se muestra la incidencia
+			if (!infante) continue;
+
+			// el estado decide la pestaña en el frontend: solo "resuelta" va a Historicas
+			const estado = inc.estado ?? "abierta";
+
+			// el frontend muestra las acciones de la mas vieja a la mas nueva
+			const acciones = [...(inc.acciones ?? [])]
+				.sort((a, b) => new Date(a.fechaHora) - new Date(b.fechaHora))
+				.map(a => ({
+					hora: a.fechaHora,
+					texto: a.texto,
+					responsable: a.responsable
+				}));
+
+			resultado.push({
+				id: inc._id,
+				folio: inc.folio,
+				nombre: `${infante.nombre ?? ""} ${infante.paterno ?? ""} ${infante.materno ?? ""}`.trim(),
+				sala: gruposPorId.get(String(inc.grupo))?.sala ?? "Sin sala",
+				tipo: inc.tipo,
+				gravedad: inc.gravedad,
+				fechaHora: inc.fechaHora,
+				reporto: inc.reporto,
+				estado,
+				descripcion: inc.descripcion,
+				tutorNotificado: inc.tutorNotificado ?? false,
+				acciones,
+				// la resolucion solo se manda cuando ya fue resuelta
+				resolucion: estado === "resuelta" ? inc.resolucion : undefined
+			});
+		}
+		res.json(resultado);
+	} catch (error) {
+		console.error("Error en incidencias:", error);
+		res.status(500).json({ error: "Error al obtener las incidencias" });
+	}
+});
+
+// Crea una incidencia con la fecha del servidor, estado "abierta" y quien reporto sacado del token
+// Regresa la incidencia creada con la misma forma que el GET /incidencias
+app.post("/incidencias", async (req, res) => {
+	let usuario;
+	try {
+		usuario = await dataUsuarios(req);
+	} catch {
+		return res.sendStatus(401);
+	}
+	try {
+		const { matricula, tipo, gravedad, descripcion } = req.body;
+		if (!matricula) {
+			return res.status(400).json({ error: "La matrícula es obligatoria" });
+		}
+		if (!tiposIncidencia.includes(tipo)) {
+			return res.status(400).json({ error: "Tipo de incidencia no válido" });
+		}
+		if (!gravedadesIncidencia.includes(gravedad)) {
+			return res.status(400).json({ error: "Gravedad no válida" });
+		}
+
+		const infante = await Infante.findOne({ matricula, activo: { $ne: false } }).lean();
+		if (!infante) return res.status(404).json({ error: "Infante no encontrado" });
+		// la sala sale del grupo vigente en el que esta inscrito el infante
+		const grupo = await Grupo.findOne({ infantes: infante._id, deleted_at: null, activo: { $ne: false } }).lean();
+
+		const incidencia = new Incidencia({
+			infante: infante._id,
+			grupo: grupo?._id ?? null,
+			estancia: infante.ebdi,
+			tipo,
+			gravedad,
+			descripcion,
+			estado: "abierta",
+			fechaHora: new Date(),
+			reporto: usuario.usuario
+		});
+		// el _id ya existe antes de guardar, se usa para el folio y asi no hay que contar registros
+		incidencia.folio = "INC-" + String(incidencia._id).slice(-6).toUpperCase();
+		await incidencia.save();
+
+		await log(usuario.usuario, "CREAR", null, req, incidencia._id, "incidencias");
+
+		res.status(201).json({
+			id: incidencia._id,
+			folio: incidencia.folio,
+			nombre: `${infante.nombre ?? ""} ${infante.paterno ?? ""} ${infante.materno ?? ""}`.trim(),
+			sala: grupo?.sala ?? "Sin sala",
+			tipo: incidencia.tipo,
+			gravedad: incidencia.gravedad,
+			fechaHora: incidencia.fechaHora,
+			reporto: incidencia.reporto,
+			estado: incidencia.estado,
+			descripcion: incidencia.descripcion,
+			tutorNotificado: false,
+			acciones: []
+		});
+	} catch (error) {
+		console.error("Error al registrar incidencia:", error);
+		if (error.name === "ValidationError") {
+			return res.status(400).json({ error: error.message });
+		}
+		res.status(500).json({ error: "Error al registrar la incidencia" });
 	}
 });
 
