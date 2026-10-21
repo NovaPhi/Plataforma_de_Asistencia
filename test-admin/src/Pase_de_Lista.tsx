@@ -6,6 +6,7 @@
 
 import{Card, CardHeader, Button, Stack, CardContent, Box,Typography, Chip, List, ListItem, ListItemText, TextField,} from "@mui/material";
 import{ useEffect, useState } from 'react';
+import { API_URL } from "./config";
 
 type Estado = "PRESENTE" | "FALTA_INJUSTIFICADA";
 
@@ -63,9 +64,11 @@ export const PasaLista = () => {
     * avisa si la matricula es int para yo cambiarla a string si la puedes mandar ya como string mejor
     */
     const handleGetData = async () => {
-        const request = new Request("http://localhost:3000/infantes", {
+        const request = new Request(`${API_URL}/infantes`, {
             method: "GET",
-            headers: new Headers({ "Content-Type": "application/json" }),
+            headers: new Headers({ "Content-Type": "application/json",
+                "Authentication": sessionStorage.getItem("auth") ?? "",
+            }),
         });
         try {
             const res = await fetch(request);
@@ -93,7 +96,7 @@ export const PasaLista = () => {
     const handleSentData = async(
         asistencia: {infante:string;  estatus: Estado}[]
     ) => {
-        const request = new Request("http://localhost:3000/asistencia", {
+        const request = new Request(`${API_URL}/asistencia`, {
             method: "PATCH",
             body: JSON.stringify({
                 grupo: GRUPO_ID,

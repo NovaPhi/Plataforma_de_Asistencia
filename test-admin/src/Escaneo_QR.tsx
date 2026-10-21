@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {Box, Card, CardHeader, Grid, Stack, Typography, Button, ToggleButtonGroup, ToggleButton, CardContent, Avatar, Alert, TextField, ListItem, List, ListItemText} from "@mui/material";
 import { Html5Qrcode } from "html5-qrcode";
+import { API_URL } from "./config";
 import LoginIcon from "@mui/icons-material/Login";
 import LogoutIcon from "@mui/icons-material/Logout";
 
@@ -35,7 +36,7 @@ type Infante ={
 
 type Metodo = "QR" | "MANUAL";
 
-const GRUPO_ID = "ID_DEL_GRUPO";
+const GRUPO_ID = "665f1c2e8b3a4d0012ab34cd";
 
 const nombreCompleto = (i:Infante) => `${i.nombre} ${i.paterno} ${i.materno}`; 
 
@@ -122,7 +123,7 @@ export const Escaneo_Credencial = () =>{
     * seguimos con los mismos mensajes de falla de 4xx o 5xx
     */
     const handleGetData = async() => {
-        const request = new Request("http://localhost:3000/Pase_de_Lista/infantes", {
+        const request = new Request(`${API_URL}/Pase_de_Lista/infantes`, {
         method: "GET",
         headers: new Headers({ "Content-Type": "application/json" }),
     });
@@ -150,10 +151,12 @@ export const Escaneo_Credencial = () =>{
     * lo de cliente Uuid si esta repetido ignorar si no se crea otro registro para hacer mas facil luego hacer el gualdado local
     */
     const handleSentData = async (infantes: Infante, metodo: Metodo) => {
-        const request = new Request("http://localhost:3000/Pase_de_Lista/escaneo", {
+        console.log("INFANTE RECIBIDO:", infantes);
+        console.log("_id:", infantes._id, "| id:", (infantes as any).id);
+        const request = new Request(`${API_URL}/Pase_de_Lista/escaneo`, {
             method: "POST",
             body: JSON.stringify({
-                infantes: infantes._id,
+                matricula: infantes.matricula,
                 grupo: GRUPO_ID,
                 tipo,
                 metodo,
@@ -163,8 +166,11 @@ export const Escaneo_Credencial = () =>{
                 // genera un id unico por escaneo que es usado para evitar registros duplicados
                 clientUuid: crypto.randomUUID(), 
             }),
+            
             headers: new Headers({"Content-Type": "application/json"}),
         });
+        
+        console.log("Enviando datos al backend:", request.body);
         let res: Response;
         try{
             res = await fetch(request);

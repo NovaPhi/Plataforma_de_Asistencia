@@ -1,5 +1,6 @@
 import { fetchUtils, UrlField } from "react-admin";
 import jsonServerProvider from "ra-data-json-server";
+import { API_URL } from "./config";
 
 const fetchJsonUtil=(url:string, options:fetchUtils.Options={})=>{
     if(!options.headers){
@@ -9,4 +10,4 @@ const fetchJsonUtil=(url:string, options:fetchUtils.Options={})=>{
     return fetchUtils.fetchJson(url, options);
 };
 
-export const dataProvider = jsonServerProvider("http://localhost:3000", fetchJsonUtil)
+export const dataProvider = jsonServerProvider(API_URL, fetchJsonUtil)

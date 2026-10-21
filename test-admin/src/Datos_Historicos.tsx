@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { useGetIdentity } from "react-admin";
+import { useEffect, useState } from "react";
 import {Alert, Box, Button, Card, CardActionArea, CardContent, CardHeader, Chip, Dialog,DialogActions, DialogContent, DialogTitle, MenuItem, Tab, Tabs, TextField, Typography,} from "@mui/material";
+import { API_URL } from "./config";
 
 type Gravedad = "grave" | "moderada" | "leve";
 type EstadoInc = "abierta" | "en_atencion" | "resuelta";
@@ -29,6 +29,9 @@ type Incidencia = {
 // lo que se captura en el formulario de "Registrar incidencia"
 type NuevaIncidencia = {nombre: string; sala: string; tipo: string; gravedad: Gravedad; descripcion: string;};
 
+// lo que se captura en el menu de "Registrar accion" y se manda a la API
+type DatosAccion = { tipo: string; notas: string };
+
 const TIPOS = ["Accidente", "Enfermedad", "Conducta"];
 
 // opciones del menu de "Registrar accion"
@@ -54,33 +57,34 @@ const ETIQUETA_ESTADO: Record<EstadoInc, string> = {
   resuelta: "Resuelta",
 };
 
-// datos temporales dados por CLOUD para ver el diseño
-const INCIDENCIAS_EJEMPLO: Incidencia[] = [
-  {
-    id: "1", folio: "INC-0000-0003", nombre: "Niño/a de ejemplo 1", sala: "Sala A", tipo: "Accidente",
-    gravedad: "grave", fechaHora: "00/00/0000 00:00", reporto: "Responsable de sala",
-    estado: "abierta", descripcion: "[Descripción de lo ocurrido]", tutorNotificado: false,
-    acciones: [{ hora: "00:00", texto: "Primeros auxilios aplicados", responsable: "Responsable de sala" }],
-  },
-  {
-    id: "2", folio: "INC-0000-0002", nombre: "Niño/a de ejemplo 2", sala: "Sala B", tipo: "Enfermedad",
-    gravedad: "moderada", fechaHora: "00/00/0000 00:00", reporto: "Responsable de sala",
-    estado: "en_atencion", descripcion: "[Descripción de lo ocurrido]", tutorNotificado: true, acciones: [],
-  },
-  {
-    id: "3", folio: "INC-0000-0001", nombre: "Niño/a de ejemplo 3", sala: "Sala A", tipo: "Conducta",
-    gravedad: "leve", fechaHora: "00/00/0000 00:00", reporto: "Responsable de sala",
-    estado: "resuelta", descripcion: "[Descripción de lo ocurrido]", tutorNotificado: true, acciones: [],
-    resolucion: { fecha: "00/00/0000 00:00", por: "Responsable" },
-  },
-];
+// fecha y hora en formato de mexico, si viene vacia o mala devuelve un guion
+const fechaTexto = (iso: string) => {
+  const d = new Date(iso);
+  return isNaN(d.getTime())
+    ? "—"
+    : d.toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short", hour12: false });
+};
 
-// devuelve la fecha, la hora al momento actual del dispositivo
-const ahora = () => {
-  const d = new Date();
-  const fecha = d.toLocaleDateString("es-MX", { day: "2-digit", month: "2-digit", year: "numeric" });
-  const hora = d.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", hour12: false });
-  return { fecha, hora, completa: `${fecha} ${hora}` };
+const encabezados = () => new Headers({"Content-Type": "application/json","Authentication": sessionStorage.getItem("auth") ?? "",});
+
+// manda una peticion que regresa una incidencia (crear, registrar accion, notificar y resolver)
+// la API siempre regresa la incidencia ya actualizada y asi el front no tiene que adivinar nada
+// ruta: lo que va despues de /incidencias, metodo: POST o PATCH, body: lo que se manda, o undefined si no lleva
+const enviar = async (ruta: string, metodo: "POST" | "PATCH", body: object | undefined, mensajeError: string) => {
+  const request = new Request(`${API_URL}/incidencias${ruta}`, {
+    method: metodo,
+    body: body ? JSON.stringify(body) : undefined,
+    headers: encabezados(),
+  });
+  try {
+    const res = await fetch(request);
+    if (res.status < 200 || res.status >= 300) {
+      throw new Error(res.statusText);
+    }
+    return (await res.json()) as Incidencia;
+  } catch {
+    throw new Error(mensajeError);
+  }
 };
 
 // chip de color segun la gravedad (rojo, amarillo, azul)
@@ -151,7 +155,7 @@ const Dato = ({ etiqueta, valor }: { etiqueta: string; valor: string }) => (
 );
 
 // panel de la derecha con todo el detalle de la incidencia seleccionada
-const Detalle = ({ inc, onRegistrarAccion, onNotificar, onResolver }: {inc?: Incidencia; onRegistrarAccion: () => void; onNotificar: () => void; onResolver: () => void;}) => {
+const Detalle = ({ inc, guardando, onRegistrarAccion, onNotificar, onResolver }: {inc?: Incidencia; guardando: boolean; onRegistrarAccion: () => void; onNotificar: () => void; onResolver: () => void;}) => {
   // si no hay incidencia elegida solo se muestra el mensaje
   if (!inc) {
     return (
@@ -203,12 +207,12 @@ const Detalle = ({ inc, onRegistrarAccion, onNotificar, onResolver }: {inc?: Inc
         {/* los botones solo existen mientras la incidencia siga activa, en historicas no se puede editar */}
         {!resuelta && (
           <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-            <Button variant="contained" onClick={onRegistrarAccion}>Registrar acción</Button>
-            <Button variant="outlined" onClick={onNotificar} disabled={inc.tutorNotificado}>
+            <Button variant="contained" onClick={onRegistrarAccion} disabled={guardando}>Registrar acción</Button>
+            <Button variant="outlined" onClick={onNotificar} disabled={inc.tutorNotificado || guardando}>
               Notificar al tutor
             </Button>
             {/* ml auto lo empuja a la derecha, color error lo pone rojo */}
-            <Button variant="outlined" color="error" sx={{ ml: "auto" }} onClick={onResolver}>
+            <Button variant="outlined" color="error" sx={{ ml: "auto" }} onClick={onResolver} disabled={guardando}>
               Resolver incidencia
             </Button>
           </Box>
@@ -217,16 +221,12 @@ const Detalle = ({ inc, onRegistrarAccion, onNotificar, onResolver }: {inc?: Inc
     </Card>
   );
 };
-
-// lo que devuelve el menu de accion al darle guardar
-type DatosAccion = { tipo: string; notas: string; hora: string };
  
 // menu que sale al picar "Registrar accion"
-const RegistrarAccionDialog = ({ inc, onClose, onGuardar }: {inc: Incidencia; onClose: () => void; onGuardar: (d: DatosAccion) => void;}) => {
-  const [hora] = useState(() => ahora().hora); // se calcula al abrir
-  const [tipo, setTipo] = useState(""); // la accion elegida, empieza vacia para obligar a elegir una
+const RegistrarAccionDialog = ({ inc, guardando, onClose, onGuardar }: {inc: Incidencia; guardando: boolean; onClose: () => void; onGuardar: (d: DatosAccion) => void;}) => {
+  // la accion elegida, empieza vacia para obligar a elegir una
+  const [tipo, setTipo] = useState("");
   const [notas, setNotas] = useState("");
- 
   return (
     // onClose se dispara tambien al picar fuera del menu o con la tecla Esc
     <Dialog open onClose={onClose} fullWidth maxWidth="sm">
@@ -234,7 +234,7 @@ const RegistrarAccionDialog = ({ inc, onClose, onGuardar }: {inc: Incidencia; on
       <DialogContent sx={{ display: "grid", gap: 2 }}>
         {/* resumen para que se sepa a cual incidencia se le esta registrando la accion */}
         <Typography variant="body2" color="text.secondary">
-          {inc.nombre} · Folio {inc.folio} · Hora de la acción: <b>{hora}</b> (se registra sola)
+          {inc.nombre} · Folio {inc.folio} · La hora se registra sola
         </Typography>
         <TextField select label="Acción realizada" value={tipo} onChange={(e) => setTipo(e.target.value)}>
           {TIPOS_ACCION.map((t) => <MenuItem key={t} value={t}>{t}</MenuItem>)}
@@ -244,30 +244,27 @@ const RegistrarAccionDialog = ({ inc, onClose, onGuardar }: {inc: Incidencia; on
       </DialogContent>
       <DialogActions sx={{ p: 2 }}>
         <Button onClick={onClose}>Cancelar</Button>
-        {/* no deja guardar hasta que se elija la accion */}
-        <Button variant="contained" disabled={!tipo} onClick={() => onGuardar({ tipo, notas, hora })}>
-          Guardar acción
+        {/* no deja guardar hasta que se elija la accion, las notas son opcionales */}
+        <Button variant="contained" disabled={!tipo || guardando} onClick={() => onGuardar({ tipo, notas })}>
+          {guardando ? "Guardando..." : "Guardar acción"}
         </Button>
       </DialogActions>
     </Dialog>
   );
 };
 
-// menu que sale al picar "Registrar incidencia"
-const RegistrarIncidenciaDialog = ({ onClose, onGuardar }: {onClose: () => void; onGuardar: (n: NuevaIncidencia) => void;}) => {
-  // todos los campos del formulario viven en un solo objeto
-  // arranca con gravedad "leve" para que ya haya una elegida
-  const [datos, setDatos] = useState<NuevaIncidencia>({
-    nombre: "", sala: "", tipo: "", gravedad: "leve", descripcion: "",
-  });
-  // funcion para todos los campos que recibe el nombre del campo y devuelve el onChange, asi no hace falta escribir un setState distinto por cada TextField
-  // ...d copia lo que ya estaba y [campo] reemplaza solo el que se escribio
-  const cambiar = (campo: keyof NuevaIncidencia) => (e: { target: { value: string } }) =>setDatos((d) => ({ ...d, [campo]: e.target.value }));
 
+// menu que sale al picar "Registrar incidencia"
+const RegistrarIncidenciaDialog = ({ guardando, onClose, onGuardar }: {guardando: boolean; onClose: () => void; onGuardar: (n: NuevaIncidencia) => void;}) => {
+  // todos los campos del formulario viven juntos en un solo objeto
+  // arranca con gravedad "leve" para que ya haya una elegida
+  const [datos, setDatos] = useState<NuevaIncidencia>({nombre: "", sala: "", tipo: "", gravedad: "leve", descripcion: "",});
+  // ...d copia lo que ya estaba y [campo] reemplaza solo el que se escribio
+  const cambiar = (campo: keyof NuevaIncidencia) => (e: { target: { value: string } }) => setDatos((d) => ({ ...d, [campo]: e.target.value }));
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>Registrar incidencia</DialogTitle>
-      {/* !important evita que la etiqueta del primer campo quede cortada debajo del titulo */}
+      {/* el pt con !important evita que la etiqueta del primer campo quede cortada debajo del titulo */}
       <DialogContent sx={{ display: "grid", gap: 2, pt: "8px !important" }}>
         <TextField label="Niña o niño" value={datos.nombre} onChange={cambiar("nombre")} />
         <TextField label="Sala" value={datos.sala} onChange={cambiar("sala")} />
@@ -284,9 +281,9 @@ const RegistrarIncidenciaDialog = ({ onClose, onGuardar }: {onClose: () => void;
       </DialogContent>
       <DialogActions sx={{ p: 2 }}>
         <Button onClick={onClose}>Cancelar</Button>
-        {/* no deja guardar si falta el nombre o el tipo */}
-        <Button variant="contained" disabled={!datos.nombre || !datos.tipo} onClick={() => onGuardar(datos)}>
-          Guardar incidencia
+        {/* no deja guardar si falta el nombre o el tipo, lo demas es opcional */}
+        <Button variant="contained" disabled={!datos.nombre || !datos.tipo || guardando} onClick={() => onGuardar(datos)}>
+          {guardando ? "Guardando..." : "Guardar incidencia"}
         </Button>
       </DialogActions>
     </Dialog>
@@ -295,28 +292,53 @@ const RegistrarIncidenciaDialog = ({ onClose, onGuardar }: {onClose: () => void;
 
 // pantalla principal, aqui se conectan los demas componentes
 export const HistorialList = () => {
-  // datos del usuario logueado, su nombre se usa como responsable de cada accion
-  const { identity } = useGetIdentity();
-  // ?? "" evita que salga undefined mientras carga la identidad
-  const usuario = identity?.fullName ?? "";
-
   // lista de incidencias en estado para poder modificarlas
-  const [incidencias, setIncidencias] = useState<Incidencia[]>(INCIDENCIAS_EJEMPLO);
+  const [incidencias, setIncidencias] = useState<Incidencia[]>([]);
+  const [cargando, setCargando] = useState(true); // true mientras llega el GET
+  const [guardando, setGuardando] = useState(false); // true mientras se espera un POST o PATCH
+  // pestaña activa: activas o historicas
   const [vista, setVista] = useState<Vista>("activas");
+  // filtros elegidos, "" en todos al inicio para que no filtre nada
   const [filtro, setFiltro] = useState<Filtro>({ sala: "", tipo: "", gravedad: "" });
+  // id de la incidencia abierta en el detalle, undefined mientras no se elija ninguna
   const [seleccionada, setSeleccionada] = useState<string | undefined>();
+  // si el menu de "Registrar incidencia" esta abierto o cerrado
   const [dialogoAbierto, setDialogoAbierto] = useState(false);
+  // si el menu de "Registrar accion" esta abierto o cerrado
   const [accionAbierta, setAccionAbierta] = useState(false);
+
+  const handleGetData = async () => {
+    const request = new Request(`${API_URL}/incidencias`, {
+      method: "GET",
+      headers: encabezados(),
+    });
+    try {
+      const res = await fetch(request);
+      if (res.status < 200 || res.status >= 300) {
+        throw new Error(res.statusText);
+      }
+      setIncidencias(await res.json());
+    } catch {
+      throw new Error("No se pudieron cargar las incidencias");
+    }
+  };
+
+  useEffect(() => {
+    handleGetData().catch((error) => {
+      console.error(error);
+      alert(error.message);
+    }).finally(() => setCargando(false));
+  }, []);
 
   // una incidencia es activa mientras no este resuelta
   const esActiva = (i: Incidencia) => i.estado !== "resuelta";
+  // conteos que se muestran en las pestañas, no se ven afectados por los filtros
   const totalActivas = incidencias.filter(esActiva).length;
   const totalHistoricas = incidencias.length - totalActivas;
   // lista de salas sin repetir para llenar el filtro (Set quita los duplicados)
   const salas = Array.from(new Set(incidencias.map((i) => i.sala)));
 
-  // lo que se ve en la lista: primero se queda con las de la pestaña y luego aplica cada filtro
-  // un filtro vacio ("") deja pasar todo, por eso el !filtro
+  // un filtro vacio ("") deja pasar todo, por eso el !filtro.algo
   const visibles = incidencias
     .filter((i) => (vista === "activas" ? esActiva(i) : !esActiva(i)))
     .filter((i) => !filtro.sala || i.sala === filtro.sala)
@@ -324,56 +346,83 @@ export const HistorialList = () => {
     .filter((i) => !filtro.gravedad || i.gravedad === filtro.gravedad)
     .sort((a, b) => (vista === "activas" ? GRAVEDADES[a.gravedad].orden - GRAVEDADES[b.gravedad].orden : 0));
 
-  // busca la incidencia completa a partir del id
+  // busca la incidencia completa a partir del id para mostrarla en el detalle
   const actual = incidencias.find((i) => i.id === seleccionada);
 
-  // cambia una sola incidencia (la del id) y deja todas las demas igual
-  const actualizar = (id: string, cambios: (i: Incidencia) => Incidencia) =>setIncidencias((prev) => prev.map((i) => (i.id === id ? cambios(i) : i)));
+  // cambia una sola incidencia por la version nueva que mando la API y deja todas las demas igual
+  const reemplazar = (nueva: Incidencia) => setIncidencias((prev) => prev.map((i) => (i.id === nueva.id ? nueva : i)));
 
-  // por ahora el notificar tutor solo deja un mensaje en pantalla, no manda ningun aviso real
-  const notificar = () => {
-  // si no hay incidencia seleccionada no hace nada
-  if (!actual) return;
-  const { hora } = ahora();actualizar(actual.id, (i) => ({...i,tutorNotificado: true,acciones: [...i.acciones, { hora, texto: "Tutor notificado", responsable: usuario }],}));
+  // se ejecuta al picar "Notificar al tutor"
+  const notificar = async () => {
+    // si no hay incidencia seleccionada no hace nada
+    if (!actual) return;
+    setGuardando(true);
+    try {
+      reemplazar(await enviar(`/${actual.id}/notificar-tutor`, "POST", undefined, "No se pudo notificar al tutor"));
+    } catch (error) {
+      console.error(error);
+      alert((error as Error).message);
+    } finally {
+      setGuardando(false); // siempre se activa, con error o sin error
+    }
   };
 
   // se ejecuta cuando se da "Guardar accion" en el menu
-  const guardarAccion = (d: DatosAccion) => {
+  const guardarAccion = async (d: DatosAccion) => {
     if (!actual) return;
-    // si estaba "abierta" pasa a "en atencion" porque ya se empezo a atender, si no se queda igual
-    actualizar(actual.id, (i) => ({...i,estado: i.estado === "abierta" ? "en_atencion" : i.estado,acciones: [...i.acciones,{ hora: d.hora, texto: d.notas ? `${d.tipo}: ${d.notas}` : d.tipo, responsable: usuario },],}));
-    // cierra el menu al terminar
-    setAccionAbierta(false);
+    setGuardando(true);
+    try {
+      reemplazar(await enviar(`/${actual.id}/acciones`, "POST", d, "No se pudo guardar la acción"));
+      // el menu solo se cierra si salio bien, si falla se queda abierto para no perder lo escrito
+      setAccionAbierta(false);
+    } catch (error) {
+      console.error(error);
+      alert((error as Error).message);
+    } finally {
+      setGuardando(false);
+    }
   };
-
-  // se ejecuta al picar "Resolver incidencia", la pasa a Historicas y guarda quien y cuando
-  const resolver = () => {
+  
+  // se ejecuta al picar "Resolver incidencia", la pasa a Historicas
+  // la API pone estado "resuelta" y guarda quien y cuando la resolvio
+  const resolver = async () => {
     if (!actual) return;
-    actualizar(actual.id, (i) => ({...i, estado: "resuelta", resolucion: { fecha: ahora().completa, por: usuario },}));
-    // se deselecciona porque ya no pertenece a la pestaña Activas y el detalle quedaria huerfano
-    setSeleccionada(undefined);
+    setGuardando(true);
+    try {
+      reemplazar(await enviar(`/${actual.id}/resolver`, "PATCH", undefined, "No se pudo resolver la incidencia"));
+      // se deselecciona porque ya no pertenece a la pestaña Activas y el detalle quedaria huerfano
+      setSeleccionada(undefined);
+    } catch (error) {
+      console.error(error);
+      alert((error as Error).message);
+    } finally {
+      setGuardando(false);
+    }
   };
 
   // se ejecuta cuando se da "Guardar incidencia" en el menu
-  const guardar = (n: NuevaIncidencia) => {
-    const nueva: Incidencia = {
-      id: Date.now().toString(),
-      // padStart rellena con ceros para que quede INC-0004 y no INC-4
-      folio: `INC-${String(incidencias.length + 1).padStart(4, "0")}`, // TODO: lo asigna el backend
-      nombre: n.nombre, sala: n.sala, tipo: n.tipo, gravedad: n.gravedad,
-      fechaHora: ahora().completa, reporto: usuario, estado: "abierta",
-      descripcion: n.descripcion, tutorNotificado: false, acciones: [],
-    };
-    // la pone al inicio de la lista
-    setIncidencias((prev) => [nueva, ...prev]);
-    // se cambia a Activas y se selecciona para que se vea de inmediato aunque estuviera en Historicas
-    setVista("activas");
-    setSeleccionada(nueva.id);
-    setDialogoAbierto(false);
+  // la API asigna folio, fecha, estado "abierta" y quien reporto (sale del token) y regresa la incidencia creada
+  const guardar = async (n: NuevaIncidencia) => {
+    setGuardando(true);
+    try {
+      const nueva = await enviar("", "POST", n, "No se pudo guardar la incidencia");
+      // la pone al inicio de la lista
+      setIncidencias((prev) => [nueva, ...prev]);
+      // se cambia a Activas y se selecciona para que se vea de inmediato aunque estuviera en Historicas
+      setVista("activas");
+      setSeleccionada(nueva.id);
+      setDialogoAbierto(false);
+    } catch (error) {
+      console.error(error);
+      alert((error as Error).message);
+    } finally {
+      setGuardando(false);
+    }
   };
 
   return (
     <Card>
+      {/* el boton de registrar va en la esquina del titulo (action) */}
       <CardHeader
         title="Incidencias"
         action={<Button variant="contained" onClick={() => setDialogoAbierto(true)}>Registrar incidencia</Button>}
@@ -384,10 +433,18 @@ export const HistorialList = () => {
           <Tab value="activas" label={`Activas · ${totalActivas}`} />
           <Tab value="historicas" label={`Históricas · ${totalHistoricas}`} />
         </Tabs>
-
+ 
         <Filtros filtro={filtro} salas={salas} onChange={setFiltro} />
-
+ 
+        {cargando && (
+          <Typography color="text.secondary" sx={{ pb: 2 }}>
+            Cargando incidencias...
+          </Typography>
+        )}
+ 
+        {/* en celular una columna, en pantalla grande lista a la izquierda y detalle a la derecha */}
         <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr", md: "2fr 3fr" }, alignItems: "start" }}>
+          {/* la lista tiene altura maxima y scroll propio para que el detalle no se mueva */}
           <Box sx={{ display: "grid", gap: 2, maxHeight: "65vh", overflowY: "auto", pr: 1 }}>
             <Typography variant="caption" sx={{ fontWeight: 700 }}>
               {visibles.length} {vista === "activas" ? "incidencias activas · ordenadas por gravedad" : "incidencias históricas"}
@@ -397,16 +454,17 @@ export const HistorialList = () => {
               <IncidenciaCard key={i.id} inc={i} activo={i.id === seleccionada} onSelect={() => setSeleccionada(i.id)} />
             ))}
           </Box>
-          <Detalle inc={actual} onRegistrarAccion={() => setAccionAbierta(true)} onNotificar={notificar} onResolver={resolver} />
+          {/* los botones del detalle solo avisan, aqui se decide que hace cada uno */}
+          <Detalle inc={actual} guardando={guardando} onRegistrarAccion={() => setAccionAbierta(true)} onNotificar={notificar} onResolver={resolver} />
         </Box>
-
-        {/* los menus solo existen mientras estan abiertos, asi cada vez que se abren empiezan limpios y con la hora nueva */}
+ 
+        {/* los menus solo existen mientras estan abiertos, asi cada vez que se abren empiezan limpios */}
         {actual && accionAbierta && (
-          <RegistrarAccionDialog inc={actual} onClose={() => setAccionAbierta(false)} onGuardar={guardarAccion} />
+          <RegistrarAccionDialog inc={actual} guardando={guardando} onClose={() => setAccionAbierta(false)} onGuardar={guardarAccion} />
         )}
-
+ 
         {dialogoAbierto && (
-          <RegistrarIncidenciaDialog onClose={() => setDialogoAbierto(false)} onGuardar={guardar} />
+          <RegistrarIncidenciaDialog guardando={guardando} onClose={() => setDialogoAbierto(false)} onGuardar={guardar} />
         )}
       </CardContent>
     </Card>
