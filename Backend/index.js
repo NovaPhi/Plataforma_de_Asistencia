@@ -86,6 +86,8 @@ const camposInfantes = {
 // Roles que pueden crear, editar y eliminar infantes
 const rolesModificanInfantes = ["ADMINISTRADOR_CENTRAL", "DIRECTORA_ESTANCIA"];
 
+const rolesVenBitacora = ["ADMINISTRADOR_CENTRAL"];
+
 // Busca al usuario que inicio sesion con el token del header "Authentication"
 async function dataUsuarios(req){
 	let token=req.get("Authentication");
@@ -454,6 +456,28 @@ app.post("/login", async (req, res)=>{
 		res.json({"token": token, "id":data.usuario});
 	}else{
 		res.sendStatus(401);
+	}
+});
+
+app.get("/bitacora", async (req, res) => {
+	// primero se valida quien es, si el token es malo o vencio responde 401
+	let usuario;
+	try {
+		usuario = await dataUsuarios(req);
+	} catch {
+		return res.sendStatus(401);
+	}
+	// solo los roles permitidos pueden verlo
+	if (!usuario.rol.some(r => rolesVenBitacora.includes(r))) {
+		return res.sendStatus(403);
+	}
+	try {
+		// lean() devuelve objetos planos y conserva el _id, que es el que usa el frontend
+		const data = await Bitacora.find({}).sort({ fechaHora: -1 }).lean();
+		res.json(data);
+	} catch (error) {
+		console.error("Error en bitacora:", error);
+		res.status(500).json({ error: "Error al obtener la bitacora" });
 	}
 });
 
