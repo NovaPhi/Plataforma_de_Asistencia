@@ -9,7 +9,7 @@ use("ISSTE");
 // ---------------------------------------------------------------------------
 
 // Placeholder: no es un hash real. Reemplazar cuando el backend defina el algoritmo (bcrypt, argon2, etc.)
-const PASSWORD_DUMMY = "DUMMY_HASH_Issste2026";
+const PASSWORD_DUMMY = "$argon2id$v=19$m=65536,p=1,t=3$zDNDAZjgZ7BqyORUwDfTFQ$yTYNOpc29cTG+rJZdluPTpdAnEvTyBCNOWXGwQTZMeA";
 
 const usuarios = [
   // ---- Administradores centrales ----

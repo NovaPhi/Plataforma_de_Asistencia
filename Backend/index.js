@@ -182,7 +182,8 @@ async function deleteData(collection, id, req, res){
 // Crea un registro de una coleccion
 async function createData(collection, req, res) {
 	if (!modelos[collection]) {
-		return res.status(404).json({ error: "Colección no válida" });
+		res.status(404).json({ error: "Colección no válida" });
+		return null;
 	}
 
 	// Copia del body sin los campos que nunca deben venir del cliente
@@ -197,7 +198,8 @@ async function createData(collection, req, res) {
 	// Los usuarios necesitan contraseña: se guarda el hash, nunca el texto
 	if (collection === "usuarios") {
 		if (!req.body.password) {
-			return res.status(400).json({ error: "La contraseña es obligatoria" });
+			res.status(400).json({ error: "La contraseña es obligatoria" });
+			return null;
 		}
 		req.body.passwordHash = await argon2.hash(req.body.password, {
 			type: argon2.argon2id,
@@ -210,8 +212,9 @@ async function createData(collection, req, res) {
 
 	if (typeof req.body.rol === "string") req.body.rol = [req.body.rol];
 
-	await modelos[collection].create(req.body);
+	const nuevo = await modelos[collection].create(req.body);
 	res.sendStatus(201);
+	return nuevo;
 }
 
 
@@ -265,8 +268,10 @@ app.post("/Pase_de_Lista/base_de_datos/:coleccion", async (req, res) => {
 			return res.sendStatus(403);
 		}
 		try {
-			await createData(req.params.coleccion, req, res);
-			await log(usuario.usuario, "crear registro", null, req);
+			const nuevo = await createData(req.params.coleccion, req, res);
+			if (nuevo) {
+				await log(usuario.usuario, "crear registro", null, req, nuevo._id);
+			}
 		}
 		catch (error) {
 			console.error("Error al crear registro:", error);
@@ -457,7 +462,7 @@ app.post("/login", async (req, res)=>{
 	}
 });
 
-async function log(sujeto, accion, objetoBefore, req){
+async function log(sujeto, accion, objetoBefore, req, registro){
 	let coleccion = req.params.coleccion;
 	let objeto = req.body;
 	//console.log("Logueando accion:", sujeto, accion, coleccion, objetoBefore, objeto);
@@ -472,14 +477,17 @@ async function log(sujeto, accion, objetoBefore, req){
 	nuevoLog["coleccion"]=coleccion;
 	nuevoLog["ip"]= req.ip;
 	nuevoLog["userAgent"]= req.get("User-Agent");
-	nuevoLog["registro"]= await modelos[coleccion].findOne({"_id":objeto.id}).exec();
+	// Identificador del registro afectado: el que se pasa al crear, o el :id de la URL
+	nuevoLog["registro"]= registro ?? req.params.id ?? null;
 	if(objetoBefore==null){
 		nuevoLog["datosAnteriores"]=null;
 	}
 	else{
 	nuevoLog["datosAnteriores"]= objetoBefore;
 	}
-	nuevoLog["datosNuevos"]= objeto;
+	// La contraseña y su hash nunca se guardan en la bitacora
+	let { passwordHash, password, ...datosNuevos } = objeto ?? {};
+	nuevoLog["datosNuevos"]= datosNuevos;
 
 	await Bitacora.create(nuevoLog);
 }
