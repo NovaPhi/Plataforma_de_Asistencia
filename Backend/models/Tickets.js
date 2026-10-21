@@ -12,6 +12,7 @@ const intentoContactoSchema = new Schema({
   numero: { type: Number, min: 1 },
   fechaHora: { type: Date },
   exitoso: { type: Boolean },
+  resultado: { type: String, enum: ["Contestó", "No contestó", "Número equivocado"] }, // Como termino la llamada
   resumen: { type: String, maxLength: 500 },
   registradoPor: { type: String, maxLength: 50 }
 }, { _id: false });

@@ -288,7 +288,7 @@ export const VBD = () => {
                 <ResourceContextProvider value="Grupos">
                     <ListContextProvider value={listGrupos}>
                         <DataTable bulkActionButtons={false}>
-                            <DataTable.Col source="_id" label="Id de estancia"/>
+                            <DataTable.Col source="estancia" label="EBDI de estancia"/>
                             <DataTable.Col source="sala"/>
                             <DataTable.Col source="cicloEscolar"/>
                             <DataTable.Col source="turno"/>
@@ -381,7 +381,7 @@ export const VBD = () => {
                 <Dialog open onClose={() => setDialogo(null)} fullWidth maxWidth="sm">
                     <DialogTitle>
                         {dialogo.registro 
-                        ? `Editar ${titulosColeccion[dialogo.coleccion]}.singular` 
+                        ? `Editar ${titulosColeccion[dialogo.coleccion].singular}` 
                         : titulosColeccion[dialogo.coleccion].nuevo}
                     </DialogTitle>
 
@@ -398,8 +398,8 @@ export const VBD = () => {
                             <>
                                 <TextField
                                     label="Número de Empleado"
-                                    value={datos.numEmpleado ?? ""}
-                                    onChange={(e) => setDatos((prev) => ({ ...prev, numEmpleado: e.target.value }))}
+                                    value={datos.numeroEmpleado ?? ""}
+                                    onChange={(e) => setDatos((prev) => ({ ...prev, numeroEmpleado: e.target.value }))}
                                 />
                                 <TextField
                                     label="Usuario"
@@ -452,8 +452,8 @@ export const VBD = () => {
                             <>
                                 <TextField
                                     label="EBDI"
-                                    value={datos.EBDI ?? ""}
-                                    onChange={(e) => setDatos((prev) => ({ ...prev, EBDI: e.target.value }))}
+                                    value={datos.ebdi ?? ""}
+                                    onChange={(e) => setDatos((prev) => ({ ...prev, ebdi: e.target.value }))}
                                 />
                                 <TextField
                                     label="Nombre"
@@ -462,12 +462,12 @@ export const VBD = () => {
                                 />
                                 <TextField
                                     label="UR"
-                                    value={datos.Ur ?? ""}
+                                    value={datos.ur ?? ""}
                                     onChange={(e) => setDatos((prev) => ({ ...prev, ur: e.target.value }))}
                                 />
                                 <TextField
                                     label="Domicilio"
-                                    value={datos.Domicilio ?? ""}
+                                    value={datos.domicilio ?? ""}
                                     onChange={(e) => setDatos((prev) => ({ ...prev, domicilio: e.target.value }))}
                                 />
                                 <TextField
@@ -487,8 +487,8 @@ export const VBD = () => {
                                 />
                                 <TextField
                                     label="Ciclo Escolar"
-                                    value={datos.cicloescolar ?? ""}
-                                    onChange={(e) => setDatos((prev) => ({ ...prev, cicloescolar: e.target.value }))}
+                                    value={datos.cicloEscolar ?? ""}
+                                    onChange={(e) => setDatos((prev) => ({ ...prev, cicloEscolar: e.target.value }))}
                                 />
                                 <TextField
                                     label="Turno"
@@ -508,8 +508,8 @@ export const VBD = () => {
                                      * solo agarra los usuaarios si tienen rol docente
                                      */}
                                     {(bd.usuarios ?? []).map((u: any) => (
-                                    <MenuItem key={u._id} value={u._id}>
-                                    {u.Nombre ?? u.nombre} {u.Paterno ?? u.paterno}
+                                    <MenuItem key={u._id} value={u.usuario}>
+                                    {u.nombre} {u.paterno}
                                     </MenuItem>
                                     ))}
                                 </TextField>
@@ -520,17 +520,17 @@ export const VBD = () => {
                             <>
                                 <TextField
                                     label="Matricula"
-                                    value={datos.Matricula ?? ""}
+                                    value={datos.matricula ?? ""}
                                     onChange={(e) => setDatos((prev) => ({ ...prev, matricula: e.target.value }))}
                                 />
                                 <TextField
                                     label="UR"
-                                    value={datos.UR ?? ""}
+                                    value={datos.ur ?? ""}
                                     onChange={(e) => setDatos((prev) => ({ ...prev, ur: e.target.value }))}
                                 />
                                 <TextField
                                     label="EBDI"
-                                    value={datos.EBDI ?? ""}
+                                    value={datos.ebdi ?? ""}
                                     onChange={(e) => setDatos((prev) => ({ ...prev, ebdi: e.target.value }))}
                                 />
                                 <TextField

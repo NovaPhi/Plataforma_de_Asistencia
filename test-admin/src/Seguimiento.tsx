@@ -105,7 +105,7 @@ const CasoCard = ({ caso, activo, onSelect }: {caso: Caso; activo: boolean; onSe
     <CardContent sx={{ display: "grid", gap: 1 }}>
       <Typography fontWeight={700}>{caso.nombre}</Typography>
       <Typography variant="caption">
-        {caso.sala} · Falta del {caso.fechaFalta} · Folio {caso.folio}
+        {caso.sala} · Falta del {soloFecha(caso.fechaFalta)} · Folio {caso.folio}
       </Typography>
       <Box><Chip size="small" variant="outlined" color="primary" label={ETIQUETA_ESTADO[caso.estado]} /></Box>
       {/* el aviso amarillo solo sale si el caso trae una alerta */}
@@ -120,7 +120,7 @@ const CasoCard = ({ caso, activo, onSelect }: {caso: Caso; activo: boolean; onSe
           <Typography variant="caption">Intentos de contacto</Typography>
           <Typography variant="body2">
             {/* muestra solo la ultima llamada (la primera del arreglo), si no hay ninguna dice "Ninguno" */}
-            {caso.intentos[0] ? `${caso.intentos[0].fecha} · ${caso.intentos[0].resultado}` : "Ninguno"}
+            {caso.intentos[0] ? `${fechaTexto(caso.intentos[0].fecha)} ·${caso.intentos[0].resultado}` : "Ninguno"}
           </Typography>
         </Box>
       </Box>
@@ -289,7 +289,7 @@ const Expediente = ({ caso, guardando, onRegistrarLlamada  }: { caso?: Caso; gua
           <Dato etiqueta="Niña o niño" valor={caso.nombre} />
           <Dato etiqueta="Sala" valor={caso.sala} />
           <Dato etiqueta="Folio" valor={caso.folio} />
-          <Dato etiqueta="Fecha de la falta" valor={caso.fechaFalta} />
+          <Dato etiqueta="Fecha de la falta" valor={soloFecha(caso.fechaFalta)} />
           <Dato etiqueta="Estado" valor={ETIQUETA_ESTADO[caso.estado]} />
         </Box>
         {/* lista de todas las llamadas hechas, la mas reciente arriba */}

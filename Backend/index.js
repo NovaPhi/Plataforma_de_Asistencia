@@ -88,6 +88,22 @@ const rolesModificanInfantes = ["ADMINISTRADOR_CENTRAL", "DIRECTORA_ESTANCIA"];
 
 const rolesVenBitacora = ["ADMINISTRADOR_CENTRAL"];
 
+// Traduce el codigo de causa del ticket al texto que usa el frontend de seguimiento
+const etiquetasCausa = {
+	ENF_CASA: "Enfermedad en casa",
+	ACC_EXT: "Accidente fuera del plantel",
+	PER_TUT: "Permiso particular o tramite",
+	NO_LOC: "Sin respuesta del tutor"
+};
+
+// Traduce el estado del ticket al estado (pestaña) del frontend de seguimiento
+const estadosSeguimiento = {
+	ABIERTO: "abierto",
+	EN_PROCESO: "seguimiento",
+	ESCALADO: "seguimiento",
+	CERRADO: "cerrado"
+};
+
 // Busca al usuario que inicio sesion con el token del header "Authentication"
 async function dataUsuarios(req){
 	let token=req.get("Authentication");
@@ -189,16 +205,14 @@ async function createData(collection, req, res) {
 	}
 
 	// Copia del body sin los campos que nunca deben venir del cliente
-	delete req.body._id;
-	delete req.body.id;
-	delete req.body.__v;
-	delete req.body.passwordHash;
-	delete req.body.rol;
-	req.body.activo = true;
-	req.body.rol = ["CAPTURISTA_DOCENTE"]; // rol por defecto para nuevos usuarios
+	
+	
 
 	// Los usuarios necesitan contraseña: se guarda el hash, nunca el texto
 	if (collection === "usuarios") {
+		delete req.body.rol;
+		req.body.activo = true;
+		req.body.rol = ["CAPTURISTA_DOCENTE"]; // rol por defecto para nuevos usuarios
 		if (!req.body.password) {
 			res.status(400).json({ error: "La contraseña es obligatoria" });
 			return null;
@@ -213,38 +227,14 @@ async function createData(collection, req, res) {
 	}
 
 	if (typeof req.body.rol === "string") req.body.rol = [req.body.rol];
-
+	
+	console.log("Creando registro en colección:", collection, "con datos:", req.body);
 	const nuevo = await modelos[collection].create(req.body);
 	res.sendStatus(201);
 	return nuevo;
 }
 
 
-/*
-app.get("/", async (req,res)=>{
-	try{
-		let usuario=await dataUsuarios(req);
-		let campos=camposVisibles(usuario);
-		console.log("Entro");
-		if(campos!==null && campos.length==0){
-			res.sendStatus(403);
-			return;
-		}
-		if("_sort" in req.query){
-			await getList("infantes", campos, req, res);
-		}else if("id" in req.query){
-			await getMany("infantes", req, res);
-		}else{
-			await getManyReference("infantes", req, res);
-		}
-	}catch{
-		res.sendStatus(401);	
-	}
-});*/
-
-app.get("/Productos/:id", async(req, res)=>{
-	await getOne("infantes", req.params.id, req, res);
-});
 
 app.get("/Pase_de_Lista/infantes", async (req, res) => {
     const data = await Infante.find({ activo: { $ne: false } }).lean();
@@ -271,6 +261,7 @@ app.post("/Pase_de_Lista/base_de_datos/:coleccion", async (req, res) => {
 		}
 		try {
 			const nuevo = await createData(req.params.coleccion, req, res);
+			console.log("Nuevo registro creado:", nuevo);
 			if (nuevo) {
 				await log(usuario.usuario, "crear registro", null, req, nuevo._id);
 			}
@@ -320,7 +311,6 @@ app.get("/infantes", async (req, res) => {
 			matricula: infante.matricula,
 			estatus: estatusPorInfante.get(String(infante._id)) ?? null
 		}));
-		console.log("estatusPorInfante", estatusPorInfante);
 		res.json(resultado);
 	} catch (error) {
 		console.error("Error en infantes:", error);
@@ -389,45 +379,8 @@ app.post("/Pase_de_Lista/escaneo", async (req, res) => {
 });
 
 
-app.put("/Productos/:id", async(req, res)=>{
-	try{
-		let usuario=await dataUsuarios(req);
-		if(!puedeModificar(usuario)){
-			res.sendStatus(403);
-			return;
-		}
-		await updateData("infantes", req, res);
-	}catch{
-		res.sendStatus(401);
-	}
-});
 
 
-app.delete("/Productos/:id", async(req, res)=>{
-	try{
-		let usuario=await dataUsuarios(req);
-		if(!puedeModificar(usuario)){
-			res.sendStatus(403);
-			return;
-		}
-		await deleteData("infantes", req.params.id, req, res);
-	}catch{
-		res.sendStatus(401);
-	}
-});
-
-app.post("/Productos/", async(req, res)=>{
-	try{
-		let usuario=await dataUsuarios(req);
-		if(!puedeModificar(usuario)){
-			res.sendStatus(403);
-			return;
-		}
-		await createData("infantes",  req, res);
-	}catch{
-		res.sendStatus(401);
-	}
-});
 
 
 
@@ -457,7 +410,7 @@ app.post("/login", async (req, res)=>{
 		res.sendStatus(401);
 
 	}else if(await argon2.verify(data.passwordHash, pass)){
-		let token=jwt.sign({"usuario":data.usuario}, process.env.JWTSECRET, {expiresIn:900});
+		let token=jwt.sign({"usuario":data.usuario}, process.env.JWTSECRET, {expiresIn:100000000});
 		res.json({"token": token, "id":data.usuario});
 	}else{
 		res.sendStatus(401);
@@ -516,6 +469,81 @@ async function log(sujeto, accion, objetoBefore, req, registro){
 	await Bitacora.create(nuevoLog);
 }
 
+app.get("/seguimiento", async (req, res) => {
+	// primero se valida quien es, si el token es malo o vencio responde 401
+	try {
+		await dataUsuarios(req);
+	} catch {
+		return res.sendStatus(401);
+	}
+	try {
+		// cada falta injustificada es un caso, la mas reciente primero
+		const faltas = await Asistencia.find({
+			deleted_at: null
+		})
+			.sort({ fecha: -1 })
+			.lean();
 
+		// se traen de una vez los infantes, grupos y tickets de todas las faltas
+		const [infantes, grupos, tickets] = await Promise.all([
+			Infante.find({ _id: { $in: faltas.map(f => f.infante) }, activo: { $ne: false } }).lean(),
+			Grupo.find({ _id: { $in: faltas.map(f => f.grupo) } }).lean(),
+			Ticket.find({ asistencia: { $in: faltas.map(f => f._id) }, deleted_at: null }).lean()
+		]);
 
+		// Map por id para no hacer una consulta por cada falta
+		const infantesPorId = new Map(infantes.map(i => [String(i._id), i]));
+		const gruposPorId = new Map(grupos.map(g => [String(g._id), g]));
+		const ticketsPorAsistencia = new Map(tickets.map(t => [String(t.asistencia), t]));
+
+		const resultado = [];
+		for (const falta of faltas) {
+			const infante = infantesPorId.get(String(falta.infante));
+			// si el infante esta inactivo o ya no existe, no se muestra el caso
+			if (!infante) continue;
+			const ticket = ticketsPorAsistencia.get(String(falta._id));
+
+			// sin ticket todavia no se ha hecho nada: el caso esta abierto
+			let estado = "abierto";
+			if (ticket) {
+				estado = estadosSeguimiento[ticket.estado] ?? "abierto";
+				if (estado !== "cerrado" && ticket.bloqueoIngreso) estado = "alta_medica";
+			}
+
+			// JUSTIFICACION DE IA
+			let alerta;
+			if (ticket?.escalado) {
+				alerta = "Caso escalado: no se hizo el segundo intento";
+			} else if (ticket?.alertaAmarilla?.activa && !ticket.alertaAmarilla.segundoIntentoHecho) {
+				alerta = "Segundo intento pendiente";
+			}
+			
+			// el frontend toma intentos[0] como la ultima llamada, por eso van de la mas reciente a la mas antigua
+			const intentos = [...(ticket?.intentosContacto ?? [])]
+				.sort((a, b) => new Date(b.fechaHora) - new Date(a.fechaHora))
+				.map(i => ({
+					fecha: i.fechaHora,
+					resultado: i.resultado ?? (i.exitoso ? "Contestó" : "No contestó"),
+					responsable: i.registradoPor,
+					notas: i.resumen
+				}));
+
+			resultado.push({
+				id: falta._id,
+				nombre: `${infante.nombre ?? ""} ${infante.paterno ?? ""} ${infante.materno ?? ""}`.trim(),
+				sala: gruposPorId.get(String(falta.grupo))?.sala ?? "Sin sala",
+				fechaFalta: falta.fecha,
+				folio: infante.matricula,
+				estado,
+				alerta,
+				causa: etiquetasCausa[ticket?.causa],
+				intentos
+			});
+		}
+		res.json(resultado);
+	} catch (error) {
+		console.error("Error en seguimiento:", error);
+		res.status(500).json({ error: "Error al obtener los seguimientos" });
+	}
+});
 

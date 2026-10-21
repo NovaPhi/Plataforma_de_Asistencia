@@ -4,7 +4,7 @@ import { theme } from "./Theme";
 import { Escaneo_Credencial } from "./Escaneo_QR";
 import { SeguimientoList } from "./Seguimiento"
 import { PasaLista } from "./Pase_de_Lista";
-import { Bitacora } from "./Bitacora";
+import { Bitacora } from "./Historial";
 import { HistorialList } from "./Datos_Historicos";
 import { VBD } from "./VistaBD";
 import { dataProvider } from "./dataProvider";
