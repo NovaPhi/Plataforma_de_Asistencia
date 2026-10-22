@@ -335,10 +335,10 @@ export const Escaneo_Credencial = () =>{
                                 <>
                                 {/*datos del estudiante con iniciales nombre y matricula*/}
                                 <Box sx={{display: "flex", alignItems: "center", gap: 2, my:2}}>
-                                    // esta es la forma en la que el Avatar como el de outlook tenga su color
+                                    {/*esta es la forma en la que el Avatar como el de outlook tenga su color*/}
                                     <Avatar sx={{width:56, height: 56, bgcolor: "primary.main", color: "primary.contrastText"}}> {iniciales(leido.Nombre)}</Avatar>
                                     <Box>
-                                        // variante es como se ve el texto y componente es como lo lee el html
+                                        {/* variante es como se ve el texto y componente es como lo lee el html */}
                                         <Typography variant="h5" fontWeight={700}>
                                             {leido.Nombre}
                                         </Typography>
