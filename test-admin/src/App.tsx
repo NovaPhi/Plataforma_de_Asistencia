@@ -33,7 +33,7 @@ return(
 // esta parte es donde se hace el usePermissions que esta diciendo si es este rol esta bien lo puede ver
 // esta la funcion de permissions ya que puede tener mas de un rol puede ver por vista por lo que se le 
 // asigno un has para que sea mas facil 
-    <Admin lightTheme={lightTheme} darkTheme={darkTheme} defaultTheme="light"  authProvider={authProvider} i18nProvider={i18nProvider} dataProvider={dataProvider} dashboard={Dashboard} layout={Layout} >
+    <Admin lightTheme={lightTheme} darkTheme={darkTheme} defaultTheme="light"  authProvider={authProvider} i18nProvider={i18nProvider} dataProvider={dataProvider} layout={Layout} >
       {(permissions: string[] = []) =>{ 
       const has = (...roles: string[]) => roles.some((r) => permissions.includes(r));
         return (
