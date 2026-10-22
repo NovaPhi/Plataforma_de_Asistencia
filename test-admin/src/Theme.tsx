@@ -170,12 +170,3 @@ export function useDyslexia() {
 
 /* ---------- Fonts (call once) ---------- */
 
-export function loadFonts(basePath = "/fonts") {
-  [
-    new FontFace("Encode Sans", `url(${basePath}/EncodeSans-latin-var.woff2)`, { weight: "100 900" }),
-    new FontFace("Noto Sans", `url(${basePath}/NotoSans-latin-var.woff2)`, { weight: "100 900" }),
-    new FontFace("Noto Sans", `url(${basePath}/NotoSans-latin-var-italic.woff2)`, { weight: "100 900", style: "italic" }),
-    new FontFace("OpenDyslexic", `url(${basePath}/OpenDyslexic-Regular.woff2)`, { weight: "400" }),
-    new FontFace("OpenDyslexic", `url(${basePath}/OpenDyslexic-Bold.woff2)`, { weight: "700" }),
-  ].forEach((f) => f.load().then((l) => document.fonts.add(l)).catch(() => {}));
-}

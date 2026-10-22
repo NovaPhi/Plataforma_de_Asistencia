@@ -1,7 +1,7 @@
 import { Admin, Resource,CustomRoutes } from "react-admin";
 import {useMemo} from "react"
 import { Layout } from "./Layout";
-import { buildTheme, DyslexiaProvider, loadFonts, useDyslexia} from "./Theme";
+import { buildTheme, DyslexiaProvider, useDyslexia} from "./Theme";
 import { Escaneo_Credencial } from "./Escaneo_QR";
 import { SeguimientoList } from "./Seguimiento"
 import { PasaLista } from "./Pase_de_Lista";
@@ -11,13 +11,16 @@ import { VBD } from "./VistaBD";
 import { dataProvider } from "./dataProvider";
 import authProvider from "./AuthProvider";
 import { i18nProvider } from "./i18nProvider";
-import { Dashboard } from "./Dashboard";
 import PostIcon from "@mui/icons-material/Book";
 import Registrarse from "./registrarse";
 import {Route} from "react-router-dom";
 
 // added the fonts for the theme
-loadFonts("fonts");
+import "@fontsource-variable/encode-sans";
+import "@fontsource-variable/noto-sans";
+import "@fontsource-variable/noto-sans/wght-italic.css";
+import "@fontsource/opendyslexic/400.css";
+import "@fontsource/opendyslexic/700.css";
 
 const AppContent =() => {
   const {dyslexia} = useDyslexia();
@@ -31,7 +34,7 @@ return(
 // esta parte es donde se hace el usePermissions que esta diciendo si es este rol esta bien lo puede ver
 // esta la funcion de permissions ya que puede tener mas de un rol puede ver por vista por lo que se le 
 // asigno un has para que sea mas facil 
-    <Admin lightTheme={lightTheme} darkTheme={darkTheme} defaultTheme="light"  authProvider={authProvider} i18nProvider={i18nProvider} dataProvider={dataProvider} dashboard={Dashboard} layout={Layout} >
+    <Admin lightTheme={lightTheme} darkTheme={darkTheme} defaultTheme="light"  authProvider={authProvider} i18nProvider={i18nProvider} dataProvider={dataProvider} layout={Layout} >
       {(permissions: string[] = []) =>{ 
       const has = (...roles: string[]) => roles.some((r) => permissions.includes(r));
         return (
