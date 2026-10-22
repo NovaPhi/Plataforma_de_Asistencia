@@ -105,6 +105,9 @@ const resultadosLlamada = ["Contestó", "No contestó", "Número equivocado"];
 const tiposIncidencia = ["Accidente", "Enfermedad", "Conducta"];
 const gravedadesIncidencia = ["grave", "moderada", "leve"];
 
+// Opciones del menu "Registrar accion" de una incidencia (las mismas de TIPOS_ACCION en Datos_Historicos.tsx)
+const tiposAccionIncidencia = ["Primeros auxilios", "Llamada al tutor", "Traslado a servicio médico", "Observación", "Otra"];
+
 // Traduce el estado del ticket al estado (pestaña) del frontend de seguimiento
 const estadosSeguimiento = {
 	ABIERTO: "abierto",
@@ -688,6 +691,210 @@ app.post("/seguimiento/:id/llamadas", async (req, res) => {
 	}
 });
 
+// Guarda el expediente del caso :id: causa, asesoria brindada, fecha probable de retorno y notas confidenciales
+// La asesoria y la nota se guardan como registros nuevos (historial), los campos vacios no cambian nada
+// Si la falta todavia no tiene ticket se crea en este momento. Regresa el caso ya actualizado
+app.patch("/seguimiento/:id", async (req, res) => {
+	let usuario;
+	try {
+		usuario = await dataUsuarios(req);
+	} catch {
+		return res.sendStatus(401);
+	}
+	try {
+		const { causa, asesoria, fechaRetorno, notas } = req.body;
+		// el frontend manda la etiqueta ("Enfermedad en casa"), en el ticket se guarda el codigo ("ENF_CASA")
+		const codigoCausa = Object.keys(etiquetasCausa).find(k => etiquetasCausa[k] === causa);
+		if (causa && !codigoCausa) {
+			return res.status(400).json({ error: "Causa no válida" });
+		}
+		// la fecha llega como "aaaa-mm-dd" desde el calendario
+
+		const fechaRetornoEstimada = fechaRetorno ? new Date(fechaRetorno) : null; // Si la fecha llega con valor se guarda como Date, si no es null
+		if (fechaRetornoEstimada && isNaN(fechaRetornoEstimada.getTime())) {
+			return res.status(400).json({ error: "Fecha de retorno no válida" });
+		}
+
+		// si la falta no existe o ya fue borrada, no se puede hacer nada
+		const falta = await Asistencia.findOne({ _id: req.params.id, deleted_at: null }).lean();
+		if (!falta) return res.sendStatus(404);
+	
+		// Se busca el infante y el grupo de la falta para regresar el nombre y la sala en la respuesta
+		const [infante, grupo] = await Promise.all([
+			Infante.findOne({ _id: falta.infante, activo: { $ne: false } }).lean(),
+			Grupo.findOne({ _id: falta.grupo }).lean()
+		]);
+		if (!infante) return res.sendStatus(404);
+
+		// sin lean() porque aqui si se modifica el ticket y se guarda con save()
+		let ticket = await Ticket.findOne({ asistencia: falta._id, deleted_at: null });
+		if (!ticket) {
+			ticket = new Ticket({
+				asistencia: falta._id,
+				infante: falta.infante,
+				estancia: falta.estancia,
+				estado: "ABIERTO",
+				fechaApertura: new Date()
+			});
+		}
+		if (ticket.estado === "CERRADO") {
+			return res.status(400).json({ error: "El caso ya está cerrado" });
+		}
+
+		
+		if (codigoCausa) ticket.causa = codigoCausa;
+		const esNuevo = ticket.isNew;
+		await ticket.save(); // Si ya existe se guardan los cambios, si no existe se crea y se guarda
+		if (esNuevo) {
+			await Asistencia.updateOne({ _id: falta._id }, { $set: { ticket: ticket._id } });
+		}
+
+		// cada vez que se escribe una asesoria o una fecha se crea una nueva y el ticket apunta a la mas reciente
+		if (asesoria || fechaRetornoEstimada) {
+			const nuevaAsesoria = await Asesoria.create({
+				ticket: ticket._id,
+				infante: falta.infante,
+				asesoria: asesoria || undefined,
+				fechaRetornoEstimada,
+				registradoPor: usuario.usuario,
+				fechaRegistro: new Date()
+			});
+			ticket.asesoria = nuevaAsesoria._id;
+			await ticket.save();
+		}
+		// la nota se cifra en el modelo de NotaConfidencial
+		if (notas) {
+			await NotaConfidencial.create({
+				ticket: ticket._id,
+				infante: falta.infante,
+				nota: notas,
+				autor: usuario.usuario,
+				fechaRegistro: new Date()
+			});
+			// la bitacora guarda el body tal cual, la nota no debe quedar en claro
+			req.body = { ...req.body, notas: "[cifrado]" };
+		}
+		await log(usuario.usuario, "ACTUALIZAR", null, req, ticket._id, "tickets");
+
+		const asesoriaActual = ticket.asesoria
+			? await Asesoria.findOne({ _id: ticket.asesoria, deleted_at: null }).lean()
+			: null;
+
+		// se regresa el caso con la misma forma que el GET /seguimiento
+		let estado = estadosSeguimiento[ticket.estado] ?? "abierto";
+		if (estado !== "cerrado" && ticket.bloqueoIngreso) estado = "alta_medica";
+
+		let alerta;
+		if (ticket.escalado) {
+			alerta = "Caso escalado: no se hizo el segundo intento";
+		} else if (ticket.alertaAmarilla?.activa && !ticket.alertaAmarilla.segundoIntentoHecho) {
+			alerta = "Segundo intento pendiente";
+		}
+
+		// el frontend toma intentos[0] como la ultima llamada, por eso van de la mas reciente a la mas antigua
+		const intentos = [...ticket.intentosContacto]
+			.sort((a, b) => new Date(b.fechaHora) - new Date(a.fechaHora))
+			.map(i => ({
+				fecha: i.fechaHora,
+				resultado: i.resultado ?? (i.exitoso ? "Contestó" : "No contestó"),
+				responsable: i.registradoPor,
+				notas: i.resumen
+			}));
+
+		res.json({
+			id: falta._id,
+			nombre: `${infante.nombre ?? ""} ${infante.paterno ?? ""} ${infante.materno ?? ""}`.trim(),
+			sala: grupo?.sala ?? "Sin sala",
+			fechaFalta: falta.fecha,
+			folio: infante.matricula,
+			estado,
+			alerta,
+			causa: etiquetasCausa[ticket.causa],
+			intentos,
+			asesoria: asesoriaActual?.asesoria,
+			fechaRetorno: asesoriaActual?.fechaRetornoEstimada ?? undefined
+		});
+	} catch (error) {
+		console.error("Error al guardar expediente:", error);
+		if (error.name === "ValidationError") {
+			return res.status(400).json({ error: error.message });
+		}
+		res.status(500).json({ error: "Error al guardar el expediente" });
+	}
+});
+
+// Cierra el caso :id: pone el ticket en CERRADO y guarda quien y cuando lo cerro
+// Si la falta todavia no tiene ticket se crea ya cerrado. Regresa el caso ya actualizado
+app.patch("/seguimiento/:id/cerrar", async (req, res) => {
+	let usuario;
+	try {
+		usuario = await dataUsuarios(req);
+	} catch {
+		return res.sendStatus(401);
+	}
+	try {
+		const falta = await Asistencia.findOne({ _id: req.params.id, deleted_at: null }).lean();
+		if (!falta) return res.sendStatus(404);
+
+
+		const [infante, grupo] = await Promise.all([
+			Infante.findOne({ _id: falta.infante, activo: { $ne: false } }).lean(),
+			Grupo.findOne({ _id: falta.grupo }).lean()
+		]);
+		if (!infante) return res.sendStatus(404);
+
+		let ticket = await Ticket.findOne({ asistencia: falta._id, deleted_at: null });
+		if (!ticket) {
+			ticket = new Ticket({
+				asistencia: falta._id,
+				infante: falta.infante,
+				estancia: falta.estancia,
+				fechaApertura: new Date()
+			});
+		}
+		if (ticket.estado === "CERRADO") {
+			return res.status(400).json({ error: "El caso ya está cerrado" });
+		}
+		// se guarda como estaba antes para la bitacora
+		const antes = { estado: ticket.estado ?? null };
+
+		ticket.estado = "CERRADO";
+		ticket.fechaCierre = new Date();
+		ticket.cerradoPor = usuario.usuario;
+
+		const esNuevo = ticket.isNew;
+		await ticket.save();
+		if (esNuevo) {
+			await Asistencia.updateOne({ _id: falta._id }, { $set: { ticket: ticket._id } });
+		}
+		await log(usuario.usuario, "CERRAR_TICKET", antes, req, ticket._id, "tickets");
+
+		// cerrado ya no lleva alerta ni alta medica, solo se arma el resto del caso
+		const intentos = [...ticket.intentosContacto]
+			.sort((a, b) => new Date(b.fechaHora) - new Date(a.fechaHora))
+			.map(i => ({
+				fecha: i.fechaHora,
+				resultado: i.resultado ?? (i.exitoso ? "Contestó" : "No contestó"),
+				responsable: i.registradoPor,
+				notas: i.resumen
+			}));
+
+		res.json({
+			id: falta._id,
+			nombre: `${infante.nombre ?? ""} ${infante.paterno ?? ""} ${infante.materno ?? ""}`.trim(),
+			sala: grupo?.sala ?? "Sin sala",
+			fechaFalta: falta.fecha,
+			folio: infante.matricula,
+			estado: "cerrado",
+			causa: etiquetasCausa[ticket.causa],
+			intentos
+		});
+	} catch (error) {
+		console.error("Error al cerrar caso:", error);
+		res.status(500).json({ error: "Error al cerrar el caso" });
+	}
+});
+
 app.get("/incidencias", async (req, res) => {
 	// primero se valida quien es, si el token es malo o vencio responde 401
 	try {
@@ -821,3 +1028,132 @@ app.post("/incidencias", async (req, res) => {
 	}
 });
 
+
+// Agrega una accion a la incidencia :id con la hora del servidor y el usuario del token
+// Con la primera accion la incidencia pasa a "en_atencion". Regresa la incidencia ya actualizada
+app.post("/incidencias/:id/acciones", async (req, res) => {
+	let usuario;
+	try {
+		usuario = await dataUsuarios(req);
+	} catch {
+		return res.sendStatus(401);
+	}
+	try {
+		const { tipo, notas } = req.body;
+		if (!tiposAccionIncidencia.includes(tipo)) {
+			return res.status(400).json({ error: "Tipo de acción no válido" });
+		}
+
+		// sin lean() porque aqui si se modifica la incidencia y se guarda con save()
+		const incidencia = await Incidencia.findOne({ _id: req.params.id, deleted_at: null });
+		if (!incidencia) return res.sendStatus(404);
+		if (incidencia.estado === "resuelta") {
+			return res.status(400).json({ error: "La incidencia ya está resuelta" });
+		}
+
+		// el texto que se muestra es el tipo de accion y, si hay, las notas
+		incidencia.acciones.push({
+			fechaHora: new Date(),
+			texto: notas ? `${tipo}: ${notas}` : tipo,
+			responsable: usuario.usuario
+		});
+		if (incidencia.estado === "abierta") incidencia.estado = "en_atencion";
+		if (tipo === "Llamada al tutor") incidencia.tutorNotificado = true;
+		await incidencia.save();
+
+		await log(usuario.usuario, "ACCION", null, req, incidencia._id, "incidencias");
+
+		const [infante, grupo] = await Promise.all([
+			Infante.findOne({ _id: incidencia.infante }).lean(),
+			Grupo.findOne({ _id: incidencia.grupo }).lean()
+		]);
+
+		// se regresa con la misma forma que el GET /incidencias, acciones de la mas vieja a la mas nueva
+		const acciones = [...incidencia.acciones]
+			.sort((a, b) => new Date(a.fechaHora) - new Date(b.fechaHora))
+			.map(a => ({
+				hora: a.fechaHora,
+				texto: a.texto,
+				responsable: a.responsable
+			}));
+
+		res.status(201).json({
+			id: incidencia._id,
+			folio: incidencia.folio,
+			nombre: `${infante?.nombre ?? ""} ${infante?.paterno ?? ""} ${infante?.materno ?? ""}`.trim(),
+			sala: grupo?.sala ?? "Sin sala",
+			tipo: incidencia.tipo,
+			gravedad: incidencia.gravedad,
+			fechaHora: incidencia.fechaHora,
+			reporto: incidencia.reporto,
+			estado: incidencia.estado,
+			descripcion: incidencia.descripcion,
+			tutorNotificado: incidencia.tutorNotificado ?? false,
+			acciones
+		});
+	} catch (error) {
+		console.error("Error al registrar acción:", error);
+		if (error.name === "ValidationError") {
+			return res.status(400).json({ error: error.message });
+		}
+		res.status(500).json({ error: "Error al registrar la acción" });
+	}
+});
+
+// Resuelve la incidencia :id: estado "resuelta" y guarda quien y cuando la resolvio
+// Regresa la incidencia ya actualizada
+app.patch("/incidencias/:id/resolver", async (req, res) => {
+	let usuario;
+	try {
+		usuario = await dataUsuarios(req);
+	} catch {
+		return res.sendStatus(401);
+	}
+	try {
+		const incidencia = await Incidencia.findOne({ _id: req.params.id, deleted_at: null });
+		if (!incidencia) return res.sendStatus(404);
+		if (incidencia.estado === "resuelta") {
+			return res.status(400).json({ error: "La incidencia ya está resuelta" });
+		}
+		// se guarda como estaba antes para la bitacora
+		const antes = { estado: incidencia.estado };
+
+		incidencia.estado = "resuelta";
+		incidencia.resolucion = { fecha: new Date(), por: usuario.usuario };
+		await incidencia.save();
+
+		await log(usuario.usuario, "RESOLVER", antes, req, incidencia._id, "incidencias");
+
+		const [infante, grupo] = await Promise.all([
+			Infante.findOne({ _id: incidencia.infante }).lean(),
+			Grupo.findOne({ _id: incidencia.grupo }).lean()
+		]);
+
+		const acciones = [...incidencia.acciones]
+			.sort((a, b) => new Date(a.fechaHora) - new Date(b.fechaHora))
+			.map(a => ({
+				hora: a.fechaHora,
+				texto: a.texto,
+				responsable: a.responsable
+			}));
+
+		res.json({
+			id: incidencia._id,
+			folio: incidencia.folio,
+			nombre: `${infante?.nombre ?? ""} ${infante?.paterno ?? ""} ${infante?.materno ?? ""}`.trim(),
+			sala: grupo?.sala ?? "Sin sala",
+			tipo: incidencia.tipo,
+			gravedad: incidencia.gravedad,
+			fechaHora: incidencia.fechaHora,
+			reporto: incidencia.reporto,
+			estado: incidencia.estado,
+			descripcion: incidencia.descripcion,
+			tutorNotificado: incidencia.tutorNotificado ?? false,
+			acciones,
+			resolucion: incidencia.resolucion
+		});
+	} catch (error) {
+		console.error("Error al resolver incidencia:", error);
+		res.status(500).json({ error: "Error al resolver la incidencia" });
+	}
+});
