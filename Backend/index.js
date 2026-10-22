@@ -46,8 +46,35 @@ const options={
 
 
 
+// Pone en falta las asistencias de dias anteriores que se quedaron sin marcar
+async function cerrarDia(){
+	const hoy = new Date(new Date().toLocaleDateString("sv-SE"));
+	const r = await Asistencia.updateMany(
+		{ estatus: null, fecha: { $lt: hoy }, deleted_at: null },
+		{ $set: { estatus: "FALTA_INJUSTIFICADA", sincronizadoEn: new Date() } }
+	);
+	console.log("Cierre del dia, asistencias puestas en falta:", r.modifiedCount);
+}
+
+// Programa cerrarDia para la siguiente medianoche del servidor y se vuelve a programar
+function programarCierre(){
+	const ahora = new Date();
+	const medianoche = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + 1);
+	setTimeout(async () => {
+		try {
+			await cerrarDia();
+		} catch (error) {
+			console.error("Error en el cierre del dia:", error);
+		}
+		programarCierre();
+	}, medianoche - ahora);
+}
+
 mongoose.connect(MONGO_URL).then(() => {
   console.log("Conectado a la base de datos");
+  // por si el servidor estuvo apagado a medianoche
+  cerrarDia().catch(error => console.error("Error en el cierre del dia:", error));
+  programarCierre();
   https.createServer(options,app).listen(PORT, async ()=>{
 	console.log(`Backend corriendo en puerto ${PORT}`);
 });
@@ -344,30 +371,55 @@ app.get("/infantes", async (req, res) => {
 			activo: { $ne: false }
 		}).lean();
 
-		const asistencias = await Asistencia.find({
-			infante: { $in: infantes.map(i => i._id) },
-			deleted_at: null
-		})
-			.sort({ fecha: -1, capturadoEn: -1 })
-			.lean();
-
-		// Ordenadas de más reciente a más antigua: la primera de cada niño es la que cuenta
-		const estatusPorInfante = new Map();
-		for (const a of asistencias) {
-			const key = String(a.infante);
-			if (!estatusPorInfante.has(key)) {
-				estatusPorInfante.set(key, a.estatus);
+		const grupoPorInfante = new Map();
+		for (const g of grupos) {
+			for (const i of g.infantes ?? []) {
+				grupoPorInfante.set(String(i), g._id);
 			}
 		}
 
-		const resultado = infantes.map(infante => ({
-			_id: String(infante._id),
-			nombre: infante.nombre,
-			paterno: infante.paterno,
-			materno: infante.materno,
-			matricula: infante.matricula,
-			estatus: estatusPorInfante.get(String(infante._id)) ?? null
-		}));
+		// se crea la asistencia de hoy de cada niño como pendiente (estatus null) si no existe
+		// a medianoche cerrarDia pone en falta las que sigan pendientes
+		const fechaHoy = new Date().toLocaleDateString("sv-SE");
+		const hoy = new Date(fechaHoy);
+		const turno = "MATUTINO";
+		const ahora = new Date();
+		if (infantes.length) {
+			await Asistencia.bulkWrite(infantes.map(i => ({
+				updateOne: {
+					filter: { infante: i._id, fecha: hoy, turno, deleted_at: null },
+					update: { $setOnInsert: {
+						grupo: grupoPorInfante.get(String(i._id)),
+						estatus: null,
+						capturadoEn: ahora,
+						clientUuid: `${i._id}-${fechaHoy}-${turno}`
+					} },
+					upsert: true
+				}
+			})));
+		}
+
+		// solo las asistencias de hoy
+		const asistencias = await Asistencia.find({
+			infante: { $in: infantes.map(i => i._id) },
+			fecha: hoy,
+			turno,
+			deleted_at: null
+		}).lean();
+		const asistenciaPorInfante = new Map(asistencias.map(a => [String(a.infante), a]));
+
+		const resultado = infantes.map(infante => {
+			const a = asistenciaPorInfante.get(String(infante._id));
+			return {
+				_id: String(infante._id),
+				nombre: infante.nombre,
+				paterno: infante.paterno,
+				materno: infante.materno,
+				matricula: infante.matricula,
+				horaIngreso: a?.horaIngreso ?? null,
+				estatus: a?.estatus ?? null
+			};
+		});
 		res.json(resultado);
 	} catch (error) {
 		console.error("Error en infantes:", error);
@@ -440,10 +492,20 @@ app.post("/Pase_de_Lista/escaneo", async (req, res) => {
 	const inf = await Infante.findOne({ matricula });
 	if (!inf) return res.status(404).json({ error: "Infante no encontrado" });
 	if(inf.activo === false) return res.status(400).json({ error: "Infante inactivo" });
-	const nueva = await modelos["asistencias"].create({
-	infante: inf._id,
-	grupo, tipo, metodo, fecha, turno, horaIngreso:capturadoEN, clientUuid,estatus: "PRESENTE"
-	});
+	// se actualiza la asistencia del dia (la que crea GET /infantes) en vez de crear otra
+	const filtro = { infante: inf._id, fecha: new Date(fecha), turno, deleted_at: null };
+	const existente = await Asistencia.findOne(filtro);
+	// si ya llego se conserva la primera hora de ingreso
+	if (existente?.horaIngreso) return res.status(200).json(existente);
+
+	const nueva = await Asistencia.findOneAndUpdate(
+		filtro,
+		{
+			$set: { estatus: "PRESENTE", horaIngreso: capturadoEN, metodo, grupo, sincronizadoEn: new Date() },
+			$setOnInsert: { clientUuid, capturadoEn: new Date() }
+		},
+		{ upsert: true, new: true, runValidators: true }
+	);
 
     res.status(201).json(nueva);
   	} catch (error) {
