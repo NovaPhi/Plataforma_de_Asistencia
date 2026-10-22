@@ -19,10 +19,19 @@ type Caso = {
   alerta?: string;
   causa?: string;
   intentos: Intento[];
+  asesoria?: string;
+  fechaRetorno?: string; // fecha ISO
+  notas?: string; 
 };
 
 // lo que se captura en el menu de "Registrar llamada" y se manda a la API
 type DatosLlamada = { resultado: string; causa: string; notas: string };
+
+// lo que se captura en el formulario del expediente y se manda a la API con el boton "Guardar"
+type DatosExpediente = { causa: string; asesoria: string; fechaRetorno: string; notas: string };
+
+// los dos filtros que se pueden aplicar, "" significa todas
+type Filtro = { sala: string; dias: string };
 
 // pestañas de arriba, el value tiene que coincidir con el estado del caso para filtrar
 const TABS: { value: Estado; label: string }[] = [
@@ -63,6 +72,9 @@ const soloFecha = (iso: string) => {
  
 const encabezados = () => new Headers({"Content-Type": "application/json","Authentication": sessionStorage.getItem("auth") ?? "",});
 
+// true si la falta fue dentro de los ultimos "dias" dias, se usa en el filtro de fecha
+const dentroDeDias = (iso: string, dias: number) => Date.now() - new Date(iso).getTime() <= dias * 86400000; //milisegundos de un dia
+
 // manda una peticion que regresa un caso ya actualizado, asi el front no tiene que adivinar nada
 // ruta: lo que va despues de /seguimientos, metodo: POST o PATCH, body: lo que se manda
 const enviar = async (ruta: string, metodo: "POST" | "PATCH", body: object | undefined, mensajeError: string) => {
@@ -82,14 +94,18 @@ const enviar = async (ruta: string, metodo: "POST" | "PATCH", body: object | und
   }
 };
 
-// filtros de sala y fecha, por ahora solo son visuales (no filtran la lista)
-const Filtros = () => (
+// filtros de sala y fecha de la falta, estos filtran la lista que ya llego de la API
+const Filtros = ({ filtro, salas, onChange }: {filtro: Filtro; salas: string[]; onChange: (f: Filtro) => void;}) => (
   <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", my: 2 }}>
-    {/* select de sala, solo tiene la opcion "todas" mientras no haya salas reales */}
-    <TextField select size="small" label="Sala" defaultValue="" sx={{ minWidth: 200 }}>
+    {/* ...filtro copia el otro filtro y solo cambia el campo que se toco */}
+    <TextField select size="small" label="Sala" value={filtro.sala} sx={{ minWidth: 200 }}
+      onChange={(e) => onChange({ ...filtro, sala: e.target.value })}>
       <MenuItem value="">Todas las salas</MenuItem>
+      {salas.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
     </TextField>
-    <TextField select size="small" label="Fecha de la falta" defaultValue="7" sx={{ minWidth: 200 }}>
+    <TextField select size="small" label="Fecha de la falta" value={filtro.dias} sx={{ minWidth: 200 }}
+      onChange={(e) => onChange({ ...filtro, dias: e.target.value })}>
+      <MenuItem value="">Todas las fechas</MenuItem>
       <MenuItem value="7">Últimos 7 días</MenuItem>
       <MenuItem value="30">Últimos 30 días</MenuItem>
     </TextField>
@@ -170,7 +186,7 @@ const OpcionesTarjeta = ({ valor, onChange, opciones, columnas }: {valor: string
 );
 
 // formulario que va dentro del expediente: causa, asesoria, fecha de retorno y notas
-const FormularioCausa = ({ caso }: { caso: Caso }) => {
+const FormularioCausa = ({ caso, guardando, onGuardar }: { caso: Caso; guardando: boolean; onGuardar: (d: DatosExpediente) => Promise<boolean> }) => {
   // emmpieza con la causa que ya tenga el caso, si no tiene queda vacio
   const [causa, setCausa] = useState(caso.causa ?? "");
   // lo que se escribe en "Asesoria brindada"
@@ -179,6 +195,10 @@ const FormularioCausa = ({ caso }: { caso: Caso }) => {
   const [fechaRetorno, setFechaRetorno] = useState("");
   // notas privadas del expediente
   const [notas, setNotas] = useState("");
+  // true cuando se acaba de guardar, muestra el aviso "Guardado" junto al boton
+  const [guardado, setGuardado] = useState(false);
+  // en cada setState hace que el aviso "Guardado" se quite en cuanto se vuelve a editar algo
+  const cambiar = (setter: (v: string) => void) => (v: string) => { setGuardado(false); setter(v); };
   return (
     <Box sx={{ display: "grid", gap: 2 }}>
       <Typography fontWeight={700}>Causa de la inasistencia</Typography>
@@ -192,7 +212,7 @@ const FormularioCausa = ({ caso }: { caso: Caso }) => {
           placeholder="Qué orientación diste a la persona tutora"
           multiline minRows={3}
           value={asesoria}
-          onChange={(e) => setAsesoria(e.target.value)}
+          onChange={(e) => cambiar(setAsesoria)(e.target.value)}
         />
         {/* type="date" hace que salga el calendario, el shrink evita que la etiqueta se encime con el formato */}
         <TextField
@@ -211,6 +231,20 @@ const FormularioCausa = ({ caso }: { caso: Caso }) => {
         value={notas}
         onChange={(e) => setNotas(e.target.value)}
       />
+      {/* el boton de guardar solo existe mientras el caso siga abierto, en cerrados ya no se edita */}
+      {caso.estado !== "cerrado" && (
+        <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+          <Button
+            variant="contained"
+            disabled={guardando}
+            // onGuardar regresa true si la API respondio bien, solo entonces sale el aviso
+            onClick={async () => { if (await onGuardar({ causa, asesoria, fechaRetorno, notas })) setGuardado(true); }}
+          >
+            {guardando ? "Guardando..." : "Guardar"}
+          </Button>
+          {guardado && <Typography variant="body2" color="success.main">Guardado</Typography>}
+        </Box>
+      )}
     </Box>
   );
 };
@@ -271,7 +305,7 @@ const RegistrarLlamadaDialog = ({ caso, guardando, onClose, onGuardar }: {caso: 
  
 // panel de la derecha con todo el detalle del caso seleccionado
 // onRegistrarLlamada: abre el menu de llamada
-const Expediente = ({ caso, guardando, onRegistrarLlamada  }: { caso?: Caso; guardando: boolean; onRegistrarLlamada: () => void }) => {
+const Expediente = ({ caso, guardando, onRegistrarLlamada, onGuardar, onCerrar }: { caso?: Caso; guardando: boolean; onRegistrarLlamada: () => void; onGuardar: (d: DatosExpediente) => Promise<boolean>; onCerrar: () => void }) => {
   // si no hay caso elegido solo se muestra el mensaje y no se dibuja nada mas
   if (!caso) {
     return (
@@ -306,23 +340,25 @@ const Expediente = ({ caso, guardando, onRegistrarLlamada  }: { caso?: Caso; gua
           ))}
         </Box>
  
-        {/* el key hace que el formulario se reinicie al cambiar de caso y no arrastre lo escrito del anterior */}
-        <FormularioCausa key={caso.id} caso={caso} />
- 
-        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-          <Button variant="contained" onClick={onRegistrarLlamada} disabled={guardando}>Registrar llamada</Button>
-          <Button variant="outlined">
-            Notificar a contactos de emergencia
-          </Button>
-          {/* ml auto lo empuja a la derecha, color error lo pone rojo */}
-          <Button variant="outlined" color="error" sx={{ ml: "auto" }}>
-            Cerrar caso
-          </Button>
-        </Box>
+        {/* el key hace que el formulario se reinicie al cambiar de caso y no arrastre lo escrito del anterior, ademas solo se abre si el caso no esta cerrado*/}
+        {caso.estado !== "cerrado" && (
+          <FormularioCausa key={caso.id} caso={caso} guardando={guardando} onGuardar={onGuardar} />
+        )}
+        {/* los botones solo existen mientras el caso siga abierto, en cerrados no se puede editar */}
+        {caso.estado !== "cerrado" && (
+          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+            <Button variant="contained" onClick={onRegistrarLlamada} disabled={guardando}>Registrar llamada</Button>
+            {/* ml auto lo empuja a la derecha, color error lo pone rojo */}
+            <Button variant="outlined" color="error" sx={{ ml: "auto" }} onClick={onCerrar} disabled={guardando}>
+              Cerrar caso
+            </Button>
+          </Box>
+        )}
       </CardContent>
     </Card>
   );
 };
+ 
  
 // pantalla principal, aqui vive todo el estado y se conectan los demas componentes
 export const SeguimientoList = () => {
@@ -332,6 +368,8 @@ export const SeguimientoList = () => {
   const [guardando, setGuardando] = useState(false); // true mientras se espera el POST
   const [dialogoAbierto, setDialogoAbierto] = useState(false);
   const [tab, setTab] = useState<Estado>("abierto");
+  // filtros elegidos, "" en todos al inicio para que no filtre nada
+  const [filtro, setFiltro] = useState<Filtro>({ sala: "", dias: "" });
   const [seleccionado, setSeleccionado] = useState<string | undefined>();
 
   const handleGetData = async () => {
@@ -352,7 +390,12 @@ export const SeguimientoList = () => {
   
   useEffect(() => {handleGetData().catch((error) => {console.error(error);alert(error.message);}).finally(() => setCargando(false));}, []);
 
-  const visibles = casos.filter((c) => c.estado === tab);
+  // lista de salas sin repetir para llenar el filtro (Set quita los duplicados, sort las ordena)
+  const salas = Array.from(new Set(casos.map((c) => c.sala))).sort();
+  const visibles = casos
+    .filter((c) => c.estado === tab)
+    .filter((c) => !filtro.sala || c.sala === filtro.sala)
+    .filter((c) => !filtro.dias || dentroDeDias(c.fechaFalta, Number(filtro.dias)));
   // busca el caso completo a partir del id para mostrarlo en el expediente
   const actual = casos.find((c) => c.id === seleccionado);
 
@@ -375,6 +418,44 @@ export const SeguimientoList = () => {
     }
   };
   
+  // se ejecuta al picar "Guardar" en el expediente
+  // la API actualiza ese ticket y regresa el caso actualizado
+  // regresa true si salio bien y false si fallo, el formulario lo usa para mostrar el aviso "Guardado"
+  const guardarExpediente = async (d: DatosExpediente) => {
+    if (!actual) return false;
+    setGuardando(true);
+    try {
+      const actualizado = await enviar(`/${actual.id}`, "PATCH", d, "No se pudo guardar el expediente");
+      setCasos((prev) => prev.map((c) => (c.id === actualizado.id ? actualizado : c)));
+      return true;
+    } catch (error) {
+      console.error(error);
+      alert((error as Error).message);
+      return false;
+    } finally {
+      setGuardando(false);
+    }
+  };
+ 
+  // se ejecuta al picar "Cerrar caso", lo pasa a la pestaña Cerrados
+  // la API pone estado cerrado y guarda quien y cuando lo cerro, y regresa el caso actualizado
+  const cerrarCaso = async () => {
+    if (!actual) return;
+    setGuardando(true);
+    try {
+      const actualizado = await enviar(`/${actual.id}/cerrar`, "PATCH", undefined, "No se pudo cerrar el caso");
+      setCasos((prev) => prev.map((c) => (c.id === actualizado.id ? actualizado : c)));
+      // se deselecciona porque ya no pertenece a la pestaña actual y el expediente quedaria huerfano
+      setSeleccionado(undefined);
+    } catch (error) {
+      console.error(error);
+      alert((error as Error).message);
+    } finally {
+      setGuardando(false);
+    }
+  };
+ 
+
   return (
     <Card>
       <CardHeader title="Seguimiento de inasistencias" />
@@ -390,7 +471,7 @@ export const SeguimientoList = () => {
           ))}
         </Tabs>
  
-        <Filtros />
+        <Filtros filtro={filtro} salas={salas} onChange={setFiltro} />
  
         {cargando && (
           <Typography color="text.secondary" sx={{ pb: 2 }}>
@@ -411,7 +492,7 @@ export const SeguimientoList = () => {
             ))}
           </Box>
           {/* al picar "Registrar llamada" solo se cambia dialogoAbierto, el menu lo dibuja mas abajo */}
-          <Expediente caso={actual} guardando={guardando} onRegistrarLlamada={() => setDialogoAbierto(true)} />
+          <Expediente caso={actual} guardando={guardando} onRegistrarLlamada={() => setDialogoAbierto(true)} onGuardar={guardarExpediente} onCerrar={cerrarCaso} />
         </Box>
         {/* el menu solo existe mientras esta abierto, asi cada vez que se abre empieza limpio */}
         {actual && dialogoAbierto && (
