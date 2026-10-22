@@ -90,6 +90,12 @@ const rolesModificanInfantes = ["ADMINISTRADOR_CENTRAL", "DIRECTORA_ESTANCIA"];
 
 const rolesVenBitacora = ["ADMINISTRADOR_CENTRAL"];
 
+// Roles que pueden usar cada pantalla (los mismos de App.tsx)
+const rolesPaseLista = ["CAPTURISTA_DOCENTE"]; // Pase de lista y Escanear credencial
+const rolesVenSeguimiento = ["TRABAJO_SOCIAL", "MEDICO_ESTANCIA"];
+const rolesVenIncidencias = ["TRABAJO_SOCIAL", "MEDICO_ESTANCIA"];
+const rolesVenBaseDatos = ["ADMINISTRADOR_CENTRAL"]; // Vistas de Base de Datos
+
 // Roles que pueden ver la pantalla de estadisticas (los mismos de ROLES_ESTADISTICAS en Estadisticas.tsx)
 const rolesVenEstadisticas = ["ADMINISTRADOR_CENTRAL", "SUPERVISOR_CENTRAL", "SUPERVISOR_REGIONAL"];
 
@@ -255,6 +261,18 @@ async function createData(collection, req, res) {
 
 
 app.get("/Pase_de_Lista/infantes", async (req, res) => {
+	let usuario;
+	try {
+		usuario = await dataUsuarios(req);
+	} catch {
+		return res.sendStatus(401);
+	}
+	if (!usuario.rol.some(r => rolesPaseLista.includes(r))) {
+		// se guarda el intento en la bitacora con la ruta que quiso abrir
+		req.body = { ...req.body, ruta: req.originalUrl, metodo: req.method };
+		await log(usuario.usuario, "ACCESO_DENEGADO", null, req, null, "asistencias");
+		return res.sendStatus(403);
+	}
     const data = await Infante.find({ activo: { $ne: false } }).lean();
     res.json(data);
 });
@@ -263,6 +281,9 @@ app.patch("/Pase_de_Lista/base_de_datos/:coleccion/:id", async (req, res) => {
 	try {
 		let usuario = await dataUsuarios(req);
 		if (!puedeModificar(usuario)) {
+			// se guarda el intento en la bitacora con los campos que quiso cambiar
+			req.body = { ...req.body, ruta: req.originalUrl, metodo: req.method };
+			await log(usuario.usuario, "ACCESO_DENEGADO", null, req, null);
 			return res.sendStatus(403);
 		}
 		let antes = await updateData(req.params.coleccion, req, res);
@@ -278,6 +299,9 @@ app.post("/Pase_de_Lista/base_de_datos/:coleccion", async (req, res) => {
 	try {
 		let usuario = await dataUsuarios(req);
 		if (!puedeModificar(usuario)) {
+			// se guarda el intento en la bitacora con los campos que quiso crear
+			req.body = { ...req.body, ruta: req.originalUrl, metodo: req.method };
+			await log(usuario.usuario, "ACCESO_DENEGADO", null, req, null);
 			return res.sendStatus(403);
 		}
 		try {
@@ -299,8 +323,19 @@ app.post("/Pase_de_Lista/base_de_datos/:coleccion", async (req, res) => {
 });
 
 app.get("/infantes", async (req, res) => {
+	let usuario;
 	try {
-		const usuario = await dataUsuarios(req);
+		usuario = await dataUsuarios(req);
+	} catch {
+		return res.sendStatus(401);
+	}
+	if (!usuario.rol.some(r => rolesPaseLista.includes(r))) {
+		// se guarda el intento en la bitacora con la ruta que quiso abrir
+		req.body = { ...req.body, ruta: req.originalUrl, metodo: req.method };
+		await log(usuario.usuario, "ACCESO_DENEGADO", null, req, null, "asistencias");
+		return res.sendStatus(403);
+	}
+	try {
 		const grupos = await Grupo.find({ educador: usuario.usuario }).lean();
 		const infanteIds = grupos.flatMap(grupo => grupo.infantes);
 
@@ -341,6 +376,18 @@ app.get("/infantes", async (req, res) => {
 });
 
 app.get("/PASE_DE_LISTA/base_de_datos", async (req, res) => {
+	let usuario;
+	try {
+		usuario = await dataUsuarios(req);
+	} catch {
+		return res.sendStatus(401);
+	}
+	if (!usuario.rol.some(r => rolesVenBaseDatos.includes(r))) {
+		// se guarda el intento en la bitacora con la ruta que quiso abrir
+		req.body = { ...req.body, ruta: req.originalUrl, metodo: req.method };
+		await log(usuario.usuario, "ACCESO_DENEGADO", null, req, null);
+		return res.sendStatus(403);
+	}
 	try {
 
 		const resultado = {};
@@ -371,6 +418,18 @@ app.get("/PASE_DE_LISTA/base_de_datos", async (req, res) => {
 
 
 app.post("/Pase_de_Lista/escaneo", async (req, res) => {
+	let usuario;
+	try {
+		usuario = await dataUsuarios(req);
+	} catch {
+		return res.sendStatus(401);
+	}
+	if (!usuario.rol.some(r => rolesPaseLista.includes(r))) {
+		// se guarda el intento en la bitacora con lo que quiso registrar
+		req.body = { ...req.body, ruta: req.originalUrl, metodo: req.method };
+		await log(usuario.usuario, "ACCESO_DENEGADO", null, req, null, "asistencias");
+		return res.sendStatus(403);
+	}
   try {
     const { matricula, grupo, tipo, metodo, fecha, turno, capturadoEN, clientUuid } = req.body;
 
@@ -400,11 +459,65 @@ app.post("/Pase_de_Lista/escaneo", async (req, res) => {
 	}
 });
 
+// Guarda el pase de lista: body { grupo, fecha: "YYYY-MM-DD", turno, asistencia: [{ infante, estatus }] }
+// Si el infante ya tiene asistencia ese dia y turno se actualiza el estatus, si no se crea
+app.patch("/asistencia", async (req, res) => {
+	let usuario;
+	try {
+		usuario = await dataUsuarios(req);
+	} catch {
+		return res.sendStatus(401);
+	}
+	if (!usuario.rol.some(r => rolesPaseLista.includes(r))) {
+		// se guarda el intento en la bitacora con lo que quiso registrar
+		req.body = { ...req.body, ruta: req.originalUrl, metodo: req.method };
+		await log(usuario.usuario, "ACCESO_DENEGADO", null, req, null, "asistencias");
+		return res.sendStatus(403);
+	}
+	try {
+		const { fecha, turno, asistencia } = req.body;
+		if (!fecha || !turno || !Array.isArray(asistencia)) {
+			return res.status(400).json({ error: "Faltan campos obligatorios" });
+		}
 
+		// el grupo se saca de los grupos del educador porque el front todavia no lo tiene
+		const grupos = await Grupo.find({ educador: usuario.usuario }).lean();
+		const grupoPorInfante = new Map();
+		for (const g of grupos) {
+			for (const i of g.infantes ?? []) {
+				grupoPorInfante.set(String(i), g._id);
+			}
+		}
 
+		const ahora = new Date();
+		const guardadas = [];
+		for (const a of asistencia) {
+			const grupo = grupoPorInfante.get(String(a.infante));
+			if (!grupo) {
+				return res.status(400).json({ error: `El infante ${a.infante} no está en un grupo del usuario` });
+			}
+			// clientUuid es unico en el schema: se arma con infante, fecha y turno para no duplicar
+			const r = await Asistencia.findOneAndUpdate(
+				{ infante: a.infante, fecha: new Date(fecha), turno, deleted_at: null },
+				{
+					$set: { estatus: a.estatus, grupo, sincronizadoEn: ahora, registradoPor: usuario.usuario },
+					$setOnInsert: { metodo: "MANUAL", offline: false, capturadoEn: ahora, clientUuid: `${a.infante}-${fecha}-${turno}` }
+				},
+				{ upsert: true, new: true, runValidators: true }
+			);
+			guardadas.push(r);
+		}
 
-
-
+		await log(usuario.usuario, "ACTUALIZAR", null, req, null, "asistencias");
+		res.json(guardadas);
+	} catch (error) {
+		console.error("Error al guardar pase de lista:", error);
+		if (error.name === "ValidationError" || error.name === "CastError") {
+			return res.status(400).json({ error: error.message });
+		}
+		res.status(500).json({ error: error.message });
+	}
+});
 
 
 app.post("/registrarse", async(req, res)=>{
@@ -449,6 +562,9 @@ app.get("/bitacora", async (req, res) => {
 	}
 	// solo los roles permitidos pueden verlo
 	if (!usuario.rol.some(r => rolesVenBitacora.includes(r))) {
+		// se guarda el intento en la bitacora con la ruta que quiso abrir
+		req.body = { ...req.body, ruta: req.originalUrl, metodo: req.method };
+		await log(usuario.usuario, "ACCESO_DENEGADO", null, req, null);
 		return res.sendStatus(403);
 	}
 	try {
@@ -503,10 +619,18 @@ async function log(sujeto, accion, objetoBefore, req, registro, coleccionLog){
 
 app.get("/seguimiento", async (req, res) => {
 	// primero se valida quien es, si el token es malo o vencio responde 401
+	let usuario;
 	try {
-		await dataUsuarios(req);
+		usuario = await dataUsuarios(req);
 	} catch {
 		return res.sendStatus(401);
+	}
+	// solo los roles permitidos pueden verlo
+	if (!usuario.rol.some(r => rolesVenSeguimiento.includes(r))) {
+		// se guarda el intento en la bitacora con la ruta que quiso abrir
+		req.body = { ...req.body, ruta: req.originalUrl, metodo: req.method };
+		await log(usuario.usuario, "ACCESO_DENEGADO", null, req, null, "tickets");
+		return res.sendStatus(403);
 	}
 	try {
 		// cada falta es un caso, la mas reciente primero
@@ -590,6 +714,12 @@ app.post("/seguimiento/:id/llamadas", async (req, res) => {
 		usuario = await dataUsuarios(req);
 	} catch {
 		return res.sendStatus(401);
+	}
+	if (!usuario.rol.some(r => rolesVenSeguimiento.includes(r))) {
+		// se guarda el intento en la bitacora con la ruta que quiso abrir
+		req.body = { ...req.body, ruta: req.originalUrl, metodo: req.method };
+		await log(usuario.usuario, "ACCESO_DENEGADO", null, req, null, "tickets");
+		return res.sendStatus(403);
 	}
 	try {
 		const { resultado, causa, notas } = req.body;
@@ -704,6 +834,12 @@ app.patch("/seguimiento/:id", async (req, res) => {
 		usuario = await dataUsuarios(req);
 	} catch {
 		return res.sendStatus(401);
+	}
+	if (!usuario.rol.some(r => rolesVenSeguimiento.includes(r))) {
+		// se guarda el intento en la bitacora; la nota no debe quedar en claro
+		req.body = { ...req.body, notas: req.body?.notas ? "[cifrado]" : undefined, ruta: req.originalUrl, metodo: req.method };
+		await log(usuario.usuario, "ACCESO_DENEGADO", null, req, null, "tickets");
+		return res.sendStatus(403);
 	}
 	try {
 		const { causa, asesoria, fechaRetorno, notas } = req.body;
@@ -836,6 +972,12 @@ app.patch("/seguimiento/:id/cerrar", async (req, res) => {
 	} catch {
 		return res.sendStatus(401);
 	}
+	if (!usuario.rol.some(r => rolesVenSeguimiento.includes(r))) {
+		// se guarda el intento en la bitacora con la ruta que quiso abrir
+		req.body = { ...req.body, ruta: req.originalUrl, metodo: req.method };
+		await log(usuario.usuario, "ACCESO_DENEGADO", null, req, null, "tickets");
+		return res.sendStatus(403);
+	}
 	try {
 		const falta = await Asistencia.findOne({ _id: req.params.id, deleted_at: null }).lean();
 		if (!falta) return res.sendStatus(404);
@@ -901,10 +1043,20 @@ app.patch("/seguimiento/:id/cerrar", async (req, res) => {
 
 app.get("/incidencias", async (req, res) => {
 	// primero se valida quien es, si el token es malo o vencio responde 401
+	let usuario;
 	try {
-		await dataUsuarios(req);
+		usuario = await dataUsuarios(req);
 	} catch {
 		return res.sendStatus(401);
+	}
+	// solo los roles permitidos pueden verlo
+	// .some devuelve true si al menos un elemento del arreglo cumple la condicion
+	if (!usuario.rol.some(r => rolesVenIncidencias.includes(r))) {
+		// se guarda el intento en la bitacora con la ruta que quiso abrir
+		// ...req.body hace una copia de lo que ya tenia el body, para no perderlo
+		req.body = { ...req.body, ruta: req.originalUrl, metodo: req.method };
+		await log(usuario.usuario, "ACCESO_DENEGADO", null, req, null, "incidencias");
+		return res.sendStatus(403);
 	}
 	try {
 		// todas las incidencias, la mas reciente primero
@@ -975,6 +1127,12 @@ app.post("/incidencias", async (req, res) => {
 	} catch {
 		return res.sendStatus(401);
 	}
+	if (!usuario.rol.some(r => rolesVenIncidencias.includes(r))) {
+		// se guarda el intento en la bitacora con la ruta que quiso abrir
+		req.body = { ...req.body, ruta: req.originalUrl, metodo: req.method };
+		await log(usuario.usuario, "ACCESO_DENEGADO", null, req, null, "incidencias");
+		return res.sendStatus(403);
+	}
 	try {
 		const { matricula, tipo, gravedad, descripcion } = req.body;
 		if (!matricula) {
@@ -1041,6 +1199,12 @@ app.post("/incidencias/:id/acciones", async (req, res) => {
 		usuario = await dataUsuarios(req);
 	} catch {
 		return res.sendStatus(401);
+	}
+	if (!usuario.rol.some(r => rolesVenIncidencias.includes(r))) {
+		// se guarda el intento en la bitacora con la ruta que quiso abrir
+		req.body = { ...req.body, ruta: req.originalUrl, metodo: req.method };
+		await log(usuario.usuario, "ACCESO_DENEGADO", null, req, null, "incidencias");
+		return res.sendStatus(403);
 	}
 	try {
 		const { tipo, notas } = req.body;
@@ -1113,6 +1277,12 @@ app.patch("/incidencias/:id/resolver", async (req, res) => {
 	} catch {
 		return res.sendStatus(401);
 	}
+	if (!usuario.rol.some(r => rolesVenIncidencias.includes(r))) {
+		// se guarda el intento en la bitacora con la ruta que quiso abrir
+		req.body = { ...req.body, ruta: req.originalUrl, metodo: req.method };
+		await log(usuario.usuario, "ACCESO_DENEGADO", null, req, null, "incidencias");
+		return res.sendStatus(403);
+	}
 	try {
 		const incidencia = await Incidencia.findOne({ _id: req.params.id, deleted_at: null });
 		if (!incidencia) return res.sendStatus(404);
@@ -1176,6 +1346,9 @@ app.get("/estadisticas", async (req, res) => {
 	}
 	// solo los roles permitidos pueden verlo
 	if (!usuario.rol.some(r => rolesVenEstadisticas.includes(r))) {
+		// se guarda el intento en la bitacora con la ruta que quiso abrir
+		req.body = { ...req.body, ruta: req.originalUrl, metodo: req.method };
+		await log(usuario.usuario, "ACCESO_DENEGADO", null, req, null);
 		return res.sendStatus(403);
 	}
 	try {
