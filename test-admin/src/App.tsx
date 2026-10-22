@@ -1,6 +1,6 @@
-import { Admin, Resource, ListGuesser,CustomRoutes } from "react-admin";
+import { Admin, Resource,CustomRoutes } from "react-admin";
 import { Layout } from "./Layout";
-import { theme } from "./Theme";
+import { buildTheme, loadFonts } from "./Theme";
 import { Escaneo_Credencial } from "./Escaneo_QR";
 import { SeguimientoList } from "./Seguimiento"
 import { PasaLista } from "./Pase_de_Lista";
@@ -15,18 +15,54 @@ import PostIcon from "@mui/icons-material/Book";
 import Registrarse from "./registrarse";
 import {Route} from "react-router-dom";
 
+// added the fonts for the theme
+loadFonts("fonts");
+
+const lightTheme = buildTheme("light");
+const darkTheme = buildTheme("dark");
+
+
  
 export const App = () => (
-  <Admin authProvider={authProvider} i18nProvider={i18nProvider} dataProvider={dataProvider} dashboard={Dashboard} layout={Layout} theme={theme}>
-    <Resource name="users" list={ListGuesser} />
-    <Resource name="pase-lista" list={PasaLista} icon={PostIcon}/>
-    <Resource name="Escanear Credencial" list={Escaneo_Credencial}/>
-    <Resource name="Bitacora" list={Bitacora} />
-    <Resource name="Incidencias" list={HistorialList}/>
-    <Resource name="Seguimiento" list={SeguimientoList}/>
-    <Resource name="BD" list={VBD}/>
-    <CustomRoutes>
-            <Route path="/registrarse" element={<Registrarse />}/>
-        </CustomRoutes>
-  </Admin>
+// esta parte es donde se hace el usePermissions que esta diciendo si es este rol esta bien lo puede ver
+// esta la funcion de permissions ya que puede tener mas de un rol puede ver por vista por lo que se le 
+// asigno un has para que sea mas facil 
+    <Admin lightTheme={lightTheme} darkTheme={darkTheme} defaultTheme="light"  authProvider={authProvider} i18nProvider={i18nProvider} dataProvider={dataProvider} dashboard={Dashboard} layout={Layout} >
+      {(permissions: string[] = []) =>{ 
+      const has = (...roles: string[]) => roles.some((r) => permissions.includes(r));
+        return (
+          <>
+            <Resource 
+              name="pase-lista" 
+              list={has('CAPTURISTA_DOCENTE') ? PasaLista : undefined} 
+              icon={PostIcon}
+            />
+            <Resource 
+              name="Escanear Credencial" 
+              list={has('CAPTURISTA_DOCENTE') ? Escaneo_Credencial: undefined}
+            />
+            <Resource 
+              name="Bitacora" 
+              list={has('ADMINISTRADOR_CENTRAL') ? Bitacora: undefined}
+            />
+            <Resource 
+              name="Incidencias" 
+              list={has('TRABAJO_SOCIAL','MEDICO_ESTANCIA')  ? HistorialList: undefined}
+            />
+
+            <Resource 
+              name="Seguimiento" 
+              list={has('TRABAJO_SOCIAL' , 'MEDICO_ESTANCIA')  ? SeguimientoList: undefined}
+            />
+
+            <Resource 
+              name="Vistas de Base de Datos" 
+              list={has('ADMINISTRADOR_CENTRAL') ? VBD: undefined}
+            />
+            <CustomRoutes>
+                    <Route path="/registrarse" element={<Registrarse />}/>
+                </CustomRoutes>
+          </>    
+      )}}
+    </Admin>
 );

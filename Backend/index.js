@@ -320,6 +320,7 @@ app.get("/infantes", async (req, res) => {
 		}
 
 		const resultado = infantes.map(infante => ({
+			_id: String(infante._id),
 			nombre: infante.nombre,
 			paterno: infante.paterno,
 			materno: infante.materno,
@@ -376,7 +377,7 @@ app.post("/Pase_de_Lista/escaneo", async (req, res) => {
 	if(inf.activo === false) return res.status(400).json({ error: "Infante inactivo" });
 	const nueva = await modelos["asistencias"].create({
 	infante: inf._id,
-	grupo, tipo, metodo, fecha, turno, horaIngreso:capturadoEN, clientUuid,
+	grupo, tipo, metodo, fecha, turno, horaIngreso:capturadoEN, clientUuid,estatus: "PRESENTE"
 	});
 
     res.status(201).json(nueva);
@@ -425,8 +426,8 @@ app.post("/login", async (req, res)=>{
 		res.sendStatus(401);
 
 	}else if(await argon2.verify(data.passwordHash, pass)){
-		let token=jwt.sign({"usuario":data.usuario}, process.env.JWTSECRET, {expiresIn:100000000});
-		res.json({"token": token, "id":data.usuario});
+		let token=jwt.sign({"usuario":data.usuario, rol: data.rol}, process.env.JWTSECRET, {expiresIn:45000});
+		return res.json({"token": token, "id":data.usuario, rol: data.rol});
 	}else{
 		res.sendStatus(401);
 	}
