@@ -90,6 +90,9 @@ const rolesModificanInfantes = ["ADMINISTRADOR_CENTRAL", "DIRECTORA_ESTANCIA"];
 
 const rolesVenBitacora = ["ADMINISTRADOR_CENTRAL"];
 
+// Roles que pueden ver la pantalla de estadisticas (los mismos de ROLES_ESTADISTICAS en Estadisticas.tsx)
+const rolesVenEstadisticas = ["ADMINISTRADOR_CENTRAL", "SUPERVISOR_CENTRAL", "SUPERVISOR_REGIONAL"];
+
 // Traduce el codigo de causa del ticket al texto que usa el frontend de seguimiento
 const etiquetasCausa = {
 	ENF_CASA: "Enfermedad en casa",
@@ -1156,5 +1159,167 @@ app.patch("/incidencias/:id/resolver", async (req, res) => {
 	} catch (error) {
 		console.error("Error al resolver incidencia:", error);
 		res.status(500).json({ error: "Error al resolver la incidencia" });
+	}
+});
+
+// Estadisticas agregadas para la pantalla de Estadisticas: solo conteos y porcentajes, sin nombres ni matriculas
+// Filtros del query: periodo ("hoy" | "mes" | "trimestre"), region (ur) y estancia (clave o parte del nombre)
+// Los conteos de grupos con menos de 5 niños se mandan como null para que no se pueda identificar a nadie
+app.get("/estadisticas", async (req, res) => {
+	// primero se valida quien es, si el token es malo o vencio responde 401
+	let usuario;
+	console.log("hola");
+	try {
+		usuario = await dataUsuarios(req);
+	} catch {
+		return res.sendStatus(401);
+	}
+	// solo los roles permitidos pueden verlo
+	if (!usuario.rol.some(r => rolesVenEstadisticas.includes(r))) {
+		return res.sendStatus(403);
+	}
+	try {
+		const esAdmin = usuario.rol.includes("ADMINISTRADOR_CENTRAL");
+		// el regional solo ve su region aunque mande otra en el query, los centrales ven todas
+		const esRegional = !esAdmin && !usuario.rol.includes("SUPERVISOR_CENTRAL");
+		if (esRegional && !usuario.ambito?.ur) {
+			return res.sendStatus(403);
+		}
+		const region = esRegional ? usuario.ambito.ur : (req.query.region || "");
+		const busqueda = String(req.query.estancia ?? "").trim().toLowerCase();
+
+		// rangos de fechas: los dias empiezan a las 00:00 del servidor
+		const dia = 24 * 60 * 60 * 1000;
+		const hoy = new Date();
+		hoy.setHours(0, 0, 0, 0);
+		const diasPeriodo = { hoy: 1, mes: 30, trimestre: 90 };
+		const inicioPeriodo = new Date(hoy.getTime() - ((diasPeriodo[req.query.periodo] ?? 1) - 1) * dia);
+		const inicioPeriodoAnterior = new Date(inicioPeriodo.getTime() - (diasPeriodo[req.query.periodo] ?? 1) * dia);
+
+		// estancias vigentes; las regiones del filtro salen de todas las estancias
+		const todasEstancias = await Estancia.find({ activo: { $ne: false }, deleted_at: null }).lean();
+		const regiones = esRegional
+			? [usuario.ambito.ur]
+			: [...new Set(todasEstancias.map(e => e.ur).filter(Boolean))].sort();
+		const estancias = todasEstancias.filter(e =>
+			(!region || e.ur === region) &&
+			(!busqueda || String(e.ebdi) === busqueda || (e.nombre ?? "").toLowerCase().includes(busqueda))
+		);
+
+		// las asistencias se buscan por grupo porque las del escaneo no traen el campo estancia
+		// se traen desde 60 dias antes para poder calcular la tendencia de dia, semana y mes
+		const grupos = await Grupo.find({ estancia: { $in: estancias.map(e => e.ebdi) }, deleted_at: null }).lean();
+		const desde = new Date(Math.min(inicioPeriodoAnterior.getTime(), hoy.getTime() - 59 * dia));
+		const asistencias = await Asistencia.find({
+			grupo: { $in: grupos.map(g => g._id) },
+			fecha: { $gte: desde },
+			deleted_at: null
+		}).lean();
+
+		// Map por id para no buscar el grupo de cada asistencia en el arreglo
+		const gruposPorId = new Map(grupos.map(g => [String(g._id), g]));
+
+		// el escaneo no guarda estatus: si tiene hora de ingreso el niño llego y cuenta como presente
+		const esPresente = a => a.estatus === "PRESENTE" || (!a.estatus && a.horaIngreso != null);
+		// ausentismo en porcentaje de las asistencias con fecha en [inicio, fin)
+		const ausentismoEntre = (inicio, fin) => {
+			const lista = asistencias.filter(a => new Date(a.fecha) >= inicio && new Date(a.fecha) < fin);
+			if (lista.length === 0) return 0;
+			return (lista.filter(a => !esPresente(a)).length / lista.length) * 100;
+		};
+
+		// asistencias del periodo elegido
+		const manana = new Date(hoy.getTime() + dia);
+		const delPeriodo = asistencias.filter(a => new Date(a.fecha) >= inicioPeriodo && new Date(a.fecha) < manana);
+		const presentes = delPeriodo.filter(esPresente).length;
+		const tasaAsistencia = delPeriodo.length ? (presentes / delPeriodo.length) * 100 : 0;
+		const tasaAusentismo = delPeriodo.length ? 100 - tasaAsistencia : 0;
+
+		// tendencia: puntos de ausentismo contra el periodo anterior del mismo tamaño, positivo es que subio
+		const tendencia = {
+			dia: ausentismoEntre(hoy, manana) - ausentismoEntre(new Date(hoy.getTime() - dia), hoy),
+			semana: ausentismoEntre(new Date(hoy.getTime() - 6 * dia), manana) - ausentismoEntre(new Date(hoy.getTime() - 13 * dia), new Date(hoy.getTime() - 6 * dia)),
+			mes: ausentismoEntre(new Date(hoy.getTime() - 29 * dia), manana) - ausentismoEntre(new Date(hoy.getTime() - 59 * dia), new Date(hoy.getTime() - 29 * dia))
+		};
+
+		// asistencia por grupo; si el grupo tiene menos de 5 inscritos la tasa va como null
+		const porGrupo = grupos.map(g => {
+			const lista = delPeriodo.filter(a => String(a.grupo) === String(g._id));
+			const tasa = lista.length ? (lista.filter(esPresente).length / lista.length) * 100 : 0;
+			return {
+				grupo: g.nombre ?? g.sala ?? "Sin sala",
+				tasa: (g.infantes?.length ?? 0) < 5 ? null : tasa
+			};
+		});
+
+		// un renglon por estancia; sinCaptura es si hoy no hay ninguna asistencia registrada
+		const filasEstancias = estancias.map(e => {
+			const lista = delPeriodo.filter(a => gruposPorId.get(String(a.grupo))?.estancia === e.ebdi);
+			const deHoy = lista.filter(a => new Date(a.fecha) >= hoy);
+			return {
+				estancia: String(e.ebdi),
+				region: e.ur ?? "",
+				tasa: lista.length ? (lista.filter(esPresente).length / lista.length) * 100 : 0,
+				sinCaptura: deHoy.length === 0
+			};
+		});
+
+		// tickets de las faltas del periodo
+		const tickets = await Ticket.find({
+			asistencia: { $in: delPeriodo.map(a => a._id) },
+			deleted_at: null
+		}).lean();
+		const abiertos = tickets.filter(t => t.estado !== "CERRADO");
+		const cerrados = tickets.filter(t => t.estado === "CERRADO" && t.fechaCierre && t.fechaApertura);
+		// promedio de dias entre apertura y cierre, con un decimal
+		const promedioDias = lista => lista.length
+			? Math.round(lista.reduce((s, t) => s + (new Date(t.fechaCierre) - new Date(t.fechaApertura)) / dia, 0) / lista.length * 10) / 10
+			: 0;
+
+		// casos abiertos por causa; los de menos de 5 casos van como null
+		const conteoCausas = new Map();
+		for (const t of abiertos) {
+			const causa = t.causa ?? "Sin causa";
+			conteoCausas.set(causa, (conteoCausas.get(causa) ?? 0) + 1);
+		}
+		const casosPorCausa = [...conteoCausas].map(([etiqueta, total]) => ({
+			etiqueta,
+			total: total < 5 ? null : total
+		}));
+
+		const resultado = {
+			alcance: region ? `Región ${region}` : "Nacional",
+			regiones,
+			asistencia: {
+				tasaAsistencia,
+				tasaAusentismo,
+				tendencia,
+				porGrupo,
+				estancias: filasEstancias
+			},
+			seguimiento: {
+				casosPorCausa,
+				abiertos: abiertos.length,
+				cerrados: tickets.filter(t => t.estado === "CERRADO").length,
+				diasPromedioCierre: promedioDias(cerrados),
+				conBloqueo: abiertos.filter(t => t.bloqueoIngreso).length,
+				// la alta se toma como el cierre de los casos que tenian bloqueo
+				diasPromedioAlta: promedioDias(cerrados.filter(t => t.bloqueoIngreso))
+			}
+		};
+
+		// la auditoria solo se manda al administrador, son conteos de la bitacora sin decir quien
+		if (esAdmin) {
+			const [accesosNotas, cambiosEstatus] = await Promise.all([
+				Bitacora.countDocuments({ accion: "VER_NOTA", fechaHora: { $gte: inicioPeriodo } }),
+				Bitacora.countDocuments({ accion: { $in: ["CAMBIO_ESTATUS", "CERRAR_TICKET", "RESOLVER"] }, fechaHora: { $gte: inicioPeriodo } })
+			]);
+			resultado.auditoria = { accesosNotas, cambiosEstatus };
+		}
+		console.log(resultado);
+		res.json(resultado);
+	} catch (error) {
+		console.error("Error en estadisticas:", error);
+		res.status(500).json({ error: "Error al obtener las estadisticas" });
 	}
 });

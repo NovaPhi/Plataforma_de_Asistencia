@@ -2,6 +2,8 @@ import { AuthProvider } from "react-admin";
 import { API_URL } from "./config";
 
 
+
+
 //funcion para hacer clean el logout
 const clearSession = () => {
     sessionStorage.removeItem("auth");
@@ -34,6 +36,7 @@ const authProvider:AuthProvider={
         }
     },
     logout: ()=>{
+        clearSession();
         clearSession();
         return Promise.resolve();
     },

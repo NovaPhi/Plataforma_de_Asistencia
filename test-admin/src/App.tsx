@@ -65,6 +65,10 @@ return(
               name="Vistas de Base de Datos" 
               list={has('ADMINISTRADOR_CENTRAL') ? VBD: undefined}
             />
+            <Resource
+            name="Estadisticas"
+            list={has('ADMINISTRADOR_CENTRAL','SUPERVISOR_CENTRAL','SUPERVISOR_REGIONAL') ? EstadisticasList : undefined}
+        />
             <CustomRoutes>
                     <Route path="/registrarse" element={<Registrarse />}/>
                 </CustomRoutes>
