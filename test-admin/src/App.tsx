@@ -1,6 +1,7 @@
 import { Admin, Resource,CustomRoutes } from "react-admin";
+import {useMemo} from "react"
 import { Layout } from "./Layout";
-import { buildTheme, loadFonts } from "./Theme";
+import { buildTheme, DyslexiaProvider, loadFonts, useDyslexia} from "./Theme";
 import { Escaneo_Credencial } from "./Escaneo_QR";
 import { SeguimientoList } from "./Seguimiento"
 import { PasaLista } from "./Pase_de_Lista";
@@ -18,12 +19,15 @@ import {Route} from "react-router-dom";
 // added the fonts for the theme
 loadFonts("fonts");
 
-const lightTheme = buildTheme("light");
-const darkTheme = buildTheme("dark");
+const AppContent =() => {
+  const {dyslexia} = useDyslexia();
+  const lightTheme = useMemo(() => buildTheme("light", dyslexia), [dyslexia]);
+  const darkTheme = useMemo(() => buildTheme("dark", dyslexia), [dyslexia]);
+
 
 
  
-export const App = () => (
+return(
 // esta parte es donde se hace el usePermissions que esta diciendo si es este rol esta bien lo puede ver
 // esta la funcion de permissions ya que puede tener mas de un rol puede ver por vista por lo que se le 
 // asigno un has para que sea mas facil 
@@ -66,3 +70,10 @@ export const App = () => (
       )}}
     </Admin>
 );
+};
+
+export const App = () => (
+  <DyslexiaProvider>
+    <AppContent/>
+  </DyslexiaProvider>
+)

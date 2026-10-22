@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { createTheme, ThemeProvider as MuiThemeProvider, CssBaseline } from "@mui/material";
+import { createTheme } from "@mui/material";
 
 /* ---------- Tokens ---------- */
 // los colores para todas las posibles cosas tanto para modo claro y obscuro
@@ -26,15 +26,20 @@ const dark: typeof light = {
 const colors = { light, dark };
 export type ThemeMode = "light" | "dark";
 
-// los fonts usados 
+// los fonts usados
 const FONT_TITULOS = '"Encode Sans", Arial, sans-serif';
 const FONT_TEXTO = '"Noto Sans", Arial, sans-serif';
+const FONT_DISLEXIA = '"OpenDyslexic", "OpenDyslexic", OpenDyslexic, OpenDyslexic';
 
 /* ---------- MUI theme built from the tokens ---------- */
 
-export function buildTheme(mode: ThemeMode) {
+// es la funcion que crea el tema, tiene todos los colores dependiendo del modo
+// y cambia la fuente si dyslexia es true. react-admin elige entre lightTheme y darkTheme
+export function buildTheme(mode: ThemeMode, dyslexia = false) {
   const c = colors[mode];
-  // es la funcion que crea el tema tiene todas los colores dependiendo lo que esta pasando y es lo que usa el front
+  const titulos = dyslexia ? FONT_DISLEXIA : FONT_TITULOS;
+  const texto = dyslexia ? FONT_DISLEXIA : FONT_TEXTO;
+
   return createTheme({
     palette: {
       mode,
@@ -48,21 +53,21 @@ export function buildTheme(mode: ThemeMode) {
       divider: c.linea,
     },
     shape: { borderRadius: 4 },
-    // esto es para los textos los headers de aria para que tengan color y todo lo necesario
+    // los textos y headers
     typography: {
-      fontFamily: FONT_TEXTO,
-      h1: { fontFamily: FONT_TITULOS, fontWeight: 700, fontSize: 32, lineHeight: "40px" },
-      h2: { fontFamily: FONT_TITULOS, fontWeight: 700, fontSize: 24, lineHeight: "32px" },
-      h3: { fontFamily: FONT_TITULOS, fontWeight: 600, fontSize: 20, lineHeight: "28px" },
-      h4: { fontFamily: FONT_TITULOS, fontWeight: 600, fontSize: 17, lineHeight: "24px" },
-      h5: { fontFamily: FONT_TITULOS, fontWeight: 700 },
+      fontFamily: texto,
+      h1: { fontFamily: titulos, fontWeight: 700, fontSize: 32, lineHeight: "40px" },
+      h2: { fontFamily: titulos, fontWeight: 700, fontSize: 24, lineHeight: "32px" },
+      h3: { fontFamily: titulos, fontWeight: 600, fontSize: 20, lineHeight: "28px" },
+      h4: { fontFamily: titulos, fontWeight: 600, fontSize: 17, lineHeight: "24px" },
+      h5: { fontFamily: titulos, fontWeight: 700 },
       button: { textTransform: "none", fontWeight: 600 },
     },
-    // los componentes de que hace cada cosa y que color va a llevar con los elementos de front como botones cards y todo eso 
+    // que color y estilo lleva cada componente
     components: {
       MuiCssBaseline: {
         styleOverrides: {
-          "input.MuiSelect-NativeInput": {
+          "input.MuiSelect-nativeInput": {
             backgroundColor: c.superficieElevada,
             color: c.tinta,
           },
@@ -80,7 +85,6 @@ export function buildTheme(mode: ThemeMode) {
         styleOverrides: { root: { borderRadius: 8 } },
       },
       // 48px touch targets on normal and large buttons
-      // todos los botones
       MuiButton: {
         styleOverrides: {
           sizeMedium: { minHeight: 48 },
@@ -88,34 +92,32 @@ export function buildTheme(mode: ThemeMode) {
         },
       },
       // visible keyboard focus ring on every MUI control
-      // los aros de enfoque
       MuiButtonBase: {
         styleOverrides: {
           root: { "&.Mui-focusVisible": { boxShadow: c.foco } },
         },
       },
-      // los textos
+      // los textfields
       MuiTextField: {
         styleOverrides: {
           root: { "& .MuiOutlinedInput-notchedOutline": { borderColor: c.lineaFuerte } },
         },
       },
-      // el background 
+      // quita el gradiente de elevacion en modo oscuro
       MuiPaper: {
-        styleOverrides: {root: {backgroundImage: "none"}},
+        styleOverrides: { root: { backgroundImage: "none" } },
       },
       // menus
       MuiMenu: {
         styleOverrides: {
-          paper: {backgroundColor: c.superficieElevada, color: c.tinta},
+          paper: { backgroundColor: c.superficieElevada, color: c.tinta },
         },
       },
-      // y lo que esta seleccionado
+      // lo que esta seleccionado
       MuiSelect: {
         styleOverrides: {
-          select: {color: c.tinta, backgroundClip: c.superficieElevada},
-          icon: {color: c.tinta},
-
+          select: { color: c.tinta, backgroundColor: c.superficieElevada },
+          icon: { color: c.tinta },
         },
       },
       // los items de menus
@@ -123,8 +125,8 @@ export function buildTheme(mode: ThemeMode) {
         styleOverrides: {
           root: {
             color: c.tinta,
-            "&.Mui-selected": {backgroundColor: c.accionSuave, color:c.tinta},
-            "&.Mui-selected:hover, &:hover": {backgroundColor: c.accionSuave},
+            "&.Mui-selected": { backgroundColor: c.accionSuave, color: c.tinta },
+            "&.Mui-selected:hover, &:hover": { backgroundColor: c.accionSuave },
           },
         },
       },
@@ -132,46 +134,37 @@ export function buildTheme(mode: ThemeMode) {
   });
 }
 
-/* ---------- Provider: MUI theme + light/dark toggle ---------- */
+/* ---------- Provider: fuente para dislexia ---------- */
+// el claro/obscuro lo maneja react-admin con ToggleThemeButton,
+// aqui solo se guarda si la fuente para dislexia esta activa
 
-type ColorModeValue = { mode: ThemeMode; toggle: () => void };
-const ColorModeContext = createContext<ColorModeValue | null>(null);
+type DyslexiaValue = { dyslexia: boolean; toggleDyslexia: () => void };
+const DyslexiaContext = createContext<DyslexiaValue | null>(null);
 
-function initialMode(): ThemeMode {
-  try {
-    const saved = localStorage.getItem("theme");
-    if (saved === "light" || saved === "dark") return saved;
-  } catch { /* ignore */ }
-  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+function initialDyslexia(): boolean {
+  try { return localStorage.getItem("dyslexia") === "true"; } catch { return false; }
 }
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [mode, setMode] = useState<ThemeMode>(initialMode);
-  const theme = useMemo(() => buildTheme(mode), [mode]);
+export function DyslexiaProvider({ children }: { children: ReactNode }) {
+  const [dyslexia, setDyslexia] = useState<boolean>(initialDyslexia);
 
+  // guarda la preferencia para que se conserve al recargar
   useEffect(() => {
-    try { localStorage.setItem("theme", mode); } catch { /* ignore */ }
-  }, [mode]);
+    try { localStorage.setItem("dyslexia", String(dyslexia)); } catch { /* ignore */ }
+  }, [dyslexia]);
 
   const value = useMemo(
-    () => ({ mode, toggle: () => setMode((m) => (m === "light" ? "dark" : "light")) }),
-    [mode]
+    () => ({ dyslexia, toggleDyslexia: () => setDyslexia((d) => !d) }),
+    [dyslexia]
   );
 
-  return (
-    <ColorModeContext.Provider value={value}>
-      <MuiThemeProvider theme={theme}>
-        <CssBaseline enableColorScheme />
-          {children}
-      </MuiThemeProvider>
-    </ColorModeContext.Provider>
-  );
+  return <DyslexiaContext.Provider value={value}>{children}</DyslexiaContext.Provider>;
 }
 
-/** Use this for the toggle. For colors and spacing, use MUI's own useTheme(). */
-export function useColorMode() {
-  const ctx = useContext(ColorModeContext);
-  if (!ctx) throw new Error("useColorMode must be used inside <ThemeProvider>");
+/** Use this in the AppBar button and in App to rebuild the themes. */
+export function useDyslexia() {
+  const ctx = useContext(DyslexiaContext);
+  if (!ctx) throw new Error("useDyslexia must be used inside <DyslexiaProvider>");
   return ctx;
 }
 
@@ -182,5 +175,7 @@ export function loadFonts(basePath = "/fonts") {
     new FontFace("Encode Sans", `url(${basePath}/EncodeSans-latin-var.woff2)`, { weight: "100 900" }),
     new FontFace("Noto Sans", `url(${basePath}/NotoSans-latin-var.woff2)`, { weight: "100 900" }),
     new FontFace("Noto Sans", `url(${basePath}/NotoSans-latin-var-italic.woff2)`, { weight: "100 900", style: "italic" }),
+    new FontFace("OpenDyslexic", `url(${basePath}/OpenDyslexic-Regular.woff2)`, { weight: "400" }),
+    new FontFace("OpenDyslexic", `url(${basePath}/OpenDyslexic-Bold.woff2)`, { weight: "700" }),
   ].forEach((f) => f.load().then((l) => document.fonts.add(l)).catch(() => {}));
 }

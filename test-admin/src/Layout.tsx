@@ -1,8 +1,11 @@
 import type { ReactNode } from "react";
 import {AppBar as RAAppBar,Layout as RALayout,Menu,CheckForApplicationUpdate,useGetIdentity,UserMenu,Logout, ToggleThemeButton,} from "react-admin";
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, Button } from "@mui/material";
 import DashboardIcon from "@mui/icons-material/SpaceDashboardOutlined";
 import AccountCircleOutlined from "@mui/icons-material/AccountCircleOutlined";
+import TextFieldsIcon from "@mui/icons-material/TextFields";
+import { useDyslexia } from "./Theme";
+
  
 
 const Roles: Record<string,string> ={
@@ -31,12 +34,13 @@ const getRolLabel =(): string => {
 
 const AppBar = () => {
   const { identity } = useGetIdentity();
+  const {dyslexia, toggleDyslexia} = useDyslexia();
   const roleLabel = getRolLabel();
   return (
     // es la forma de dar el nombre al usuario en la parte de arriba
     <RAAppBar userMenu={<UserMenu icon={<AccountCircleOutlined fontSize="large"/>} >
-                          <Logout/>
-                        </UserMenu>} toolbar={false}>
+      <Logout/>
+      </UserMenu>} toolbar={false}>
       <Box sx={{ flex: 1 }}>
         <Typography variant="subtitle1" fontWeight={700} lineHeight={1.2}>
           Registro de asistencia
@@ -47,9 +51,16 @@ const AppBar = () => {
         <Typography variant="caption" fontWeight={700} display="block">
           {identity?.fullName}
         </Typography>
-        {/* TODO: rol real del usuario */}
         <Typography variant="caption">{roleLabel}</Typography>
       </Box>
+      <Button
+        color="inherit"
+        startIcon={<TextFieldsIcon/>}
+        onClick={toggleDyslexia}
+        aria-pressed={dyslexia}
+      >
+        Tipo de letra para dislexia
+      </Button>
       {/*esto es para cambiar el tema de claro a obscuro */}
       <ToggleThemeButton/>
     </RAAppBar>
