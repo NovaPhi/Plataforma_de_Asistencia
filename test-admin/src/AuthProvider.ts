@@ -37,7 +37,6 @@ const authProvider:AuthProvider={
     },
     logout: ()=>{
         clearSession();
-        clearSession();
         return Promise.resolve();
     },
     checkAuth:  ()=>{return sessionStorage.getItem("auth")?Promise.resolve():Promise.reject()},

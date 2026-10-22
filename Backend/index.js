@@ -47,6 +47,8 @@ const options={
 
 
 // Pone en falta las asistencias de dias anteriores que se quedaron sin marcar
+//async lo que hace es que la funcion devuelve una promesa y se puede usar await 
+// para esperar a que termine
 async function cerrarDia(){
 	const hoy = new Date(new Date().toLocaleDateString("sv-SE"));
 	const r = await Asistencia.updateMany(
@@ -305,7 +307,7 @@ app.get("/Pase_de_Lista/infantes", async (req, res) => {
 });
 
 app.patch("/Pase_de_Lista/base_de_datos/:coleccion/:id", async (req, res) => {
-	try {
+	try {	
 		let usuario = await dataUsuarios(req);
 		if (!puedeModificar(usuario)) {
 			// se guarda el intento en la bitacora con los campos que quiso cambiar
@@ -315,6 +317,7 @@ app.patch("/Pase_de_Lista/base_de_datos/:coleccion/:id", async (req, res) => {
 		}
 		let antes = await updateData(req.params.coleccion, req, res);
 		// VistaBD hace el borrado logico mandando activo:false
+		// accion es ELIMINAR o ACTUALIZAR segun el valor de activo
 		let accion = req.body.activo === false ? "ELIMINAR" : "ACTUALIZAR";
 		await log(usuario.usuario, accion, antes, req, req.params.id);
 	} catch (error) {
