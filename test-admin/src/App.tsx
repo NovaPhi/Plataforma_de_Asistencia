@@ -1,7 +1,7 @@
 import { Admin, Resource,CustomRoutes } from "react-admin";
 import {useMemo} from "react"
 import { Layout } from "./Layout";
-import { buildTheme, DyslexiaProvider, loadFonts, useDyslexia} from "./Theme";
+import { buildTheme, DyslexiaProvider, useDyslexia} from "./Theme";
 import { Escaneo_Credencial } from "./Escaneo_QR";
 import { SeguimientoList } from "./Seguimiento"
 import { PasaLista } from "./Pase_de_Lista";
@@ -12,14 +12,17 @@ import { VBD } from "./VistaBD";
 import { dataProvider } from "./dataProvider";
 import authProvider from "./AuthProvider";
 import { i18nProvider } from "./i18nProvider";
-import { Dashboard } from "./Dashboard";
 import PostIcon from "@mui/icons-material/Book";
 import Registrarse from "./registrarse";
 import {Route} from "react-router-dom";
 
 
 // added the fonts for the theme
-loadFonts("fonts");
+import "@fontsource-variable/encode-sans";
+import "@fontsource-variable/noto-sans";
+import "@fontsource-variable/noto-sans/wght-italic.css";
+import "@fontsource/opendyslexic/400.css";
+import "@fontsource/opendyslexic/700.css";
 
 const AppContent =() => {
   const {dyslexia} = useDyslexia();

@@ -12,6 +12,7 @@ import { API_URL } from "./config";
 
 type Estado = "PRESENTE" | "FALTA_INJUSTIFICADA";
 
+
 //objeto con una llave por estado y numero como valor
 type Conteos = Record<Estado, number>;
 
@@ -29,7 +30,7 @@ type Infante = {
     materno: string;
     matricula: string;
     horaIngreso?: string;
-    estatus: Estado | null;
+    estatus: Estado;
 };
 
 //DEBE VENIR DEL USUARIO QUE ESTA LOGGED IN
