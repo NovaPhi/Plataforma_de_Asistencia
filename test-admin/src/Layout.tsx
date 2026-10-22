@@ -69,7 +69,6 @@ const AppBar = () => {
  
 const AppMenu = () => (
   <Menu>
-    <Menu.Item to="/" primaryText="Tablero" leftIcon={<DashboardIcon />} />
     <Menu.ResourceItems/>
   </Menu>
 );
