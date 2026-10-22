@@ -27,7 +27,8 @@ type Incidencia = {
 };
 
 // lo que se captura en el formulario de "Registrar incidencia"
-type NuevaIncidencia = {nombre: string; sala: string; tipo: string; gravedad: Gravedad; descripcion: string;};
+// el nombre y la sala los saca la API del infante con esa matricula
+type NuevaIncidencia = {matricula: string; tipo: string; gravedad: Gravedad; descripcion: string;};
 
 // lo que se captura en el menu de "Registrar accion" y se manda a la API
 type DatosAccion = { tipo: string; notas: string };
@@ -68,7 +69,7 @@ const fechaTexto = (iso: string) => {
 const encabezados = () => new Headers({"Content-Type": "application/json","Authentication": sessionStorage.getItem("auth") ?? "",});
 
 // manda una peticion que regresa una incidencia (crear, registrar accion, notificar y resolver)
-// la API siempre regresa la incidencia ya actualizada y asi el front no tiene que adivinar nada
+// la API siempre regresa la incidencia ya actualizada
 // ruta: lo que va despues de /incidencias, metodo: POST o PATCH, body: lo que se manda, o undefined si no lleva
 const enviar = async (ruta: string, metodo: "POST" | "PATCH", body: object | undefined, mensajeError: string) => {
   const request = new Request(`${API_URL}/incidencias${ruta}`, {
@@ -134,12 +135,8 @@ const IncidenciaCard = ({ inc, activo, onSelect }: {inc: Incidencia; activo: boo
         </Box>
         <Typography sx={{ fontWeight: 700 }}>{inc.nombre}</Typography>
         <Typography variant="caption">
-          {inc.sala} · {inc.fechaHora} · Folio {inc.folio}
+          {inc.sala} · {fechaTexto(inc.fechaHora)} · Folio {inc.folio}
         </Typography>
-        {/* el aviso amarillo solo sale si sigue activa y todavia no se avisa al tutor */}
-        {inc.estado !== "resuelta" && !inc.tutorNotificado && (
-          <Alert severity="warning" sx={{ py: 0 }}>Pendiente de notificar al tutor</Alert>
-        )}
         <Typography variant="caption">Estado: <b>{ETIQUETA_ESTADO[inc.estado]}</b></Typography>
       </CardContent>
     </CardActionArea>
@@ -155,7 +152,7 @@ const Dato = ({ etiqueta, valor }: { etiqueta: string; valor: string }) => (
 );
 
 // panel de la derecha con todo el detalle de la incidencia seleccionada
-const Detalle = ({ inc, guardando, onRegistrarAccion, onNotificar, onResolver }: {inc?: Incidencia; guardando: boolean; onRegistrarAccion: () => void; onNotificar: () => void; onResolver: () => void;}) => {
+const Detalle = ({ inc, guardando, onRegistrarAccion, onResolver }: {inc?: Incidencia; guardando: boolean; onRegistrarAccion: () => void; onResolver: () => void;}) => {
   // si no hay incidencia elegida solo se muestra el mensaje
   if (!inc) {
     return (
@@ -174,11 +171,11 @@ const Detalle = ({ inc, guardando, onRegistrarAccion, onNotificar, onResolver }:
           <Dato etiqueta="Niña o niño" valor={inc.nombre} />
           <Dato etiqueta="Sala" valor={inc.sala} />
           <Dato etiqueta="Tipo" valor={inc.tipo} />
-          <Dato etiqueta="Fecha y hora" valor={inc.fechaHora} />
+          <Dato etiqueta="Fecha y hora" valor={fechaTexto(inc.fechaHora)} />
           <Dato etiqueta="Reportó" valor={inc.reporto} />
           <Dato etiqueta="Estado" valor={ETIQUETA_ESTADO[inc.estado]} />
           {/* estos dos solo aparecen cuando ya fue resuelta */}
-          {inc.resolucion && <Dato etiqueta="Resuelta el" valor={inc.resolucion.fecha} />}
+          {inc.resolucion && <Dato etiqueta="Resuelta el" valor={fechaTexto(inc.resolucion.fecha)} />}
           {inc.resolucion && <Dato etiqueta="Resuelta por" valor={inc.resolucion.por} />}
         </Box>
 
@@ -195,22 +192,15 @@ const Detalle = ({ inc, guardando, onRegistrarAccion, onNotificar, onResolver }:
           {/* i se usa como key porque las acciones todavia no tienen id propio */}
           {inc.acciones.map((a, i) => (
             <Typography key={i} variant="body2" sx={{ mb: 0.5 }}>
-              <b>{a.hora}</b> · {a.texto} · {a.responsable}
+              <b>{fechaTexto(a.hora)}</b> · {a.texto} · {a.responsable}
             </Typography>
           ))}
-          {/* recordatorio de que falta avisar al tutor, desaparece al notificar o al resolver */}
-          {!inc.tutorNotificado && !resuelta && (
-            <Typography variant="body2"><b>—</b> · Tutor aún sin notificar</Typography>
-          )}
         </Box>
 
         {/* los botones solo existen mientras la incidencia siga activa, en historicas no se puede editar */}
         {!resuelta && (
           <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
             <Button variant="contained" onClick={onRegistrarAccion} disabled={guardando}>Registrar acción</Button>
-            <Button variant="outlined" onClick={onNotificar} disabled={inc.tutorNotificado || guardando}>
-              Notificar al tutor
-            </Button>
             {/* ml auto lo empuja a la derecha, color error lo pone rojo */}
             <Button variant="outlined" color="error" sx={{ ml: "auto" }} onClick={onResolver} disabled={guardando}>
               Resolver incidencia
@@ -258,7 +248,7 @@ const RegistrarAccionDialog = ({ inc, guardando, onClose, onGuardar }: {inc: Inc
 const RegistrarIncidenciaDialog = ({ guardando, onClose, onGuardar }: {guardando: boolean; onClose: () => void; onGuardar: (n: NuevaIncidencia) => void;}) => {
   // todos los campos del formulario viven juntos en un solo objeto
   // arranca con gravedad "leve" para que ya haya una elegida
-  const [datos, setDatos] = useState<NuevaIncidencia>({nombre: "", sala: "", tipo: "", gravedad: "leve", descripcion: "",});
+  const [datos, setDatos] = useState<NuevaIncidencia>({matricula: "", tipo: "", gravedad: "leve", descripcion: "",});
   // ...d copia lo que ya estaba y [campo] reemplaza solo el que se escribio
   const cambiar = (campo: keyof NuevaIncidencia) => (e: { target: { value: string } }) => setDatos((d) => ({ ...d, [campo]: e.target.value }));
   return (
@@ -266,8 +256,7 @@ const RegistrarIncidenciaDialog = ({ guardando, onClose, onGuardar }: {guardando
       <DialogTitle>Registrar incidencia</DialogTitle>
       {/* el pt con !important evita que la etiqueta del primer campo quede cortada debajo del titulo */}
       <DialogContent sx={{ display: "grid", gap: 2, pt: "8px !important" }}>
-        <TextField label="Niña o niño" value={datos.nombre} onChange={cambiar("nombre")} />
-        <TextField label="Sala" value={datos.sala} onChange={cambiar("sala")} />
+        <TextField label="Matrícula de la niña o niño" value={datos.matricula} onChange={cambiar("matricula")} />
         <TextField select label="Tipo" value={datos.tipo} onChange={cambiar("tipo")}>
           {TIPOS.map((t) => <MenuItem key={t} value={t}>{t}</MenuItem>)}
         </TextField>
@@ -281,8 +270,8 @@ const RegistrarIncidenciaDialog = ({ guardando, onClose, onGuardar }: {guardando
       </DialogContent>
       <DialogActions sx={{ p: 2 }}>
         <Button onClick={onClose}>Cancelar</Button>
-        {/* no deja guardar si falta el nombre o el tipo, lo demas es opcional */}
-        <Button variant="contained" disabled={!datos.nombre || !datos.tipo || guardando} onClick={() => onGuardar(datos)}>
+        {/* no deja guardar si falta la matricula o el tipo, lo demas es opcional */}
+        <Button variant="contained" disabled={!datos.matricula || !datos.tipo || guardando} onClick={() => onGuardar(datos)}>
           {guardando ? "Guardando..." : "Guardar incidencia"}
         </Button>
       </DialogActions>
@@ -352,21 +341,6 @@ export const HistorialList = () => {
   // cambia una sola incidencia por la version nueva que mando la API y deja todas las demas igual
   const reemplazar = (nueva: Incidencia) => setIncidencias((prev) => prev.map((i) => (i.id === nueva.id ? nueva : i)));
 
-  // se ejecuta al picar "Notificar al tutor"
-  const notificar = async () => {
-    // si no hay incidencia seleccionada no hace nada
-    if (!actual) return;
-    setGuardando(true);
-    try {
-      reemplazar(await enviar(`/${actual.id}/notificar-tutor`, "POST", undefined, "No se pudo notificar al tutor"));
-    } catch (error) {
-      console.error(error);
-      alert((error as Error).message);
-    } finally {
-      setGuardando(false); // siempre se activa, con error o sin error
-    }
-  };
-
   // se ejecuta cuando se da "Guardar accion" en el menu
   const guardarAccion = async (d: DatosAccion) => {
     if (!actual) return;
@@ -400,7 +374,7 @@ export const HistorialList = () => {
     }
   };
 
-  // se ejecuta cuando se da "Guardar incidencia" en el menu
+  // se ejecuta cuando se da "Registrar incidencia" en el menu
   // la API asigna folio, fecha, estado "abierta" y quien reporto (sale del token) y regresa la incidencia creada
   const guardar = async (n: NuevaIncidencia) => {
     setGuardando(true);
@@ -455,7 +429,7 @@ export const HistorialList = () => {
             ))}
           </Box>
           {/* los botones del detalle solo avisan, aqui se decide que hace cada uno */}
-          <Detalle inc={actual} guardando={guardando} onRegistrarAccion={() => setAccionAbierta(true)} onNotificar={notificar} onResolver={resolver} />
+          <Detalle inc={actual} guardando={guardando} onRegistrarAccion={() => setAccionAbierta(true)} onResolver={resolver}/>
         </Box>
  
         {/* los menus solo existen mientras estan abiertos, asi cada vez que se abren empiezan limpios */}
