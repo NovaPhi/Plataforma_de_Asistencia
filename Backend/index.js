@@ -479,6 +479,11 @@ async function log(sujeto, accion, objetoBefore, req, registro, coleccionLog){
 	}
 	// La contraseña y su hash nunca se guardan en la bitacora
 	let { passwordHash, password, ...datosNuevos } = objeto ?? {};
+	// Los campos cifrados no se guardan en claro en la bitacora
+	for (const campo of modelos[coleccion]?.camposCifrados ?? []) {
+		if (datosNuevos[campo] !== undefined) datosNuevos[campo] = "[cifrado]";
+		if (nuevoLog["datosAnteriores"]?.[campo] !== undefined) nuevoLog["datosAnteriores"][campo] = "[cifrado]";
+	}
 	nuevoLog["datosNuevos"]= datosNuevos;
 
 	// si falla la bitacora no se rompe la peticion, al cliente ya se le respondio
