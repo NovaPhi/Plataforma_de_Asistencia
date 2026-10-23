@@ -431,7 +431,7 @@ export const Escaneo_Credencial = () =>{
                                     <Typography fontWeight={700} sx={{width:64}}>
                                         {r.Hora}
                                     </Typography>
-                                    <ListItemText primary={r.Nombre}/>
+                                    <ListItemText primary={r.Nombre} />
                                     <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, color:"text.secondary" }}>
                                         {r.tipo === "Ingreso"?(
                                             <LoginIcon fontSize="small"/>
