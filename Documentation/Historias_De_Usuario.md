@@ -231,12 +231,12 @@ Story Points: 6
 
 ## Modulo Gestion de Riesgos y Contingencia Operativa
 
-### HU 33 - Protocolo de Contingencia por Caida de Enlace
+### HU 34 - Protocolo de Contingencia por Caida de Enlace
 Como Directora quiero un manual de captura en formatos fisicos de respaldo y su reconciliacion al restablecerse el servicio para no detener la operacion ante fallas prolongadas
 
 Story Points: 4
 
-### HU 34 - Plan de Pruebas Piloto
+### HU 35 - Plan de Pruebas Piloto
 Como Administrador Central quiero ejecutar pruebas piloto en 3 a 5 estancias reales antes del despliegue masivo para validar el sistema en condiciones reales y firmar actas de aceptacion
 
 Story Points: 2

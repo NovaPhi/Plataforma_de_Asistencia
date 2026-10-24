@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import {Alert, Box, Button, Card, CardContent, CardHeader, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, MenuItem, Radio, RadioGroup, Tab, Tabs, TextField, Typography,} from "@mui/material";
+// componentes de MUI recomendados por Claude a partir del mockup / Propuesta de Claude
+import {Alert, Box, Button, Card, CardContent, CardHeader, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Radio, RadioGroup, Tab, Tabs, TextField, Typography,} from "@mui/material";
 import { API_URL } from "./config";
 
 // los 4 estados por los que pasa un caso, cada uno es una pestaña
@@ -19,10 +20,19 @@ type Caso = {
   alerta?: string;
   causa?: string;
   intentos: Intento[];
+  asesoria?: string;
+  fechaRetorno?: string; // fecha ISO
+  notas?: string; 
 };
 
 // lo que se captura en el menu de "Registrar llamada" y se manda a la API
 type DatosLlamada = { resultado: string; causa: string; notas: string };
+
+// lo que se captura en el formulario del expediente y se manda a la API con el boton "Guardar"
+type DatosExpediente = { causa: string; asesoria: string; fechaRetorno: string; notas: string };
+
+// los dos filtros que se pueden aplicar, "" significa todas
+type Filtro = { sala: string; dias: string };
 
 // pestañas de arriba, el value tiene que coincidir con el estado del caso para filtrar
 const TABS: { value: Estado; label: string }[] = [
@@ -47,27 +57,36 @@ const CAUSAS = ["Enfermedad en casa", "Accidente fuera del plantel", "Permiso pa
 // opciones de como termino la llamada
 const RESULTADOS = ["Contestó", "No contestó", "Número equivocado"];
 
-// fecha y hora en formato de mexico, si viene vacia o mala devuelve un guion
+// fecha y hora en formato de mexico, si viene vacia o mala devuelve un guion / isNaN y toLocaleString propuestas por Claude
 const fechaTexto = (iso: string) => {
   const d = new Date(iso);
+  // getTime da el numero de milisegundos, si la fecha es mala da NaN y isNaN lo detecta
   return isNaN(d.getTime())
     ? "—"
+    // dateStyle short = 05/10/26, timeStyle short = hora y minuto, hour12 false = formato de 24 horas
     : d.toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short", hour12: false });
 };
 
-// solo la fecha, sin hora, para el dia de la falta
+// solo la fecha, sin hora, para el dia de la falta / isNaN y toLocaleString propuestas por Claude
 const soloFecha = (iso: string) => {
   const d = new Date(iso);
   return isNaN(d.getTime()) ? "—" : d.toLocaleDateString("es-MX", { dateStyle: "short" });
 };
  
+// Headers es la clase del navegador que guarda los encabezados de una peticion http
+// "Content-Type" avisa que se manda json, "Authentication" lleva el token del login
 const encabezados = () => new Headers({"Content-Type": "application/json","Authentication": sessionStorage.getItem("auth") ?? "",});
+
+// true si la falta fue dentro de los ultimos "dias" dias, se usa en el filtro de fecha
+// Date.now() son los milisegundos de ahora, new Date(iso).getTime() son los de la falta, la resta es cuanto tiempo paso, y se compara con dias * 86400000
+const dentroDeDias = (iso: string, dias: number) => Date.now() - new Date(iso).getTime() <= dias * 86400000; //milisegundos de un dia
 
 // manda una peticion que regresa un caso ya actualizado, asi el front no tiene que adivinar nada
 // ruta: lo que va despues de /seguimientos, metodo: POST o PATCH, body: lo que se manda
-const enviar = async (ruta: string, metodo: "POST" | "PATCH", body: object | undefined, mensajeError: string) => {
+const enviar = async (ruta: string, metodo: "POST" | "PATCH", body: object | undefined, mensajeError: string) => { 
   const request = new Request(`${API_URL}/seguimiento${ruta}`, {
     method: metodo,
+    // si hay body lo convierte a texto json con JSON.stringify, si no (undefined) no manda nada
     body: body ? JSON.stringify(body) : undefined,
     headers: encabezados(),
   });
@@ -82,16 +101,39 @@ const enviar = async (ruta: string, metodo: "POST" | "PATCH", body: object | und
   }
 };
 
-// filtros de sala y fecha, por ahora solo son visuales (no filtran la lista)
-const Filtros = () => (
+// filtros de sala y fecha de la falta, estos filtran la lista que ya llego de la API
+const Filtros = ({ filtro, salas, onChange }: {filtro: Filtro; salas: string[]; onChange: (f: Filtro) => void;}) => (
+  // Box es un div de mui, sx son estilos
   <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", my: 2 }}>
-    {/* select de sala, solo tiene la opcion "todas" mientras no haya salas reales */}
-    <TextField select size="small" label="Sala" defaultValue="" sx={{ minWidth: 200 }}>
-      <MenuItem value="">Todas las salas</MenuItem>
+    {/* ...filtro copia el otro filtro y solo cambia el campo que se toco */}
+    <TextField
+      select
+      id="filtro-sala"
+      size="small"
+      label="Sala"
+      value={filtro.sala}
+      sx={{ minWidth: 200 }}
+      // native usa el <select> del navegador, shrink deja la etiqueta arriba para que no se encime con el texto del filtro "Todas las salas" // Propuesta de Claude
+      slotProps={{ select: { native: true }, inputLabel: { shrink: true } }} // Propuesta de Claude
+      // e es el evento y e.target.value es lo elegido}
+      onChange={(e) => onChange({ ...filtro, sala: e.target.value })}> 
+      <option value="">Todas las salas</option>
+      {/* map recorre la lista de salas y por cada una crea una option, key ayuda a react a distinguirlas */}
+      {salas.map((s) => <option key={s} value={s}>{s}</option>)}
     </TextField>
-    <TextField select size="small" label="Fecha de la falta" defaultValue="7" sx={{ minWidth: 200 }}>
-      <MenuItem value="7">Últimos 7 días</MenuItem>
-      <MenuItem value="30">Últimos 30 días</MenuItem>
+    {/* segundo filtro, igual que el primero pero para la fecha de la falta */}
+    <TextField
+      select
+      id="filtro-fecha"
+      size="small"
+      label="Fecha de la falta"
+      value={filtro.dias}
+      sx={{ minWidth: 200 }}
+      slotProps={{ select: { native: true }, inputLabel: { shrink: true } }} // Propuesta de Claude
+      onChange={(e) => onChange({ ...filtro, dias: e.target.value })}>
+      <option value="">Todas las fechas</option>
+      <option value="7">Últimos 7 días</option>
+      <option value="30">Últimos 30 días</option>
     </TextField>
   </Box>
 );
@@ -103,12 +145,23 @@ const CasoCard = ({ caso, activo, onSelect }: {caso: Caso; activo: boolean; onSe
   // el borde es de color primario si es el caso seleccionado, si no es gris
   <Card variant="outlined" sx={{ borderWidth: 2, borderColor: activo ? "primary.main" : "divider" }}>
     <CardContent sx={{ display: "grid", gap: 1 }}>
-      <Typography fontWeight={700}>{caso.nombre}</Typography>
-      <Typography variant="caption">
-        {caso.sala} · Falta del {caso.fechaFalta} · Folio {caso.folio}
+      <Typography 
+        fontWeight={700}>{caso.nombre}
       </Typography>
-      <Box><Chip size="small" variant="outlined" color="primary" label={ETIQUETA_ESTADO[caso.estado]} /></Box>
-      {/* el aviso amarillo solo sale si el caso trae una alerta */}
+      <Typography variant="caption">
+        {/* soloFecha convierte el texto iso en fecha corta */}
+        {caso.sala} · Falta del {soloFecha(caso.fechaFalta)} · Folio {caso.folio}
+      </Typography>
+      <Box>
+        {/* Chip es la etiqueta redonda, variant outlined es solo borde */}
+        <Chip 
+          size="small" 
+          variant="outlined"
+          color="primary" 
+          label={ETIQUETA_ESTADO[caso.estado]} 
+        />
+      </Box>
+      {/* el aviso amarillo solo sale si el caso trae una alerta, severity warning = amarillo */}
       {caso.alerta && <Alert severity="warning" sx={{ py: 0 }}>{caso.alerta}</Alert>}
       <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1 }}>
         <Box>
@@ -120,7 +173,7 @@ const CasoCard = ({ caso, activo, onSelect }: {caso: Caso; activo: boolean; onSe
           <Typography variant="caption">Intentos de contacto</Typography>
           <Typography variant="body2">
             {/* muestra solo la ultima llamada (la primera del arreglo), si no hay ninguna dice "Ninguno" */}
-            {caso.intentos[0] ? `${caso.intentos[0].fecha} · ${caso.intentos[0].resultado}` : "Ninguno"}
+            {caso.intentos[0] ? `${fechaTexto(caso.intentos[0].fecha)} ·${caso.intentos[0].resultado}` : "Ninguno"}
           </Typography>
         </Box>
       </Box>
@@ -133,9 +186,12 @@ const CasoCard = ({ caso, activo, onSelect }: {caso: Caso; activo: boolean; onSe
  
 
 // par de etiqueta chiquita arriba y valor en negritas abajo, se usa en los datos del expediente
+// etiqueta: el nombre del dato (Sala), valor: el dato (Lactantes B)
 const Dato = ({ etiqueta, valor }: { etiqueta: string; valor: string }) => (
   <Box>
+    {/* text.secondary es el gris del tema */}
     <Typography variant="caption" color="text.secondary">{etiqueta}</Typography>
+    {/* negritas ligeras (600) */}
     <Typography variant="body2" fontWeight={600}>{valor}</Typography>
   </Box>
 );
@@ -152,9 +208,11 @@ const OpcionesTarjeta = ({ valor, onChange, opciones, columnas }: {valor: string
   >
     {/* map crea una tarjeta por cada opcion, key ayuda a react a distinguirlas */}
     {opciones.map((o) => (
+      // FormControlLabel junta un radio con su texto, asi picar el texto tambien marca el radio
       <FormControlLabel
         key={o}
         value={o}
+        // control es el circulito del radio
         control={<Radio />}
         label={o}
         // la opcion elegida se resalta con borde y fondo de color
@@ -170,7 +228,7 @@ const OpcionesTarjeta = ({ valor, onChange, opciones, columnas }: {valor: string
 );
 
 // formulario que va dentro del expediente: causa, asesoria, fecha de retorno y notas
-const FormularioCausa = ({ caso }: { caso: Caso }) => {
+const FormularioCausa = ({ caso, guardando, onGuardar }: { caso: Caso; guardando: boolean; onGuardar: (d: DatosExpediente) => Promise<boolean> }) => {
   // emmpieza con la causa que ya tenga el caso, si no tiene queda vacio
   const [causa, setCausa] = useState(caso.causa ?? "");
   // lo que se escribe en "Asesoria brindada"
@@ -179,6 +237,10 @@ const FormularioCausa = ({ caso }: { caso: Caso }) => {
   const [fechaRetorno, setFechaRetorno] = useState("");
   // notas privadas del expediente
   const [notas, setNotas] = useState("");
+  // true cuando se acaba de guardar, muestra el aviso "Guardado" junto al boton
+  const [guardado, setGuardado] = useState(false);
+  // en cada setState hace que el aviso "Guardado" se quite en cuanto se vuelve a editar algo
+  const cambiar = (setter: (v: string) => void) => (v: string) => { setGuardado(false); setter(v); };
   return (
     <Box sx={{ display: "grid", gap: 2 }}>
       <Typography fontWeight={700}>Causa de la inasistencia</Typography>
@@ -192,13 +254,15 @@ const FormularioCausa = ({ caso }: { caso: Caso }) => {
           placeholder="Qué orientación diste a la persona tutora"
           multiline minRows={3}
           value={asesoria}
-          onChange={(e) => setAsesoria(e.target.value)}
+          // al escribir, cambiar(setAsesoria) quita el aviso "Guardado"
+          onChange={(e) => cambiar(setAsesoria)(e.target.value)}
         />
         {/* type="date" hace que salga el calendario, el shrink evita que la etiqueta se encime con el formato */}
         <TextField
           label="Fecha probable de retorno"
+          // type date saca el selector de calendario del navegador
           type="date"
-          InputLabelProps={{ shrink: true }}
+          InputLabelProps={{ shrink: true }} // ayuda a que no se sobreponga la label con el texto de ayuda
           helperText="Formato dd/mm/aaaa"
           value={fechaRetorno}
           onChange={(e) => setFechaRetorno(e.target.value)}
@@ -207,10 +271,28 @@ const FormularioCausa = ({ caso }: { caso: Caso }) => {
       {/* multiline hace que sea un cuadro de texto grande, minRows es el alto minimo */}
       <TextField
         label="Notas confidenciales"
+        // fullWidth ocupa todo el ancho disponible
         multiline minRows={3} fullWidth
         value={notas}
         onChange={(e) => setNotas(e.target.value)}
       />
+      {/* el boton de guardar solo existe mientras el caso siga abierto, en cerrados ya no se edita */}
+      {caso.estado !== "cerrado" && (
+        // alignItems center los alinea verticalmente
+        <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+          <Button
+            variant="contained"
+            // disabled apaga el boton mientras guardando sea true, asi no se manda doble
+            disabled={guardando}
+            // onGuardar regresa true si la API respondio bien, solo entonces sale el aviso
+            onClick={async () => { if (await onGuardar({ causa, asesoria, fechaRetorno, notas })) setGuardado(true); }}
+            >
+            {/* si esta guardando dice "Guardando...", si no "Guardar" */}
+            {guardando ? "Guardando..." : "Guardar"}
+          </Button>
+          {guardado && <Typography variant="body2" color="success.main">Guardado</Typography>}
+        </Box>
+      )}
     </Box>
   );
 };
@@ -219,16 +301,19 @@ const FormularioCausa = ({ caso }: { caso: Caso }) => {
 // caso: el caso al que se le registra la llamada, onClose: cierra el menu sin guardar nada, onGuardar: manda los datos capturados al padre (SeguimientoList) para que los agregue al caso
 const RegistrarLlamadaDialog = ({ caso, guardando, onClose, onGuardar }: {caso: Caso; guardando: boolean; onClose: () => void; onGuardar: (d: DatosLlamada) => void;}) => {
   const [resultado, setResultado] = useState("");
+  // empieza con la que ya tenga el caso
   const [causa, setCausa] = useState(caso.causa ?? "");
   const [notas, setNotas] = useState("");
  
   return (
     // onClose se dispara tambien al picar fuera del menu o con la tecla Esc
+    // Dialog es la ventana emergente
     <Dialog open onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         Registrar llamada
         {/* la tecla Esc tambien cierra el menu, el chip solo lo avisa */}
         <Button variant="outlined" color="inherit" onClick={onClose}>
+          {/* &nbsp ayuda a que haya un espacio entre cerrar y el label de ESC / propuesta por Claude*/}
           Cerrar&nbsp;<Chip size="small" variant="outlined" label="Esc" />
         </Button>
       </DialogTitle>
@@ -271,7 +356,7 @@ const RegistrarLlamadaDialog = ({ caso, guardando, onClose, onGuardar }: {caso: 
  
 // panel de la derecha con todo el detalle del caso seleccionado
 // onRegistrarLlamada: abre el menu de llamada
-const Expediente = ({ caso, guardando, onRegistrarLlamada  }: { caso?: Caso; guardando: boolean; onRegistrarLlamada: () => void }) => {
+const Expediente = ({ caso, guardando, onRegistrarLlamada, onGuardar, onCerrar }: { caso?: Caso; guardando: boolean; onRegistrarLlamada: () => void; onGuardar: (d: DatosExpediente) => Promise<boolean>; onCerrar: () => void }) => {
   // si no hay caso elegido solo se muestra el mensaje y no se dibuja nada mas
   if (!caso) {
     return (
@@ -289,16 +374,20 @@ const Expediente = ({ caso, guardando, onRegistrarLlamada  }: { caso?: Caso; gua
           <Dato etiqueta="Niña o niño" valor={caso.nombre} />
           <Dato etiqueta="Sala" valor={caso.sala} />
           <Dato etiqueta="Folio" valor={caso.folio} />
-          <Dato etiqueta="Fecha de la falta" valor={caso.fechaFalta} />
+          {/* soloFecha convierte la fecha ISO en fecha corta */}
+          <Dato etiqueta="Fecha de la falta" valor={soloFecha(caso.fechaFalta)} />
           <Dato etiqueta="Estado" valor={ETIQUETA_ESTADO[caso.estado]} />
         </Box>
         {/* lista de todas las llamadas hechas, la mas reciente arriba */}
         <Box>
+          {/* gutterBottom le deja un margen abajo al texto / Propuesta de Claude */}
           <Typography fontWeight={700} gutterBottom>Historial de llamadas</Typography>
           {/* si no hay llamadas se avisa en lugar de dejar el espacio vacio */}
           {caso.intentos.length === 0 && <Typography variant="body2">Sin llamadas registradas.</Typography>}
           {/* idx se usa como key porque los intentos todavia no tienen id propio */}
+          {/* map recorre los intentos: i es cada llamada e idx su numero de posicion (0, 1, 2...) */}
           {caso.intentos.map((i, idx) => (
+            // mb 1 = margen para separar una llamada de otra
             <Box key={idx} sx={{ mb: 1 }}>
               <Typography variant="body2" fontWeight={600}>{fechaTexto(i.fecha)} · {i.resultado}</Typography>
               <Typography variant="caption">{i.responsable}</Typography>
@@ -306,23 +395,27 @@ const Expediente = ({ caso, guardando, onRegistrarLlamada  }: { caso?: Caso; gua
           ))}
         </Box>
  
-        {/* el key hace que el formulario se reinicie al cambiar de caso y no arrastre lo escrito del anterior */}
-        <FormularioCausa key={caso.id} caso={caso} />
- 
-        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-          <Button variant="contained" onClick={onRegistrarLlamada} disabled={guardando}>Registrar llamada</Button>
-          <Button variant="outlined">
-            Notificar a contactos de emergencia
-          </Button>
-          {/* ml auto lo empuja a la derecha, color error lo pone rojo */}
-          <Button variant="outlined" color="error" sx={{ ml: "auto" }}>
-            Cerrar caso
-          </Button>
-        </Box>
+        {/* el key hace que el formulario se reinicie al cambiar de caso y no arrastre lo escrito del anterior, ademas solo se abre si el caso no esta cerrado*/}
+        {caso.estado !== "cerrado" && (
+          <FormularioCausa key={caso.id} caso={caso} guardando={guardando} onGuardar={onGuardar} />
+        )}
+        {/* los botones solo existen mientras el caso siga abierto, en cerrados no se puede editar */}
+        {caso.estado !== "cerrado" && (
+          // flexWrap los baja de renglon en pantalla chica
+          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+            {/* al picar abre el dialogo de llamada, disabled lo apaga mientras se guarda */}
+            <Button variant="contained" onClick={onRegistrarLlamada} disabled={guardando}>Registrar llamada</Button>
+            {/* ml auto lo empuja a la derecha, color error lo pone rojo */}
+            <Button variant="outlined" color="error" sx={{ ml: "auto" }} onClick={onCerrar} disabled={guardando}>
+              Cerrar caso
+            </Button>
+          </Box>
+        )}
       </CardContent>
     </Card>
   );
 };
+ 
  
 // pantalla principal, aqui vive todo el estado y se conectan los demas componentes
 export const SeguimientoList = () => {
@@ -332,8 +425,11 @@ export const SeguimientoList = () => {
   const [guardando, setGuardando] = useState(false); // true mientras se espera el POST
   const [dialogoAbierto, setDialogoAbierto] = useState(false);
   const [tab, setTab] = useState<Estado>("abierto");
+  // filtros elegidos, "" en todos al inicio para que no filtre nada
+  const [filtro, setFiltro] = useState<Filtro>({ sala: "", dias: "" });
   const [seleccionado, setSeleccionado] = useState<string | undefined>();
 
+  // pedir casos API
   const handleGetData = async () => {
     const request = new Request(`${API_URL}/seguimiento`, {
       method: "GET",
@@ -349,10 +445,16 @@ export const SeguimientoList = () => {
       throw new Error("No se pudieron cargar los casos de seguimiento");
     }
   };
-  
+
+  // useEffect corre el codigo al abrir la pantalla, el [] del final significa "solo una vez"
   useEffect(() => {handleGetData().catch((error) => {console.error(error);alert(error.message);}).finally(() => setCargando(false));}, []);
 
-  const visibles = casos.filter((c) => c.estado === tab);
+  // lista de salas sin repetir para llenar el filtro (Set quita los duplicados, sort las ordena) casos.map((c) => c.sala) saca una lista solo con las salas
+  const salas = Array.from(new Set(casos.map((c) => c.sala))).sort();
+  const visibles = casos
+    .filter((c) => c.estado === tab) // esta en la tab
+    .filter((c) => !filtro.sala || c.sala === filtro.sala)
+    .filter((c) => !filtro.dias || dentroDeDias(c.fechaFalta, Number(filtro.dias)));
   // busca el caso completo a partir del id para mostrarlo en el expediente
   const actual = casos.find((c) => c.id === seleccionado);
 
@@ -364,6 +466,7 @@ export const SeguimientoList = () => {
     try {
       const actualizado = await enviar(`/${actual.id}/llamadas`, "POST", d, "No se pudo guardar la llamada");
       // cambia solo ese caso por la version nueva y deja los demas igual
+      // prev es la lista anterior, map recorre cada caso: si el id coincide pone el nuevo, si no deja el mismo
       setCasos((prev) => prev.map((c) => (c.id === actualizado.id ? actualizado : c)));
       // el menu solo se cierra si salio bien, si falla se queda abierto para no perder lo escrito
       setDialogoAbierto(false);
@@ -375,9 +478,48 @@ export const SeguimientoList = () => {
     }
   };
   
+  // se ejecuta al picar "Guardar" en el expediente
+  // la API actualiza ese ticket y regresa el caso actualizado
+  // regresa true si salio bien y false si fallo, el formulario lo usa para mostrar el aviso "Guardado"
+  const guardarExpediente = async (d: DatosExpediente) => {
+    if (!actual) return false;
+    setGuardando(true);
+    try {
+      const actualizado = await enviar(`/${actual.id}`, "PATCH", d, "No se pudo guardar el expediente");
+      setCasos((prev) => prev.map((c) => (c.id === actualizado.id ? actualizado : c)));
+      return true;
+    } catch (error) {
+      console.error(error);
+      alert((error as Error).message);
+      return false;
+    } finally {
+      setGuardando(false);
+    }
+  };
+ 
+  // se ejecuta al picar "Cerrar caso", lo pasa a la pestaña Cerrados
+  // la API pone estado cerrado y guarda quien y cuando lo cerro, y regresa el caso actualizado
+  const cerrarCaso = async () => {
+    if (!actual) return;
+    setGuardando(true);
+    try {
+      const actualizado = await enviar(`/${actual.id}/cerrar`, "PATCH", undefined, "No se pudo cerrar el caso");
+      setCasos((prev) => prev.map((c) => (c.id === actualizado.id ? actualizado : c)));
+      // se deselecciona porque ya no pertenece a la pestaña actual y el expediente quedaria huerfano
+      setSeleccionado(undefined);
+    } catch (error) {
+      console.error(error);
+      alert((error as Error).message);
+    } finally {
+      setGuardando(false);
+    }
+  };
+ 
+
   return (
     <Card>
-      <CardHeader title="Seguimiento de inasistencias" />
+      {/* variant h2 es el tamaño visual, component h1 es la etiqueta html // Propuesta de Claude */}
+      <CardHeader title="Seguimiento de inasistencias" slotProps={{ title: { variant: "h2", component: "h1" } }} />
       <CardContent>
         {/* cada pestaña muestra cuantos casos tiene ese estado, al cambiar de pestaña se actualiza la lista */}
         <Tabs value={tab} onChange={(_, v: Estado) => setTab(v)}>
@@ -390,7 +532,7 @@ export const SeguimientoList = () => {
           ))}
         </Tabs>
  
-        <Filtros />
+        <Filtros filtro={filtro} salas={salas} onChange={setFiltro} />
  
         {cargando && (
           <Typography color="text.secondary" sx={{ pb: 2 }}>
@@ -411,7 +553,7 @@ export const SeguimientoList = () => {
             ))}
           </Box>
           {/* al picar "Registrar llamada" solo se cambia dialogoAbierto, el menu lo dibuja mas abajo */}
-          <Expediente caso={actual} guardando={guardando} onRegistrarLlamada={() => setDialogoAbierto(true)} />
+          <Expediente caso={actual} guardando={guardando} onRegistrarLlamada={() => setDialogoAbierto(true)} onGuardar={guardarExpediente} onCerrar={cerrarCaso} />
         </Box>
         {/* el menu solo existe mientras esta abierto, asi cada vez que se abre empieza limpio */}
         {actual && dialogoAbierto && (

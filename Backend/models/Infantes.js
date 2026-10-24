@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import cifrarCampos from "./cifrado.js";
 
 const { Schema } = mongoose;
 
@@ -92,6 +93,8 @@ const infanteSchema = new Schema({
   tutores: [tutorAutorizadoSchema],
   contactosEmergencia: [contactoEmergenciaSchema]
 });
+
+cifrarCampos(infanteSchema, ["discapacidad", "RegPesoTalla", "comentario"]);
 
 infanteSchema.index({ matricula: 1 }, { unique: true });
 infanteSchema.index({ curp: 1 }, { unique: true });

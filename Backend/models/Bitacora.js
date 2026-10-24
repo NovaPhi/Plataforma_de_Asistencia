@@ -6,7 +6,7 @@ const { Schema } = mongoose;
 // La bitacora no tiene borrado logico porque no se edita desde la app
 const bitacoraSchema = new Schema({
   usuario: { type: String},            // usuario que hizo la accion
-  rol: { type: String },                  // Rol que tenia en ese momento
+  rol: [{ type: String }],                  // Rol que tenia en ese momento
   ip: { type: String },
   userAgent: { type: String},                         // Navegador o dispositivo
   fechaHora: { type: Date},                           // Momento exacto del cambio
@@ -23,7 +23,8 @@ const bitacoraSchema = new Schema({
            "asesorias",
            "notasConfidenciales",
            "consentimientos",
-           "historico"]
+           "historico",
+           "incidencias"]
   },
   registro: { type: Schema.Types.Mixed, default: null },               // _id, ebdi o usuario segun la coleccion
   datosAnteriores: { type: Schema.Types.Mixed, default: null },        // Valores antes del cambio

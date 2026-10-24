@@ -137,14 +137,14 @@ const asistencias = [
     registradoPor: "capt.ebdi012",
     deleted_at: null
   },
-  {
+  /*{
     _id: ObjectId("c00000000000000000000007"),
     estancia: 12,
     infante: ObjectId("90000000000000000000001a"),
     grupo: ObjectId("a00000000000000000000003"),
     fecha: ISODate("2026-10-05"),
     turno: "MATUTINO",
-    estatus: "PRESENTE",
+    estatus: "FALTA_INJUSTIFICADA",
     horaIngreso: ISODate("2026-10-05T08:11:10-06:00"),
     horaEgreso: ISODate("2026-10-05T14:13:04-06:00"),
     tutorIngreso: ObjectId("b00000000000000000000029"),
@@ -157,7 +157,7 @@ const asistencias = [
     ticket: null,
     registradoPor: "capt.ebdi012",
     deleted_at: null
-  },
+  },*/  
   {
     _id: ObjectId("c00000000000000000000008"),
     estancia: 12,
@@ -625,6 +625,7 @@ const asistencias = [
     registradoPor: "capt.ebdi012",
     deleted_at: null
   },
+  /*
   {
     _id: ObjectId("c0000000000000000000001e"),
     estancia: 12,
@@ -632,7 +633,7 @@ const asistencias = [
     grupo: ObjectId("a00000000000000000000003"),
     fecha: ISODate("2026-10-06"),
     turno: "MATUTINO",
-    estatus: "PRESENTE",
+    estatus: "FALTA_INJUSTIFICADA",
     horaIngreso: ISODate("2026-10-06T08:39:33-06:00"),
     horaEgreso: ISODate("2026-10-06T14:31:32-06:00"),
     tutorIngreso: ObjectId("b0000000000000000000002a"),
@@ -645,7 +646,7 @@ const asistencias = [
     ticket: null,
     registradoPor: "capt.ebdi012",
     deleted_at: null
-  },
+  },*/
   {
     _id: ObjectId("c0000000000000000000001f"),
     estancia: 12,

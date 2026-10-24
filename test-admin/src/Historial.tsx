@@ -1,4 +1,4 @@
-import{Card, CardHeader, Stack, CardContent, Typography, Chip, List, ListItem, ListItemText, TextField, Box} from "@mui/material";
+import{Card, CardHeader, Stack, Chip, List, ListItem, ListItemText, Box} from "@mui/material";
 import{ useEffect, useState } from 'react';
 import { API_URL } from "./config";
 
@@ -66,7 +66,7 @@ export const Bitacora = () => {
       <Card>
         <CardHeader
         title="Bitacora"
-        slotProps={{title: {variant: "h2"}}}
+        slotProps={{title: {variant: "h2", component: "h1"}}}
         />
       </Card>
       <Card>
@@ -75,41 +75,28 @@ export const Bitacora = () => {
         />
       </Card>
       <Card>
-        {/*la zona fija que se pueda ver siempre*/}
-        <Box sx={{p:2}}>
-          <TextField
-          fullWidth
-          size='small'
-          label="Buscar"
-          placeholder='Usuario, accion o modulo'
-          value={busqueda}
-          onChange={(e)=> setBusqueda(e.target.value)}
-          />
-        </Box>
-        {cargando && (
-          <Typography color="text.secondary" sx={{p:2}}>
-          Cargando historial...
-          </Typography>
-        )}
-        {/*Lista con el scroll propio*/}
-          <List sx={{ maxHeight: "60vh", overflowY: "auto" }}>
+        {/* tabIndex 0 la hace enfocable con Tab para poder bajar con las flechas */}
+        {/* role region + aria-label le da nombre para lector de pantalla */}
+        <Box tabIndex={0} role="region" aria-label="Historial de cambios" sx={{ maxHeight: "60vh", overflowY: "auto" }}>
+          <List>
             {visibles.map((r) => (
               <ListItem
-              key={r.id}
-              divider
-              // la accion que se hizo
-              secondaryAction={
-                <Chip label={ACCIONES[r.accion] ?? r.accion} variant="outlined" size="small" sx={{fontWeight: 600}} />
-              }
-            >
-              {/* quien lo hizo, en que modulo y cuando */}
-              <ListItemText
-                primary={`${r.usuario} (${r.rol})`}
-                secondary={`${r.coleccion} , ${fechaTexto(r.fechaHora)}`}
-              />
-            </ListItem>
-          ))}
-        </List>
+                key={r.id}
+                divider
+                // la accion que se hizo
+                secondaryAction={
+                  <Chip label={ACCIONES[r.accion] ?? r.accion} variant="outlined" size="small" sx={{fontWeight: 600}} />
+                }
+              >
+                {/* quien lo hizo, en que modulo y cuando */}
+                <ListItemText
+                  primary={`${r.usuario} (${r.rol})`}
+                  secondary={`${r.coleccion} , ${fechaTexto(r.fechaHora)}`}
+                />
+              </ListItem>
+            ))}
+          </List>
+        </Box>
       </Card>
      </Stack>
     );

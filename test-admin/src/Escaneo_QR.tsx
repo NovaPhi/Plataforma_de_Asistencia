@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+// estilos de los componentes de MUI (como Card) consultados con Claude a partir del mockup / Ayudado por Claude
 import {Box, Card, CardHeader, Grid, Stack, Typography, Button, ToggleButtonGroup, ToggleButton, CardContent, Avatar, Alert, TextField, ListItem, List, ListItemText} from "@mui/material";
 import { Html5Qrcode } from "html5-qrcode";
 import { API_URL } from "./config";
@@ -47,6 +48,7 @@ const iniciales = (nombre: string) =>
 // QR Reader
 const ELEMENT_ID = "lector-qr";
 
+// función del lector QR, Claude explicó cómo usar y llamar a Html5Qrcode de html5-qrcode / Ayudado por Claude
 // recibe onScan que es funcion de la libreria
 const LectorQR = ({ onScan }: { onScan: (texto: string) => void }) => {
     //guarda la ultima version de onScan para no reiniciar la camara
@@ -125,7 +127,10 @@ export const Escaneo_Credencial = () =>{
     const handleGetData = async() => {
         const request = new Request(`${API_URL}/Pase_de_Lista/infantes`, {
         method: "GET",
-        headers: new Headers({ "Content-Type": "application/json" }),
+        headers: new Headers({ 
+            "Content-Type": "application/json",
+            "Authentication": sessionStorage.getItem("auth") ?? "",
+        }),
     });
         try{
             const res = await fetch(request);
@@ -167,7 +172,10 @@ export const Escaneo_Credencial = () =>{
                 clientUuid: crypto.randomUUID(), 
             }),
             
-            headers: new Headers({"Content-Type": "application/json"}),
+            headers: new Headers({ 
+                "Content-Type": "application/json",
+                "Authentication": sessionStorage.getItem("auth") ?? "",
+            }),
         });
         
         console.log("Enviando datos al backend:", request.body);
@@ -253,6 +261,8 @@ export const Escaneo_Credencial = () =>{
                             marginRight: 0,
                         },
                     }}
+                    // variante es como se ve el texto y componente es como lo lee el html
+                    slotProps={{title: { variant: "h2", component:"h1"}}}
                     // selector de modo que solo sea uno a la vez
                     action={
                         <ToggleButtonGroup
@@ -271,16 +281,13 @@ export const Escaneo_Credencial = () =>{
                             </ToggleButton>
                         </ToggleButtonGroup>
                     }
-                    slotProps={{
-                        title: {variant: "h4"}
-                    }}
                 />
             </Card>
 
             <Grid container spacing={3}>
                 {/*la parte de la camara en celular ocupa todo el ancho en compu la mitad*/}
                 <Grid size={{xs:12, md:6}}>
-                    <Typography variant="h6" fontWeight={700} gutterBottom>
+                    <Typography variant="h5" component='h2' fontWeight={700} gutterBottom>
                         Lee la credencial del infante
                     </Typography>
                     {/*caja de la camara se adapta a dispositivo*/}
@@ -306,7 +313,8 @@ export const Escaneo_Credencial = () =>{
                         <LectorQR onScan={(t) => alEscanear(t,"QR")}/>
                     </Box>
                     {/*instrucciones para el usuario*/}
-                    <Typography variant="h6" gutterBottom align="center">
+                    {/* variante es como se ve el texto y componente es como lo lee el html*/}
+                    <Typography variant="h6" component='h3' gutterBottom align="center">
                         Apunta la camara al codigo QR
                     </Typography>
                 </Grid>
@@ -320,7 +328,8 @@ export const Escaneo_Credencial = () =>{
                     }}
                     >
                         <CardContent>
-                            <Typography variant="h4" fontWeight={400} gutterBottom>
+                            {/* variante es como se ve el texto y componente es como lo lee el html
+                            <Typography variant="h4" component='h4' fontWeight={400} gutterBottom>
                                 Resultado del Scan
                             </Typography>
                             {/*tiene si fue valido error o esta esperando*/} 
@@ -328,9 +337,11 @@ export const Escaneo_Credencial = () =>{
                                 <>
                                 {/*datos del estudiante con iniciales nombre y matricula*/}
                                 <Box sx={{display: "flex", alignItems: "center", gap: 2, my:2}}>
-                                    <Avatar sx={{width:56, height: 56}}> {iniciales(leido.Nombre)}</Avatar>
+                                    {/*esta es la forma en la que el Avatar como el de outlook tenga su color*/}
+                                    <Avatar sx={{width:56, height: 56, bgcolor: "primary.main", color: "primary.contrastText"}}> {iniciales(leido.Nombre)}</Avatar>
                                     <Box>
-                                        <Typography variant="h6" fontWeight={700}>
+                                        {/* variante es como se ve el texto y componente es como lo lee el html */}
+                                        <Typography variant="h5" fontWeight={700}>
                                             {leido.Nombre}
                                         </Typography>
                                         <Typography variant="body2" color="text.secondary">
@@ -393,8 +404,10 @@ export const Escaneo_Credencial = () =>{
                 </Typography>
             </Card>
             <Box>
+                {/* variante es como se ve el texto y componente es como lo lee el html*/}
                 <Typography
                 variant="h6" 
+                component='h5'
                 fontWeight={700}
                 gutterBottom>
                     Ultimos registros
@@ -416,11 +429,11 @@ export const Escaneo_Credencial = () =>{
                             {Registros.map((r,i) => (
                                 // Hora nombre y tipo 
                                 <ListItem key={r.Id} divider={i< Registros.length -1} sx={{py:2}}>
-                                    // hora a la izquierda con el ancho fijo pa que se vea bonito
+                                    {/*hora a la izquierda con el ancho fijo pa que se vea bonito*/}
                                     <Typography fontWeight={700} sx={{width:64}}>
                                         {r.Hora}
                                     </Typography>
-                                    <ListItemText primary={r.Nombre}/>
+                                    <ListItemText primary={r.Nombre} />
                                     <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, color:"text.secondary" }}>
                                         {r.tipo === "Ingreso"?(
                                             <LoginIcon fontSize="small"/>

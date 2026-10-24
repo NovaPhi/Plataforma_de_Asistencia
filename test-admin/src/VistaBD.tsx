@@ -1,9 +1,10 @@
 //BOTON QUE COLAPSE LA LISTA DE EL ESQUEMA  
 //LA API MANDA OBJETOS USA NOTACION PUNTO
 // recibe todos los bloques de la api y regresa cualquier cambio hecho en front
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useId} from "react";
+// estilos de los componentes de MUI (como Card) consultados con Claude a partir del mockup / Ayudado por Claude
 import { Box, Card, CardContent, CardHeader,Stack, Button, Dialog, DialogTitle, DialogContent, TextField, MenuItem, DialogActions } from "@mui/material"
-import {DataTable,ListContextProvider,ResourceContextProvider,useList,DateField, EmailField, Pagination} from "react-admin"
+import {DataTable,ListContextProvider,ResourceContextProvider,useList,DateField, EmailField, Pagination, PaginationActions} from "react-admin"
 import { API_URL } from "./config";
 
 
@@ -88,6 +89,15 @@ const titulosColeccion: Record<Coleccion, { singular: string; nuevo: string }> =
     salas: { singular: "sala", nuevo: "Nueva sala" },
     infantes: { singular: "infante", nuevo: "Nuevo infante" },
     tutores: { singular: "tutor", nuevo: "Nuevo tutor" },
+};
+
+const Paginacion = ({etiqueta}: {etiqueta: string}) => {
+    const idFilas = useId();
+    const Actions = useMemo(
+        () => (props: any) => <PaginationActions {...props} aria-label={etiqueta} />,
+        [etiqueta]
+    );
+    return <Pagination actions={Actions} slotProps={{selectLabel:{as: "label", htmlFor:idFilas} as any, select: {inputProps: {id:idFilas}},}}/>;
 };
 
 export const VBD = () => {
@@ -202,9 +212,9 @@ export const VBD = () => {
 
 
     return (
-        <Stack spacing={2}>
+        <Stack spacing={2} sx={{minWidth: 0 , maxWidth: "100%", contain: "inline-size"} }>
             <Card>
-                <CardHeader title="Vista de Base de datos" />
+                <CardHeader title="Vista de Base de datos" slotProps={{title: { variant: "h2", component: "h1" }}}/>
             </Card>
             <Card sx={{ minWidth: 0, maxWidth: "100%" }}>
                 <CardHeader 
@@ -217,7 +227,30 @@ export const VBD = () => {
                     <ListContextProvider value={listUsuarios}>
                         <CardContent sx={{pt: 0}}>
                             <Box>
-                                <DataTable bulkActionButtons={false} >
+                                <DataTable bulkActionButtons={false} sx={{
+                                    // esto es el tamano en x basado en el card osea que tome todo el card
+                                    width: "100%",
+                                    maxWidth: "100%",
+                                    minWidth: 0,
+                                    //como se contiene 
+                                    contain: "inline-size",
+                                    // es como se hace el alto dependiendo del dispositivo
+                                    height: { xs: 320, sm: 380, md: 480, lg: 560 },
+                                    // como funciona el scroll
+                                    overflow: "auto",
+                                    // esto es el tipo de borde el color y el tamano
+                                    border: 1,
+                                    borderColor: "divider",
+                                    borderRadius: 2,
+
+                                    // que el encabecdo se sticky osea que este fijo mientras uno scrollea y bgcolor le da el color de background
+                                    "& .MuiTableCell-head": {
+                                        position: "sticky",
+                                        top: 0,
+                                        zIndex: 1,
+                                        bgcolor: "background.paper",
+                                    },
+                                }}>
                                     <DataTable.Col source="numeroEmpleado"/>
                                     <DataTable.Col source="usuario"/>
                                     <DataTable.Col source="nombre"/>
@@ -240,7 +273,8 @@ export const VBD = () => {
                                  * PONER ROWSPERPAGEOPTIONS ={[MIN, MED, MAX]}
                                  * PARA QUE SE VEAN LAS OPCIONES CALAR CUANTOS PONER PARA QUE SEA MEJOR DESPUES DE QUE TENGAMOS LA VIEW DE API
                                  */}
-                                <Pagination/>  
+                                 {/*etiqueta para aria osea screenreaders */}
+                                <Paginacion etiqueta="Paginacion de usuarios"/>  
                             </Box>
                         </CardContent>
                     </ListContextProvider>
@@ -255,7 +289,30 @@ export const VBD = () => {
                     <ListContextProvider value={listEstancias}>
                         <CardContent sx={{pt: 0}}>
                             <Box>
-                                <DataTable bulkActionButtons={false}>
+                                <DataTable bulkActionButtons={false} sx={{
+                                    // esto es el tamano en x basado en el card osea que tome todo el card
+                                    width: "100%",
+                                    maxWidth: "100%",
+                                    minWidth: 0,
+                                    //como se contiene 
+                                    contain: "inline-size",
+                                    // es como se hace el alto dependiendo del dispositivo
+                                    height: { xs: 320, sm: 380, md: 480, lg: 560 },
+                                    // como funciona el scroll
+                                    overflow: "auto",
+                                    // esto es el tipo de borde el color y el tamano
+                                    border: 1,
+                                    borderColor: "divider",
+                                    borderRadius: 2,
+
+                                    // que el encabecdo se sticky osea que este fijo mientras uno scrollea y bgcolor le da el color de background
+                                    "& .MuiTableCell-head": {
+                                        position: "sticky",
+                                        top: 0,
+                                        zIndex: 1,
+                                        bgcolor: "background.paper",
+                                    },
+                                }}>
                                     <DataTable.Col source="ebdi"/>
                                     <DataTable.Col source="nombre"/>
                                     <DataTable.Col source="ur"/>
@@ -272,7 +329,8 @@ export const VBD = () => {
                                     )}
                                     />
                                 </DataTable>
-                                <Pagination/>
+                                {/*etiqueta para aria osea screenreaders */}
+                                <Paginacion etiqueta="Paginacion de estancias"/>
                             </Box>
                         </CardContent>
                     </ListContextProvider>
@@ -287,8 +345,30 @@ export const VBD = () => {
                 {/* <DataTable source="Infantes.Matricula" label="Matricula"/>*/}
                 <ResourceContextProvider value="Grupos">
                     <ListContextProvider value={listGrupos}>
-                        <DataTable bulkActionButtons={false}>
-                            <DataTable.Col source="_id" label="Id de estancia"/>
+                        <DataTable bulkActionButtons={false} sx={{
+                                // esto es el tamano en x basado en el card osea que tome todo el card
+                                width: "100%",
+                                maxWidth: "100%",
+                                minWidth: 0,
+                                //como se contiene 
+                                contain: "inline-size",
+                                // es como se hace el alto dependiendo del dispositivo
+                                height: { xs: 320, sm: 380, md: 480, lg: 560 },
+                                // como funciona el scroll
+                                overflow: "auto",
+                                // esto es el tipo de borde el color y el tamano
+                                border: 1,
+                                borderColor: "divider",
+                                borderRadius: 2,
+                                // que el encabecdo se sticky osea que este fijo mientras uno scrollea y bgcolor le da el color de background
+                                "& .MuiTableCell-head": {
+                                    position: "sticky",
+                                    top: 0,
+                                    zIndex: 1,
+                                    bgcolor: "background.paper",
+                                },
+                            }}>
+                            <DataTable.Col source="estancia" label="EBDI de estancia"/>
                             <DataTable.Col source="sala"/>
                             <DataTable.Col source="cicloEscolar"/>
                             <DataTable.Col source="turno"/>
@@ -301,7 +381,8 @@ export const VBD = () => {
                             )}
                             />
                         </DataTable>
-                        <Pagination/>
+                        {/*etiqueta para aria osea screenreaders */}
+                        <Paginacion etiqueta="Paginacion de grupos"/>
                     </ListContextProvider>
                 </ResourceContextProvider>
             </Card>
@@ -313,7 +394,29 @@ export const VBD = () => {
                 <CardContent sx={{ pt: 0 }}>
                     <ResourceContextProvider value="infantes">
                         <ListContextProvider value={listInfantes}>
-                            <DataTable bulkActionButtons={false}>
+                            <DataTable bulkActionButtons={false} sx={{
+                                // esto es el tamano en x basado en el card osea que tome todo el card
+                                width: "100%",
+                                maxWidth: "100%",
+                                minWidth: 0,
+                                //como se contiene 
+                                contain: "inline-size",
+                                // es como se hace el alto dependiendo del dispositivo
+                                height: { xs: 320, sm: 380, md: 480, lg: 560 },
+                                // como funciona el scroll
+                                overflow: "auto",
+                                // esto es el tipo de borde el color y el tamano
+                                border: 1,
+                                borderColor: "divider",
+                                borderRadius: 2,
+                                // que el encabecdo se sticky osea que este fijo mientras uno scrollea y bgcolor le da el color de background
+                                "& .MuiTableCell-head": {
+                                    position: "sticky",
+                                    top: 0,
+                                    zIndex: 1,
+                                    bgcolor: "background.paper",
+                                },
+                            }}>
                                 <DataTable.Col source="_id" label="Id"/>
                                 <DataTable.Col source="matricula"/>
                                 <DataTable.Col source="ur"/>
@@ -334,7 +437,8 @@ export const VBD = () => {
                                 )}
                                 />
                             </DataTable>
-                            <Pagination />
+                            {/*etiqueta para aria osea screenreaders */}
+                            <Paginacion etiqueta="Paginacion de infantes"/>
                         </ListContextProvider>
                     </ResourceContextProvider>        
                 </CardContent>
@@ -347,7 +451,31 @@ export const VBD = () => {
                 <CardContent sx={{pt: 0}}>
                     <ResourceContextProvider value="Tutores">
                         <ListContextProvider value={listTutores}>
-                            <DataTable bulkActionButtons={false}>
+                            <DataTable bulkActionButtons={false} sx={{
+                                // esto es el tamano en x basado en el card osea que tome todo el card
+                                width: "100%",
+                                maxWidth: "100%",
+                                minWidth: 0,
+                                //como se contiene 
+                                contain: "inline-size",
+                                // es como se hace el alto dependiendo del dispositivo
+                                height: { xs: 320, sm: 380, md: 480, lg: 560 },
+                                // como funciona el scroll
+                                overflow: "auto",
+                                // esto es el tipo de borde el color y el tamano
+                                border: 1,
+                                borderColor: "divider",
+                                borderRadius: 2,
+                                // que el encabecdo se sticky osea que este fijo mientras uno scrollea y bgcolor le da el color de background
+                                "& .MuiTableCell-head": {
+                                    position: "sticky",
+                                    top: 0,
+                                    zIndex: 1, 
+                                    // lo pone arriba de las filas que van pasando pq se asigna el indice 1 se 
+                                    // vuelve el indice mas alto y se sobrepone con los z index mas bajos
+                                    bgcolor: "background.paper",
+                                },
+                            }}>
                                 <DataTable.Col source="nombre"/>
                                 <DataTable.Col source="paterno"/>
                                 <DataTable.Col source="materno"/>
@@ -370,7 +498,8 @@ export const VBD = () => {
                                 )}
                                 />
                             </DataTable>
-                            <Pagination/>
+                            {/*etiqueta para aria osea screenreaders */}
+                            <Paginacion etiqueta="Paginacion de tutores"/>
                         </ListContextProvider>
                     </ResourceContextProvider>
                 </CardContent>
@@ -381,7 +510,7 @@ export const VBD = () => {
                 <Dialog open onClose={() => setDialogo(null)} fullWidth maxWidth="sm">
                     <DialogTitle>
                         {dialogo.registro 
-                        ? `Editar ${titulosColeccion[dialogo.coleccion]}.singular` 
+                        ? `Editar ${titulosColeccion[dialogo.coleccion].singular}` 
                         : titulosColeccion[dialogo.coleccion].nuevo}
                     </DialogTitle>
 
@@ -398,8 +527,8 @@ export const VBD = () => {
                             <>
                                 <TextField
                                     label="Número de Empleado"
-                                    value={datos.numEmpleado ?? ""}
-                                    onChange={(e) => setDatos((prev) => ({ ...prev, numEmpleado: e.target.value }))}
+                                    value={datos.numeroEmpleado ?? ""}
+                                    onChange={(e) => setDatos((prev) => ({ ...prev, numeroEmpleado: e.target.value }))}
                                 />
                                 <TextField
                                     label="Usuario"
@@ -452,8 +581,8 @@ export const VBD = () => {
                             <>
                                 <TextField
                                     label="EBDI"
-                                    value={datos.EBDI ?? ""}
-                                    onChange={(e) => setDatos((prev) => ({ ...prev, EBDI: e.target.value }))}
+                                    value={datos.ebdi ?? ""}
+                                    onChange={(e) => setDatos((prev) => ({ ...prev, ebdi: e.target.value }))}
                                 />
                                 <TextField
                                     label="Nombre"
@@ -462,12 +591,12 @@ export const VBD = () => {
                                 />
                                 <TextField
                                     label="UR"
-                                    value={datos.Ur ?? ""}
+                                    value={datos.ur ?? ""}
                                     onChange={(e) => setDatos((prev) => ({ ...prev, ur: e.target.value }))}
                                 />
                                 <TextField
                                     label="Domicilio"
-                                    value={datos.Domicilio ?? ""}
+                                    value={datos.domicilio ?? ""}
                                     onChange={(e) => setDatos((prev) => ({ ...prev, domicilio: e.target.value }))}
                                 />
                                 <TextField
@@ -487,8 +616,8 @@ export const VBD = () => {
                                 />
                                 <TextField
                                     label="Ciclo Escolar"
-                                    value={datos.cicloescolar ?? ""}
-                                    onChange={(e) => setDatos((prev) => ({ ...prev, cicloescolar: e.target.value }))}
+                                    value={datos.cicloEscolar ?? ""}
+                                    onChange={(e) => setDatos((prev) => ({ ...prev, cicloEscolar: e.target.value }))}
                                 />
                                 <TextField
                                     label="Turno"
@@ -508,8 +637,8 @@ export const VBD = () => {
                                      * solo agarra los usuaarios si tienen rol docente
                                      */}
                                     {(bd.usuarios ?? []).map((u: any) => (
-                                    <MenuItem key={u._id} value={u._id}>
-                                    {u.Nombre ?? u.nombre} {u.Paterno ?? u.paterno}
+                                    <MenuItem key={u._id} value={u.usuario}>
+                                    {u.nombre} {u.paterno}
                                     </MenuItem>
                                     ))}
                                 </TextField>
@@ -520,17 +649,17 @@ export const VBD = () => {
                             <>
                                 <TextField
                                     label="Matricula"
-                                    value={datos.Matricula ?? ""}
+                                    value={datos.matricula ?? ""}
                                     onChange={(e) => setDatos((prev) => ({ ...prev, matricula: e.target.value }))}
                                 />
                                 <TextField
                                     label="UR"
-                                    value={datos.UR ?? ""}
+                                    value={datos.ur ?? ""}
                                     onChange={(e) => setDatos((prev) => ({ ...prev, ur: e.target.value }))}
                                 />
                                 <TextField
                                     label="EBDI"
-                                    value={datos.EBDI ?? ""}
+                                    value={datos.ebdi ?? ""}
                                     onChange={(e) => setDatos((prev) => ({ ...prev, ebdi: e.target.value }))}
                                 />
                                 <TextField

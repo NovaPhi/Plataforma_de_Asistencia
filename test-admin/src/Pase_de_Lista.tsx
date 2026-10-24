@@ -4,11 +4,15 @@
 // LA API TE VA A REGRESAR UN OBJETO DE USUARIOS, EN EL FORNT VAS A PODER VER LAS ESTANCIAS 
 //EN LA PARTE DE CAMBIAR DE SALA, CON EL OBJETO DE LA API VAS A PODER MOSTRAR LAS SALAS QUE TIENE ESE USUAARIO
 
+// estilos de los componentes de MUI (como Card) consultados con Claude a partir del mockup / Ayudado por Claude
 import{Card, CardHeader, Button, Stack, CardContent, Box,Typography, Chip, List, ListItem, ListItemText, TextField,} from "@mui/material";
 import{ useEffect, useState } from 'react';
 import { API_URL } from "./config";
 
+
+
 type Estado = "PRESENTE" | "FALTA_INJUSTIFICADA";
+
 
 //objeto con una llave por estado y numero como valor
 type Conteos = Record<Estado, number>;
@@ -27,7 +31,7 @@ type Infante = {
     materno: string;
     matricula: string;
     horaIngreso?: string;
-    Estatus: Estado;
+    estatus: Estado;
 };
 
 //DEBE VENIR DEL USUARIO QUE ESTA LOGGED IN
@@ -46,8 +50,7 @@ const horaTexto = (iso?: string) =>
 const estadoBase = (i: Infante): Estado => i.horaIngreso ? "PRESENTE" : "FALTA_INJUSTIFICADA";
 
 // el estatus guardado y si no existe usa e estado base
-const estadoDe = (i:Infante): Estado => i.Estatus ?? estadoBase(i);
-
+const estadoDe = (i: Infante): Estado => i.estatus ?? estadoBase(i);
 
 export const PasaLista = () => {
 
@@ -106,7 +109,10 @@ export const PasaLista = () => {
                 turno: "MATUTINO",
                 asistencia,
             }),
-            headers: new Headers({"Content-Type": "application/json"}),
+            headers: new Headers({ 
+                "Content-Type": "application/json",
+                "Authentication": sessionStorage.getItem("auth") ?? "",
+            }),
         });
         try{
             const res = await fetch(request);
@@ -139,10 +145,10 @@ export const PasaLista = () => {
         `${nombreCompleto(i)} ${i.matricula}`.toLowerCase().includes(busqueda.toLowerCase())
     );
 
-    //mamda a quienes no escanearon y no tienen estatus guardado los presentes ya los tiene la BD por el qr y los que ya tienen estatus no se tocan
+    //manda a quienes no escanearon y no tienen estatus guardado los presentes ya los tiene la BD por el qr y los que ya tienen estatus no se tocan
     //tipo si tiene medica 
     const guardar = async() => {
-        const faltantes = infantes.filter((i) => !i.horaIngreso && !i.Estatus).map((i)=> ({infante: i._id, estatus: "FALTA_INJUSTIFICADA" as Estado}));
+        const faltantes = infantes.filter((i) => !i.estatus).map((i)=> ({infante: i._id, estatus: "FALTA_INJUSTIFICADA" as Estado}));
         // lo de as Estado es para que ts lo trate como string normal
         setGuardando(true);
         try{
@@ -157,12 +163,13 @@ export const PasaLista = () => {
     };
 
     return (
-        // lo que pone las cartas de forma vertical
+        //lo que pone las cartas de forma vertical
         <Stack spacing={2}>
             <Card>
                     <CardHeader 
                         title="Pase de Lista" 
-                        slotProps={{title: {variant: "h2"}}}
+                        //lee el componente com h1 pero ensena el texto como si fueraa h2
+                        slotProps={{title: { variant: "h2", component:"h1"}}}
                     /> 
             </Card>
 
@@ -180,7 +187,8 @@ export const PasaLista = () => {
                         {Estados.map((e) => (
                             // bloque por estado mas el nombre
                             <Box key={e.key} sx={{display: 'flex', alignItems: 'center', gap:1}}>
-                                <Typography variant='h5' fontWeight={700}>
+                                {/*lee el componente como h2 en html pero ensena el texto como h5 para que no se vea muy grande */}
+                                <Typography variant='h5' component='h2' fontWeight={700}>
                                     {conteos[e.key]}
                                 </Typography>
                                 <Chip
@@ -213,45 +221,62 @@ export const PasaLista = () => {
                     </Typography>
                 )}
 
-                {/*Lista con el scroll propio*/}
-                <List sx={{ maxHeight: "60vh", overflowY: "auto" }}>
-                    {visibles.map((i) => {
-                        const estado = estadoDe(i);
-                        return (
-                            <ListItem
-                                key={i._id}
-                                divider
-                                secondaryAction={
-                                    // las cajas de falta y presente sin boton
-                                    <Stack direction="row" spacing={1}>
-                                        {Estados.map((s) => (
-                                            <Button
-                                                key={s.key}
-                                                size="small"
-                                                disableRipple
-                                                variant={estado === s.key ? "contained" : "outlined"}
-                                                color={
-                                                    estado === s.key
-                                                        ? s.key === "PRESENTE" ? "success" : "error": "inherit"
-                                                }
-                                                sx={{ pointerEvents: "none", cursor: "default" }}
-                                                tabIndex={-1}
-                                            >
-                                                {s.label}
-                                            </Button>
-                                        ))}
-                                    </Stack>
-                                }
-                            >
-                                {/* nombre, matrícula y cuando entra */}
-                                <ListItemText
-                                    primary={nombreCompleto(i)}
-                                    secondary={`${i.matricula}${i.horaIngreso ? ` , Ingreso ${horaTexto(i.horaIngreso)}` : ""}`}
-                                />
-                            </ListItem>
-                        );
-                    })}
-                </List>
+                {/*
+                * Lista con el scroll propio
+                * se le anadio el role region que convierte el contedor osea el boxx en zona dentro de la pagina
+                * el aria label es el nomber de la region para que los screen readers lo puedan leer
+                * el &focus visible es que aplique el estilo cuando el teclado lo enfoca y no cuando se le hace click
+                * es un apoyo visual para que la gente que se mueve puramente por el teclado pueda ver en que parte esta de 
+                * forma mas simple y pues el overflowY es solo cuando el contenido esta mas grande qeu la taabla prevista se
+                * crea el scrollbar
+                */}
+                <Box 
+                    role="region" 
+                    aria-label="Lista de Estudiantes" 
+                    tabIndex={0} 
+                    sx={{maxHeight: "60vh", 
+                    overflowY: "auto", 
+                    "&:focus-visible": { outline: "3px solid", outlineColor: "primary.main", outlineOffset: -3 },}}
+                >
+                    <List disablePadding >
+                        {visibles.map((i) => {
+                            const estado = estadoDe(i);
+                            return (
+                                <ListItem
+                                    key={i._id}
+                                    divider
+                                    secondaryAction={
+                                        // las cajas de falta y presente sin boton
+                                        <Stack direction="row" spacing={1}>
+                                            {Estados.map((s) => (
+                                                <Button
+                                                    key={s.key}
+                                                    size="small"
+                                                    disableRipple
+                                                    variant={estado === s.key ? "contained" : "outlined"}
+                                                    color={
+                                                        estado === s.key
+                                                            ? s.key === "PRESENTE" ? "success" : "error": "inherit"
+                                                    }
+                                                    sx={{ pointerEvents: "none", cursor: "default" }}
+                                                    tabIndex={-1}
+                                                >
+                                                    {s.label}
+                                                </Button>
+                                            ))}
+                                        </Stack>
+                                    }
+                                >
+                                    {/* nombre, matrícula y cuando entra */}
+                                    <ListItemText
+                                        primary={nombreCompleto(i)}
+                                        secondary={`${i.matricula}${i.horaIngreso ? ` , Ingreso ${horaTexto(i.horaIngreso)}` : ""}`}
+                                    />
+                                </ListItem>
+                            );
+                        })}
+                    </List>
+                </Box>
             </Card>
             <Card>
                 {/*texto a la izquierda boton a la derecha y el flexWrap para que se vea chido en pantalla chica*/}

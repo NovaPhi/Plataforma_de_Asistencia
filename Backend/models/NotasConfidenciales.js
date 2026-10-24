@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import cifrarCampos from "./cifrado.js";
 
 const { Schema } = mongoose;
 
@@ -12,6 +13,8 @@ const notaConfidencialSchema = new Schema({
   fechaRegistro: { type: Date },
   deleted_at: { type: Date, default: null }                            // Borrado logico
 });
+
+cifrarCampos(notaConfidencialSchema, ["diagnostico", "nota"]);
 
 notaConfidencialSchema.index({ ticket: 1 });
 notaConfidencialSchema.index({ infante: 1 });
