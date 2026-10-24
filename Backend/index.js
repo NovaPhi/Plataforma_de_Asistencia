@@ -610,7 +610,7 @@ app.post("/login", async (req, res)=>{
 		res.sendStatus(401);
 
 	}else if(await argon2.verify(data.passwordHash, pass)){
-		let token=jwt.sign({"usuario":data.usuario, rol: data.rol}, process.env.JWTSECRET, {expiresIn:45000});
+		let token=jwt.sign({"usuario":data.usuario, rol: data.rol}, process.env.JWTSECRET, {expiresIn:900});
 		return res.json({"token": token, "id":data.usuario, rol: data.rol});
 	}else{
 		res.sendStatus(401);
@@ -1459,8 +1459,8 @@ app.get("/estadisticas", async (req, res) => {
 
 		// el escaneo no guarda estatus: si tiene hora de ingreso el niño llego y cuenta como presente
 		const esPresente = a => a.estatus === "PRESENTE" || (!a.estatus && a.horaIngreso != null);
-		// ausentismo en porcentaje de las asistencias con fecha en [inicio, fin)
-		const ausentismoEntre = (inicio, fin) => {
+		// ausencia en porcentaje de las asistencias con fecha en [inicio, fin)
+		const ausenciaEntre = (inicio, fin) => {
 			const lista = asistencias.filter(a => new Date(a.fecha) >= inicio && new Date(a.fecha) < fin);
 			if (lista.length === 0) return 0;
 			return (lista.filter(a => !esPresente(a)).length / lista.length) * 100;
@@ -1471,13 +1471,13 @@ app.get("/estadisticas", async (req, res) => {
 		const delPeriodo = asistencias.filter(a => new Date(a.fecha) >= inicioPeriodo && new Date(a.fecha) < manana);
 		const presentes = delPeriodo.filter(esPresente).length;
 		const tasaAsistencia = delPeriodo.length ? (presentes / delPeriodo.length) * 100 : 0;
-		const tasaAusentismo = delPeriodo.length ? 100 - tasaAsistencia : 0;
+		const tasaAusencia = delPeriodo.length ? 100 - tasaAsistencia : 0;
 
-		// tendencia: puntos de ausentismo contra el periodo anterior del mismo tamaño, positivo es que subio
+		// tendencia: puntos de ausencia contra el periodo anterior del mismo tamaño, positivo es que subio
 		const tendencia = {
-			dia: ausentismoEntre(hoy, manana) - ausentismoEntre(new Date(hoy.getTime() - dia), hoy),
-			semana: ausentismoEntre(new Date(hoy.getTime() - 6 * dia), manana) - ausentismoEntre(new Date(hoy.getTime() - 13 * dia), new Date(hoy.getTime() - 6 * dia)),
-			mes: ausentismoEntre(new Date(hoy.getTime() - 29 * dia), manana) - ausentismoEntre(new Date(hoy.getTime() - 59 * dia), new Date(hoy.getTime() - 29 * dia))
+			dia: ausenciaEntre(hoy, manana) - ausenciaEntre(new Date(hoy.getTime() - dia), hoy),
+			semana: ausenciaEntre(new Date(hoy.getTime() - 6 * dia), manana) - ausenciaEntre(new Date(hoy.getTime() - 13 * dia), new Date(hoy.getTime() - 6 * dia)),
+			mes: ausenciaEntre(new Date(hoy.getTime() - 29 * dia), manana) - ausenciaEntre(new Date(hoy.getTime() - 59 * dia), new Date(hoy.getTime() - 29 * dia))
 		};
 
 		// asistencia por grupo; si el grupo tiene menos de 5 inscritos la tasa va como null
@@ -1530,7 +1530,7 @@ app.get("/estadisticas", async (req, res) => {
 			regiones,
 			asistencia: {
 				tasaAsistencia,
-				tasaAusentismo,
+				tasaAusencia,
 				tendencia,
 				porGrupo,
 				estancias: filasEstancias

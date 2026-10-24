@@ -56,7 +56,7 @@ const CAUSAS = ["Enfermedad en casa", "Accidente fuera del plantel", "Permiso pa
 // opciones de como termino la llamada
 const RESULTADOS = ["Contestó", "No contestó", "Número equivocado"];
 
-// fecha y hora en formato de mexico, si viene vacia o mala devuelve un guion
+// fecha y hora en formato de mexico, si viene vacia o mala devuelve un guion / isNaN y toLocaleString propuestas por Claude
 const fechaTexto = (iso: string) => {
   const d = new Date(iso);
   // getTime da el numero de milisegundos, si la fecha es mala da NaN y isNaN lo detecta
@@ -66,7 +66,7 @@ const fechaTexto = (iso: string) => {
     : d.toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short", hour12: false });
 };
 
-// solo la fecha, sin hora, para el dia de la falta
+// solo la fecha, sin hora, para el dia de la falta / isNaN y toLocaleString propuestas por Claude
 const soloFecha = (iso: string) => {
   const d = new Date(iso);
   return isNaN(d.getTime()) ? "—" : d.toLocaleDateString("es-MX", { dateStyle: "short" });
@@ -112,8 +112,8 @@ const Filtros = ({ filtro, salas, onChange }: {filtro: Filtro; salas: string[]; 
       label="Sala"
       value={filtro.sala}
       sx={{ minWidth: 200 }}
-      // native usa el <select> del navegador, shrink deja la etiqueta arriba para que no se encime con el texto del filtro "Todas las salas"
-      slotProps={{ select: { native: true }, inputLabel: { shrink: true } }}
+      // native usa el <select> del navegador, shrink deja la etiqueta arriba para que no se encime con el texto del filtro "Todas las salas" // Propuesta de Claude
+      slotProps={{ select: { native: true }, inputLabel: { shrink: true } }} // Propuesta de Claude
       // e es el evento y e.target.value es lo elegido}
       onChange={(e) => onChange({ ...filtro, sala: e.target.value })}> 
       <option value="">Todas las salas</option>
@@ -128,7 +128,7 @@ const Filtros = ({ filtro, salas, onChange }: {filtro: Filtro; salas: string[]; 
       label="Fecha de la falta"
       value={filtro.dias}
       sx={{ minWidth: 200 }}
-      slotProps={{ select: { native: true }, inputLabel: { shrink: true } }}
+      slotProps={{ select: { native: true }, inputLabel: { shrink: true } }} // Propuesta de Claude
       onChange={(e) => onChange({ ...filtro, dias: e.target.value })}>
       <option value="">Todas las fechas</option>
       <option value="7">Últimos 7 días</option>
@@ -261,7 +261,7 @@ const FormularioCausa = ({ caso, guardando, onGuardar }: { caso: Caso; guardando
           label="Fecha probable de retorno"
           // type date saca el selector de calendario del navegador
           type="date"
-          InputLabelProps={{ shrink: true }}
+          InputLabelProps={{ shrink: true }} // ayuda a que no se sobreponga la label con el texto de ayuda
           helperText="Formato dd/mm/aaaa"
           value={fechaRetorno}
           onChange={(e) => setFechaRetorno(e.target.value)}
@@ -312,7 +312,7 @@ const RegistrarLlamadaDialog = ({ caso, guardando, onClose, onGuardar }: {caso: 
         Registrar llamada
         {/* la tecla Esc tambien cierra el menu, el chip solo lo avisa */}
         <Button variant="outlined" color="inherit" onClick={onClose}>
-          {/* &nbsp; es un espacio que no se parte, */}
+          {/* &nbsp ayuda a que haya un espacio entre cerrar y el label de ESC / prupuesta por Claude*/}
           Cerrar&nbsp;<Chip size="small" variant="outlined" label="Esc" />
         </Button>
       </DialogTitle>
@@ -517,7 +517,7 @@ export const SeguimientoList = () => {
 
   return (
     <Card>
-      {/* variant h2 es el tamaño visual, component h1 es la etiqueta html */}
+      {/* variant h2 es el tamaño visual, component h1 es la etiqueta html // Propuesta de Claude */}
       <CardHeader title="Seguimiento de inasistencias" slotProps={{ title: { variant: "h2", component: "h1" } }} />
       <CardContent>
         {/* cada pestaña muestra cuantos casos tiene ese estado, al cambiar de pestaña se actualiza la lista */}
