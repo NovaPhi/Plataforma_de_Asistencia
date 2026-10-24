@@ -4,6 +4,7 @@
 // LA API TE VA A REGRESAR UN OBJETO DE USUARIOS, EN EL FORNT VAS A PODER VER LAS ESTANCIAS 
 //EN LA PARTE DE CAMBIAR DE SALA, CON EL OBJETO DE LA API VAS A PODER MOSTRAR LAS SALAS QUE TIENE ESE USUAARIO
 
+// estilos de los componentes de MUI (como Card) consultados con Claude a partir del mockup / Ayudado por Claude
 import{Card, CardHeader, Button, Stack, CardContent, Box,Typography, Chip, List, ListItem, ListItemText, TextField,} from "@mui/material";
 import{ useEffect, useState } from 'react';
 import { API_URL } from "./config";

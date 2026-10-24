@@ -2,6 +2,7 @@
 //LA API MANDA OBJETOS USA NOTACION PUNTO
 // recibe todos los bloques de la api y regresa cualquier cambio hecho en front
 import { useEffect, useState, useMemo, useId} from "react";
+// estilos de los componentes de MUI (como Card) consultados con Claude a partir del mockup / Ayudado por Claude
 import { Box, Card, CardContent, CardHeader,Stack, Button, Dialog, DialogTitle, DialogContent, TextField, MenuItem, DialogActions } from "@mui/material"
 import {DataTable,ListContextProvider,ResourceContextProvider,useList,DateField, EmailField, Pagination, PaginationActions} from "react-admin"
 import { API_URL } from "./config";

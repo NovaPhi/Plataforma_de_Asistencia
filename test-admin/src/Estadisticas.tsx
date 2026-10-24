@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react"; // "type ReactNode" es un tipo solo para el editor que significa "cualquier cosa que react pueda dibujar"
 import { usePermissions } from "react-admin"; // los saca de authProvider.getPermissions
+// componentes de MUI recomendados por Claude a partir del mockup / Propuesta de Claude
 import {Box, Card, CardContent, CardHeader, Chip, Tab, Table, TableBody, TableCell, TableHead, TableRow, Tabs, TextField, ToggleButton, ToggleButtonGroup, Typography,} from "@mui/material";
 import { API_URL } from "./config";
 
@@ -105,7 +106,7 @@ const Indicador = ({ etiqueta, valor, detalle }: { etiqueta: string; valor: stri
 );
 
 // rejilla para acomodar los cuadros de numeros en filas y columnas
-// children es lo que se escribe entre las etiquetas del componente, de tipo ReactNode (cualquier cosa dibujable) / Ayudado or Claude
+// children es lo que se escribe entre las etiquetas del componente, de tipo ReactNode (cualquier cosa dibujable) / Ayudado por Claude
 const RejillaIndicadores = ({ children }: { children: ReactNode }) => (<Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(4, 1fr)" } }}>{children}</Box>);
 
 // chip de color segun el semaforo (verde, amarillo, rojo)
@@ -294,7 +295,7 @@ export const EstadisticasList = () => {
   // pestaña activa
   const [vista, setVista] = useState<Vista>("asistencia");
 
-  // espera 400 ms despues de la ultima tecla para pasar lo escrito a estancia
+  // espera 400 ms despues de la ultima tecla para pasar lo escrito a estancia / Propuesta de Claude
   useEffect(() => {
     const t = setTimeout(() => setEstancia(busqueda.trim()), 400); // trim quita espacios sobrantes
     return () => clearTimeout(t);
@@ -336,6 +337,7 @@ export const EstadisticasList = () => {
     // Card es la tarjeta grande que envuelve toda la pantalla
     <Card>
       {/* el alcance lo manda la API, asi el supervisor regional ve su region y no "Nacional" // Propuesta de Claude*/}
+      {/* variant h2 es el tamaño visual, component h1 es la etiqueta html // Propuesta de Claude */}
       <CardHeader title="Estadísticas" subheader={datos ? `Alcance: ${datos.alcance}` : undefined} slotProps={{ title: { variant: "h2", component: "h1" } }} />
       <CardContent>
         {/* al cambiar de pestaña solo cambia vista, los datos ya estan cargados */}

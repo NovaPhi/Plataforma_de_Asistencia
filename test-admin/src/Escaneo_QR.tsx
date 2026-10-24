@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+// estilos de los componentes de MUI (como Card) consultados con Claude a partir del mockup / Ayudado por Claude
 import {Box, Card, CardHeader, Grid, Stack, Typography, Button, ToggleButtonGroup, ToggleButton, CardContent, Avatar, Alert, TextField, ListItem, List, ListItemText} from "@mui/material";
 import { Html5Qrcode } from "html5-qrcode";
 import { API_URL } from "./config";
@@ -47,6 +48,7 @@ const iniciales = (nombre: string) =>
 // QR Reader
 const ELEMENT_ID = "lector-qr";
 
+// función del lector QR, Claude explicó cómo usar y llamar a Html5Qrcode de html5-qrcode / Ayudado por Claude
 // recibe onScan que es funcion de la libreria
 const LectorQR = ({ onScan }: { onScan: (texto: string) => void }) => {
     //guarda la ultima version de onScan para no reiniciar la camara

@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { createTheme } from "@mui/material";
 
+// tema hecho con Claude a partir del mockup y las fuentes, mejorado con más prompts para accesibilidad y diseño / Ayudado por Claude
 /* ---------- Tokens ---------- */
 // los colores para todas las posibles cosas tanto para modo claro y obscuro
 const light = {

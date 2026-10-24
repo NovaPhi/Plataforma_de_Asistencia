@@ -24,6 +24,7 @@ import "@fontsource-variable/noto-sans/wght-italic.css";
 import "@fontsource/opendyslexic/400.css";
 import "@fontsource/opendyslexic/700.css";
 
+// contexto de dislexia para cambiar a OpenDyslexic en todos los campos a la vez, se depuró con Claude / Ayudado por Claude
 const AppContent =() => {
   const {dyslexia} = useDyslexia();
   const lightTheme = useMemo(() => buildTheme("light", dyslexia), [dyslexia]);

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+// componentes de MUI recomendados por Claude a partir del mockup / Propuesta de Claude
 import {Box, Button, Card, CardActionArea, CardContent, CardHeader, Chip, Dialog,DialogActions, DialogContent, DialogTitle, MenuItem, Tab, Tabs, TextField, Typography,} from "@mui/material";
 import { API_URL } from "./config";
 
@@ -225,13 +226,14 @@ const Detalle = ({ inc, guardando, onRegistrarAccion, onResolver }: {inc?: Incid
 
         {/* bloque de descripcion */}
         <Box>
-          {/* gutterBottom le deja un margen abajo al texto */}
+          {/* gutterBottom le deja un margen abajo al texto / Propuesta de Claude */}
           <Typography sx={{ fontWeight: 700 }} gutterBottom>Descripción</Typography>
           <Typography variant="body2">{inc.descripcion}</Typography>
         </Box>
 
         {/* historial de lo que se ha hecho, en orden de la mas vieja a la mas nueva */}
         <Box>
+          {/* gutterBottom le deja un margen abajo al texto / Propuesta de Claude */}
           <Typography sx={{ fontWeight: 700 }} gutterBottom>Acciones realizadas</Typography>
           {/* si no hay acciones se avisa en lugar de dejar el espacio vacio */}
           {inc.acciones.length === 0 && <Typography variant="body2">Sin acciones registradas.</Typography>}

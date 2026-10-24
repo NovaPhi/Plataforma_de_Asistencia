@@ -2,6 +2,8 @@
 // Correr desde Backend despues de cada carga de datos con mongosh:
 //   node scripts/cifrarExistentes.js
 // Hacer respaldo de la BD antes de correrlo
+
+// Revisado con claude, me ayudo a hacer el script y a entender como funciona mongoose-field-encryption. 
 import "dotenv/config";
 import mongoose from "mongoose";
 import Infante from "../models/Infantes.js";

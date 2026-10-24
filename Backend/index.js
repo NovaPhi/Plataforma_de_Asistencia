@@ -1106,6 +1106,7 @@ app.patch("/seguimiento/:id/cerrar", async (req, res) => {
 	}
 });
 
+// se revisó con Claude qué podía causar errores en este endpoint y se usó de referencia para los siguientes / Ayudado por Claude
 app.get("/incidencias", async (req, res) => {
 	// primero se valida quien es, si el token es malo o vencio responde 401
 	let usuario;
@@ -1426,6 +1427,7 @@ app.get("/estadisticas", async (req, res) => {
 		const region = esRegional ? usuario.ambito.ur : (req.query.region || "");
 		const busqueda = String(req.query.estancia ?? "").trim().toLowerCase();
 
+		// fechas de hoy, días del periodo, inicio del periodo y del periodo anterior para comparar las estadísticas / Ayudado por Claude
 		// rangos de fechas: los dias empiezan a las 00:00 del servidor
 		const dia = 24 * 60 * 60 * 1000;
 		const hoy = new Date();

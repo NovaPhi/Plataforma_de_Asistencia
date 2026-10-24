@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+// componentes de MUI recomendados por Claude a partir del mockup / Propuesta de Claude
 import {Alert, Box, Button, Card, CardContent, CardHeader, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Radio, RadioGroup, Tab, Tabs, TextField, Typography,} from "@mui/material";
 import { API_URL } from "./config";
 
@@ -312,7 +313,7 @@ const RegistrarLlamadaDialog = ({ caso, guardando, onClose, onGuardar }: {caso: 
         Registrar llamada
         {/* la tecla Esc tambien cierra el menu, el chip solo lo avisa */}
         <Button variant="outlined" color="inherit" onClick={onClose}>
-          {/* &nbsp ayuda a que haya un espacio entre cerrar y el label de ESC / prupuesta por Claude*/}
+          {/* &nbsp ayuda a que haya un espacio entre cerrar y el label de ESC / propuesta por Claude*/}
           Cerrar&nbsp;<Chip size="small" variant="outlined" label="Esc" />
         </Button>
       </DialogTitle>
@@ -379,7 +380,7 @@ const Expediente = ({ caso, guardando, onRegistrarLlamada, onGuardar, onCerrar }
         </Box>
         {/* lista de todas las llamadas hechas, la mas reciente arriba */}
         <Box>
-          {/* gutterBottom le deja un margen abajo al texto */}
+          {/* gutterBottom le deja un margen abajo al texto / Propuesta de Claude */}
           <Typography fontWeight={700} gutterBottom>Historial de llamadas</Typography>
           {/* si no hay llamadas se avisa en lugar de dejar el espacio vacio */}
           {caso.intentos.length === 0 && <Typography variant="body2">Sin llamadas registradas.</Typography>}
