@@ -58,7 +58,7 @@ const ETIQUETA_ESTADO: Record<EstadoInc, string> = {
   resuelta: "Resuelta",
 };
 
-// fecha y hora en formato de mexico, si viene vacia o mala devuelve un guion
+// fecha y hora en formato de mexico, si viene vacia o mala devuelve un guion / isNaN y toLocaleString propuestas por Claude
 const fechaTexto = (iso: string) => {
   const d = new Date(iso);
   return isNaN(d.getTime()) //saca los milisegundos
@@ -116,7 +116,7 @@ const Filtros = ({ filtro, salas, onChange }: {filtro: Filtro; salas: string[]; 
       label="Sala"
       value={filtro.sala}
       sx={{ minWidth: 200 }}
-      slotProps={{ select: { native: true }, inputLabel: { shrink: true } }}
+      slotProps={{ select: { native: true }, inputLabel: { shrink: true } }} // Propuesta de Claude
       //...filtro copia los otros dos filtros y solo cambia el campo que se toco 
       onChange={(e) => onChange({ ...filtro, sala: e.target.value })}> // 
       <option value="">Todas las salas</option>
@@ -130,7 +130,7 @@ const Filtros = ({ filtro, salas, onChange }: {filtro: Filtro; salas: string[]; 
       label="Tipo"
       value={filtro.tipo}
       sx={{ minWidth: 200 }}
-      slotProps={{ select: { native: true }, inputLabel: { shrink: true } }}
+      slotProps={{ select: { native: true }, inputLabel: { shrink: true } }} // Propuesta de Claude
       // copia los otros ...filtros y cambia solo tipo
       onChange={(e) => onChange({ ...filtro, tipo: e.target.value })}>
       <option value="">Todos los tipos</option>
@@ -144,7 +144,7 @@ const Filtros = ({ filtro, salas, onChange }: {filtro: Filtro; salas: string[]; 
       label="Gravedad"
       value={filtro.gravedad}
       sx={{ minWidth: 200 }}
-      slotProps={{ select: { native: true }, inputLabel: { shrink: true } }}
+      slotProps={{ select: { native: true }, inputLabel: { shrink: true } }} // Propuesta de Claude
       onChange={(e) => onChange({ ...filtro, gravedad: e.target.value })}>
       <option value="">Todas</option>
       {/* Object.keys saca las llaves del objeto GRAVEDADES como lista de textos y "as Gravedad[]" dice si esos textos son gravedades validas */}
@@ -192,7 +192,7 @@ const Dato = ({ etiqueta, valor }: { etiqueta: string; valor: string }) => (
 );
 
 // panel de la derecha con todo el detalle de la incidencia seleccionada
-// inc significa que puede ser undefined (cuando no hay ninguna elegida)
+// inc? significa que puede ser undefined (cuando no hay ninguna elegida)
 const Detalle = ({ inc, guardando, onRegistrarAccion, onResolver }: {inc?: Incidencia; guardando: boolean; onRegistrarAccion: () => void; onResolver: () => void;}) => {
   // si no hay incidencia elegida solo se muestra el mensaje
   if (!inc) {
@@ -337,7 +337,7 @@ export const HistorialList = () => {
   // useState<Incidencia[]>([]) crea una lista de incidencias que empieza vacia ([])
   const [incidencias, setIncidencias] = useState<Incidencia[]>([]);
   const [cargando, setCargando] = useState(true); // true mientras llega el GET
-  const [guardando, setGuardando] = useState(false); // true mientras se espera un POST o PATCH
+  const [guardando, setGuardando] = useState(false);
   // pestaña activa: activas o historicas
   const [vista, setVista] = useState<Vista>("activas");
   // filtros elegidos, "" en todos al inicio para que no filtre nada
@@ -367,12 +367,7 @@ export const HistorialList = () => {
   };
 
   // useEffect corre el codigo al abrir la pantalla, el [] del final significa "solo una vez"
-  useEffect(() => {
-    handleGetData().catch((error) => {
-      console.error(error);
-      alert(error.message);
-    }).finally(() => setCargando(false));
-  }, []);
+  useEffect(() => {handleGetData().catch((error) => {console.error(error);alert(error.message);}).finally(() => setCargando(false));}, []);
 
   // una incidencia es activa mientras no este resuelta
   const esActiva = (i: Incidencia) => i.estado !== "resuelta";
@@ -458,9 +453,10 @@ export const HistorialList = () => {
 
   return (
     <Card>
-      {/* el boton de registrar va en la esquina del titulo (action) */}
+      {/* el boton de registrar va en la esquina del titulo (action) // Propuesta de Claude */}
       <CardHeader
         title="Incidencias"
+        slotProps={{ title: { variant: "h2", component: "h1" } }}
         action={<Button variant="contained" onClick={() => setDialogoAbierto(true)}>Registrar incidencia</Button>}
       />
       <CardContent>

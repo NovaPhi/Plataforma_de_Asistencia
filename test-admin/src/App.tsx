@@ -43,7 +43,7 @@ return(
           <>
             <Resource 
               name="pase-lista" 
-              list={has('CAPTURISTA_DOCENTE') ? PasaLista : undefined} 
+              list={has('CAPTURISTA_DOCENTE','DIRECTORA_ESTANCIA') ? PasaLista : undefined} 
               icon={PostIcon}
             />
             <Resource 

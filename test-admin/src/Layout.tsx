@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import {AppBar as RAAppBar,Layout as RALayout,Menu,CheckForApplicationUpdate,useGetIdentity,UserMenu,Logout, ToggleThemeButton,} from "react-admin";
 import { Box, Typography, Button } from "@mui/material";
-import DashboardIcon from "@mui/icons-material/SpaceDashboardOutlined";
 import AccountCircleOutlined from "@mui/icons-material/AccountCircleOutlined";
 import TextFieldsIcon from "@mui/icons-material/TextFields";
 import { useDyslexia } from "./Theme";
